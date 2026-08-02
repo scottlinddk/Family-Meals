@@ -1,6 +1,8 @@
 import { Form, useActionData, useNavigation } from "react-router";
 import type { Route } from "./+types/auth.login";
 import { createSupabaseServerClient } from "~/lib/auth";
+import { Button } from "~/ui/components/ui/Button";
+import { Input } from "~/ui/components/ui/Input";
 
 export async function action({ request }: Route.ActionArgs) {
   const headers = new Headers();
@@ -21,29 +23,20 @@ export default function LoginPage() {
   const navigation = useNavigation();
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-4 p-8">
-      <h1 className="text-xl font-semibold">Sign in to Family Meals</h1>
-      <p className="text-sm text-gray-600">
-        We'll email you a magic link — no password needed.
-      </p>
+    <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-5 p-8">
+      <div>
+        <p className="font-mono text-[11px] tracking-[0.18em] text-muted uppercase">Family Meals</p>
+        <h1 className="mt-2 font-display text-4xl">Sign in.</h1>
+      </div>
+      <p className="text-sm text-ink-2">We'll email you a magic link — no password needed.</p>
       <Form method="post" className="flex flex-col gap-3">
-        <input
-          type="email"
-          name="email"
-          required
-          placeholder="you@example.com"
-          className="rounded border border-gray-300 px-3 py-2"
-        />
-        <button
-          type="submit"
-          disabled={navigation.state === "submitting"}
-          className="rounded bg-gray-900 px-3 py-2 text-white disabled:opacity-50"
-        >
+        <Input type="email" name="email" required placeholder="you@example.com" />
+        <Button type="submit" variant="primary" disabled={navigation.state === "submitting"}>
           {navigation.state === "submitting" ? "Sending..." : "Send magic link"}
-        </button>
+        </Button>
       </Form>
-      {actionData?.ok && <p className="text-sm text-green-700">Check your inbox for the link.</p>}
-      {actionData?.error && <p className="text-sm text-red-700">{actionData.error}</p>}
+      {actionData?.ok && <p className="text-sm text-olive">Check your inbox for the link.</p>}
+      {actionData?.error && <p className="text-sm text-brick">{actionData.error}</p>}
     </main>
   );
 }

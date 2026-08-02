@@ -1,1 +1,51 @@
 @import "tailwindcss";
+
+@theme {
+  --font-display: "Instrument Serif", "Times New Roman", serif;
+  --font-sans: "Geist", "Helvetica Neue", system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, monospace;
+
+  /* Warm editorial palette — canvas to ink, with ember/brick/olive/amber accents.
+     Values flip for dark mode below; utility class names stay the same. */
+  --color-canvas: #f2ebdb;
+  --color-paper: #fbf6e8;
+  --color-paper-warm: #f8ebc8;
+  --color-surface: #ffffff;
+  --color-surface-2: #e8dfc8;
+  --color-ink: #1a1612;
+  --color-ink-2: #4a4239;
+  --color-muted: #8b7f6e;
+  --color-line: #d6cbb4;
+  --color-line-2: #bfb39a;
+  --color-ember: #dc4a1e;
+  --color-ember-2: #bc3a12;
+  --color-brick: #7b1f18;
+  --color-olive: #5a6b3a;
+  --color-amber: #e89a2b;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-canvas: #0f0d0b;
+    --color-paper: #15110d;
+    --color-paper-warm: #2a2014;
+    --color-surface: #1a1714;
+    --color-surface-2: #221d18;
+    --color-ink: #f2ebdb;
+    --color-ink-2: #c9bfa8;
+    --color-muted: #7a7060;
+    --color-line: #2f2924;
+    --color-line-2: #3c342c;
+    --color-ember: #f26a3d;
+    --color-ember-2: #ff8a5f;
+    --color-brick: #b23a2a;
+    --color-olive: #8aa055;
+    --color-amber: #f2b652;
+  }
+}
+
+body {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-feature-settings: "ss01", "cv11";
+}

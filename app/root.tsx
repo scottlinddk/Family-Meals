@@ -19,10 +19,16 @@ export function Layout({ children }: { children: ReactNode }) {
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>Family Meals</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap"
+        />
         <Meta />
         <Links />
       </head>
-      <body>
+      <body className="min-h-screen bg-canvas font-sans text-ink antialiased">
         {children}
         <ScrollRestoration />
         <Scripts />
@@ -59,10 +65,10 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
 
   return (
     <main className="mx-auto max-w-2xl p-8">
-      <h1 className="text-2xl font-semibold">{message}</h1>
-      <p className="mt-2 text-gray-600">{details}</p>
+      <h1 className="font-display text-4xl">{message}</h1>
+      <p className="mt-2 text-ink-2">{details}</p>
       {stack && (
-        <pre className="mt-4 w-full overflow-x-auto rounded bg-gray-100 p-4 text-sm">
+        <pre className="mt-4 w-full overflow-x-auto rounded-md border border-line bg-surface-2 p-4 font-mono text-sm">
           <code>{stack}</code>
         </pre>
       )}

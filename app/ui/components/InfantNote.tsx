@@ -1,11 +1,12 @@
 import { INFANT_NOTE } from "~/domain/infant/infantNote";
+import { Badge } from "~/ui/components/ui/Badge";
 
 /** Static, non-personalized reminder — the only infant-related content in the app. */
 export function InfantNote() {
   return (
-    <aside className="rounded border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-      <p className="font-medium">6-month-old</p>
-      <p className="mt-1">{INFANT_NOTE.text}</p>
+    <aside className="rounded-lg border border-amber/30 bg-paper-warm p-4 text-sm text-ink-2">
+      <Badge tone="ember">6-month-old</Badge>
+      <p className="mt-2">{INFANT_NOTE.text}</p>
     </aside>
   );
 }

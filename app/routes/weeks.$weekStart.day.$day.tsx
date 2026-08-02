@@ -5,6 +5,8 @@ import { useWeekPlan } from "~/ui/hooks/useWeekPlan";
 import { useSwapDayRecipe } from "~/ui/hooks/useRegenerateDay";
 import { DayCard } from "~/ui/components/DayCard";
 import { RECIPE_CATALOG } from "~/domain/recipes/recipeCatalog";
+import { Card } from "~/ui/components/ui/Card";
+import { FieldLabel, Select } from "~/ui/components/ui/Input";
 
 export async function loader({ request }: Route.LoaderArgs) {
   const headers = new Headers();
@@ -22,7 +24,7 @@ export default function DayPage({ params }: Route.ComponentProps) {
 
   return (
     <main className="mx-auto max-w-2xl p-6">
-      <Link to={`/weeks/${weekStart}`} className="text-sm text-gray-500">
+      <Link to={`/weeks/${weekStart}`} className="font-mono text-xs tracking-wide text-muted hover:text-ink">
         ← Back to week
       </Link>
 
@@ -30,17 +32,14 @@ export default function DayPage({ params }: Route.ComponentProps) {
         <div className="mt-4">
           <DayCard day={day} weekStart={weekStart} dayIndex={dayIndex} />
 
-          <div className="mt-4 rounded-lg border border-gray-200 p-4">
-            <label htmlFor="swap-recipe" className="text-sm font-medium">
-              Swap to a different recipe
-            </label>
-            <select
+          <Card className="mt-4">
+            <FieldLabel htmlFor="swap-recipe">Swap to a different recipe</FieldLabel>
+            <Select
               id="swap-recipe"
               defaultValue=""
               onChange={(e) => {
                 if (e.target.value) swap.mutate({ dayIndex, recipeId: e.target.value });
               }}
-              className="mt-1 w-full rounded border border-gray-300 p-2 text-sm"
             >
               <option value="" disabled>
                 Choose a recipe…
@@ -50,8 +49,8 @@ export default function DayPage({ params }: Route.ComponentProps) {
                   {entry.recipe.title}
                 </option>
               ))}
-            </select>
-          </div>
+            </Select>
+          </Card>
         </div>
       )}
     </main>
