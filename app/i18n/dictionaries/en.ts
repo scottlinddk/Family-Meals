@@ -1,0 +1,88 @@
+import type { da } from "~/i18n/dictionaries/da";
+
+/** English UI strings — kept as a fallback locale; Danish (`da`) is the default. */
+export const en: Record<keyof typeof da, string> = {
+  "app.title": "Family Meals",
+
+  "error.title.oops": "Oops!",
+  "error.details.generic": "An unexpected error occurred.",
+  "error.title.404": "404",
+  "error.details.404": "The requested page could not be found.",
+
+  "common.password": "Password",
+
+  "auth.login.heading": "Sign in to Family Meals",
+  "auth.login.submitting": "Signing in...",
+  "auth.login.submit": "Sign in",
+  "auth.login.noAccount": "No account yet?",
+  "auth.login.link": "Sign up",
+
+  "auth.signup.heading": "Create your Family Meals account",
+  "auth.signup.submitting": "Signing up...",
+  "auth.signup.submit": "Sign up",
+  "auth.signup.confirmEmail": "Check your inbox to confirm your email, then sign in.",
+  "auth.signup.hasAccount": "Already have an account?",
+  "auth.signup.link": "Sign in",
+
+  "week.prev": "← Prev",
+  "week.next": "Next →",
+  "week.heading": "Week of {{date}}",
+  "week.manageOffers": "Manage offers",
+  "week.signOut": "Sign out",
+  "week.loading": "Loading…",
+  "week.empty": "No plan generated for this week yet.",
+  "week.generating": "Generating...",
+  "week.generate": "Generate week plan",
+  "week.regeneratingWhole": "Regenerating...",
+  "week.regenerateWhole": "Regenerate whole week",
+
+  "day.backToWeek": "← Back to week",
+  "day.swapLabel": "Swap to a different recipe",
+  "day.choosePlaceholder": "Choose a recipe…",
+
+  "dayCard.regenerating": "Regenerating...",
+  "dayCard.regenerateThisDay": "Regenerate this day",
+
+  "infant.label": "6-month-old",
+
+  "offers.pageTitle": "Weekly offers",
+  "offers.backToPlan": "← Back to plan",
+  "offers.formHeading": "This week's REMA 1000 offers",
+  "offers.formDescription":
+    "Paste offer JSON in the reference schema shape (same fields REMA's own listings use). This replaces the currently-imported offer set.",
+  "offers.importing": "Importing...",
+  "offers.import": "Import offers",
+  "offers.currentlyImported": "Currently imported ({{count}})",
+  "offers.autoFetchHeading": "Automatic offers",
+  "offers.autoFetchDescription":
+    "Fetch REMA 1000's current offers automatically from etilbudsavis.dk (a third-party tilbudsavis built on the Tjek platform, not the webshop itself).",
+  "offers.fetching": "Fetching...",
+  "offers.fetchNow": "Fetch offers now",
+  "offers.fetchError": "Could not fetch offers automatically.",
+
+  "recipes.suggestionsHeading": "Best meals from this week's offers",
+  "recipes.suggestionsDescription":
+    "REMA 1000's own recipes (madogdrikke.rema1000.dk/opskrifter), ranked by how many ingredients are on offer this week.",
+  "recipes.refreshing": "Refreshing...",
+  "recipes.refresh": "Refresh recipes",
+  "recipes.refreshError": "Could not refresh recipes automatically.",
+  "recipes.none": "No recipes cached yet — click \"Refresh recipes\".",
+  "recipes.onOffer": "On offer: {{names}}",
+  "recipes.viewRecipe": "View recipe →",
+  "recipes.noMatch": "No ingredients currently on offer.",
+
+  "calendar.subscribeButton": "Subscribe in your calendar app",
+  "calendar.modalHeading": "Subscribe to your meal calendar",
+  "calendar.modalDescription":
+    "This link is unique to your family — anyone with it can see (but not edit) your meal plan, so keep it private. You can rotate it any time if it leaks.",
+  "calendar.apple": "Apple Calendar: File → New Calendar Subscription, paste the link above.",
+  "calendar.google": "Google Calendar: Other calendars → From URL, paste the https:// version below.",
+  "calendar.outlook": "Outlook: Add calendar → Subscribe from web, paste the link above.",
+  "calendar.refreshNote":
+    "Calendar apps refresh subscriptions on their own schedule (often not more than a few times a day) — edits here will always be correct at this link, but your calendar app may take a while to pick them up.",
+  "calendar.close": "Close",
+
+  "variant.adultsHeading": "Adults (calorie-minimized)",
+  "variant.childHeading": "Toddler (base dish + calorie-dense addition)",
+  "variant.addLabel": "Add {{qty}}{{unit}} {{name}}",
+};

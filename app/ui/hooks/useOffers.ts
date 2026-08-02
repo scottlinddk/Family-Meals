@@ -35,3 +35,21 @@ export function useImportOffers() {
     },
   });
 }
+
+/** Fetches this week's REMA 1000 offers automatically from etilbudsavis.dk. */
+export function useRefreshOffers() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/offers/refresh", { method: "POST" });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.message ?? "Failed to fetch offers");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: OFFERS_QUERY_KEY });
+    },
+  });
+}

@@ -11,14 +11,16 @@ import type { Route } from "./+types/root";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import "./app.css";
+import { t } from "~/i18n/t";
+import { DEFAULT_LOCALE } from "~/i18n/locale";
 
 export function Layout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang={DEFAULT_LOCALE}>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Family Meals</title>
+        <title>{t("app.title")}</title>
         <Meta />
         <Links />
       </head>
@@ -42,15 +44,15 @@ export default function App() {
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  let message = "Oops!";
-  let details = "An unexpected error occurred.";
+  let message = t("error.title.oops");
+  let details = t("error.details.generic");
   let stack: string | undefined;
 
   if (isRouteErrorResponse(error)) {
-    message = error.status === 404 ? "404" : "Error";
+    message = error.status === 404 ? t("error.title.404") : "Error";
     details =
       error.status === 404
-        ? "The requested page could not be found."
+        ? t("error.details.404")
         : error.statusText || details;
   } else if (import.meta.env.DEV && error && error instanceof Error) {
     details = error.message;

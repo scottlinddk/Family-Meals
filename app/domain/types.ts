@@ -111,6 +111,24 @@ export interface WeekPlan {
 }
 
 /**
+ * A recipe pulled from an external source (REMA 1000's own recipe site,
+ * madogdrikke.rema1000.dk/opskrifter) rather than the hand-authored
+ * `RECIPE_CATALOG`. Ingredients are kept as plain display strings — the
+ * source page doesn't expose structured quantity/unit data — and are only
+ * used for offer-matching (substring scoring), never fed into the
+ * adult/child variant derivation pipeline built for `BaseRecipe`.
+ */
+export interface ExternalRecipe {
+  /** Stable id derived from the source URL slug. */
+  id: string;
+  title: string;
+  /** Canonical URL on madogdrikke.rema1000.dk. */
+  url: string;
+  imageUrl?: string;
+  ingredients: string[];
+}
+
+/**
  * Static, non-personalized reminder for the ~6mo infant. Intentionally not
  * tied to any WeekPlan/DayPlan and never generated or turned into a VEVENT —
  * the infant is explicitly excluded from meal planning per the family's

@@ -29,12 +29,53 @@ for the generator, and `app/domain/calendar/icsBuilder.ts` for the ICS feed.
 
 ## Data source for weekly offers
 
-There's no confirmed ToS-compliant ongoing API for REMA 1000's offers, so the
-only wired-in `OfferSource` (see `app/adapters/offerSource/`) is manual
-entry/JSON-paste through the `/offers` page, validated against the reference
-schema in `offerSchema.ts`. A future scraper-based or official-API source can
-implement the same `OfferSource` interface without touching any meal-planning
-logic.
+There's no confirmed ToS-compliant ongoing API for REMA 1000's own webshop,
+so manual entry/JSON-paste through the `/offers` page (validated against the
+reference schema in `offerSchema.ts`) remains the safe default `OfferSource`.
+
+Additionally, `EtilbudsavisOfferSource` (`app/adapters/offerSource/EtilbudsavisOfferSource.ts`)
+fetches REMA 1000's offers automatically from etilbudsavis.dk — a
+third-party tilbudsavis aggregator built on the Tjek platform that publishes
+REMA's weekly offers as structured data (name, price, validity period),
+rather than the webshop itself. Trigger it from the "Fetch offers now"
+button on `/offers`, which calls `POST /api/offers/refresh`. The Tjek API
+isn't formally documented, but the endpoints and field shapes this adapter
+uses (`/v2/dealers`, `/v2/catalogs`, `/v2/offers?catalog_ids=...` — note
+`/v2/offers/search` requires a non-empty `query` and can't list a whole
+dealer's offers) were confirmed against live responses and are covered by
+`EtilbudsavisOfferSource.test.ts` with real fixture data. It still couldn't
+be exercised end-to-end from this project's dev sandbox (api.etilbudsavis.dk
+403s this sandbox's outbound requests specifically — bot protection, not a
+ToS/auth issue), so do one live `POST /api/offers/refresh` after deploying
+to confirm nothing about the catalog/offer volume surprises the pagination
+loop.
+
+Both sources implement the same `OfferSource` interface
+(`app/adapters/offerSource/OfferSource.ts`), so meal-planning logic doesn't
+care which one populated the current offer set.
+
+## Recipe suggestions from REMA 1000's own recipes
+
+`RemaRecipeSource` (`app/adapters/recipeSource/RemaRecipeSource.ts`) fetches
+and parses REMA 1000's public recipe site
+(madogdrikke.rema1000.dk/opskrifter), separate from the hand-authored
+`RECIPE_CATALOG` used for the adult/child variant pipeline. Click "Refresh
+recipes" on `/offers` (`POST /api/recipes/refresh`) to re-scrape, and the
+"Best meals from this week's offers" panel
+(`GET /api/recipes/suggestions`, `app/domain/recipes/externalRecipeMatch.ts`)
+ranks the cached recipes by how many ingredients are on offer this week.
+Like the offer source above, madogdrikke.rema1000.dk returned 403 from this
+sandbox, so the HTML selectors are written defensively against common
+markup patterns and covered by fixture-based tests
+(`RemaRecipeSource.test.ts`) rather than live traffic — verify selectors
+against the real page in an environment with normal network access.
+
+## Locale
+
+Danish (`da`) is the app's default and only fully-translated locale — see
+`app/i18n/`. `t(key, vars?)` looks up `app/i18n/dictionaries/da.ts` first,
+falling back to `en.ts` (kept as a secondary locale) then the raw key.
+`<html lang>` is set from `DEFAULT_LOCALE` in `app/root.tsx`.
 
 ## Calendar subscription
 
