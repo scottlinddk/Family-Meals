@@ -3,6 +3,11 @@ import { requireFamily } from "~/lib/auth";
 import { externalRecipeRepository } from "~/data/repositories/externalRecipeRepository";
 import { RemaRecipeSource } from "~/adapters/recipeSource/RemaRecipeSource";
 
+/** This is an action-only resource route; a stray GET (crawler, prefetch, etc.) should 405, not crash the router. */
+export async function loader() {
+  return new Response("Method not allowed", { status: 405 });
+}
+
 /** POST: re-scrape REMA 1000's own recipes (madogdrikke.rema1000.dk/opskrifter) into the cache. */
 export async function action({ request }: Route.ActionArgs) {
   if (request.method !== "POST") {
