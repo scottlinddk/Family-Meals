@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { useImportOffers, useOffers } from "~/ui/hooks/useOffers";
+import { useImportOffers, useOffers, useRefreshOffers } from "~/ui/hooks/useOffers";
+import { t } from "~/i18n/t";
 
 const PLACEHOLDER = `[
   {
@@ -21,6 +22,7 @@ export function OfferJsonPasteForm() {
   const [raw, setRaw] = useState("");
   const [error, setError] = useState<string | null>(null);
   const importOffers = useImportOffers();
+  const refreshOffers = useRefreshOffers();
   const offers = useOffers();
 
   async function handleImport() {
@@ -36,11 +38,24 @@ export function OfferJsonPasteForm() {
 
   return (
     <section className="rounded-lg border border-gray-200 p-4">
-      <h2 className="text-lg font-semibold">This week's REMA 1000 offers</h2>
-      <p className="mt-1 text-sm text-gray-600">
-        Paste offer JSON in the reference schema shape (same fields REMA's own listings use). This
-        replaces the currently-imported offer set.
-      </p>
+      <h2 className="text-lg font-semibold">{t("offers.autoFetchHeading")}</h2>
+      <p className="mt-1 text-sm text-gray-600">{t("offers.autoFetchDescription")}</p>
+      <button
+        type="button"
+        onClick={() => refreshOffers.mutate()}
+        disabled={refreshOffers.isPending}
+        className="mt-2 rounded bg-gray-900 px-3 py-1.5 text-sm text-white disabled:opacity-50"
+      >
+        {refreshOffers.isPending ? t("offers.fetching") : t("offers.fetchNow")}
+      </button>
+      {refreshOffers.isError && (
+        <p className="mt-1 text-sm text-red-700">
+          {t("offers.fetchError")} {refreshOffers.error instanceof Error ? refreshOffers.error.message : ""}
+        </p>
+      )}
+
+      <h2 className="mt-6 text-lg font-semibold">{t("offers.formHeading")}</h2>
+      <p className="mt-1 text-sm text-gray-600">{t("offers.formDescription")}</p>
       <textarea
         value={raw}
         onChange={(e) => setRaw(e.target.value)}
@@ -55,12 +70,12 @@ export function OfferJsonPasteForm() {
         disabled={importOffers.isPending || raw.trim().length === 0}
         className="mt-2 rounded bg-gray-900 px-3 py-1.5 text-sm text-white disabled:opacity-50"
       >
-        {importOffers.isPending ? "Importing..." : "Import offers"}
+        {importOffers.isPending ? t("offers.importing") : t("offers.import")}
       </button>
 
       <div className="mt-4">
         <h3 className="text-sm font-medium text-gray-700">
-          Currently imported ({offers.data?.length ?? 0})
+          {t("offers.currentlyImported", { count: offers.data?.length ?? 0 })}
         </h3>
         <ul className="mt-1 max-h-48 space-y-1 overflow-y-auto text-sm text-gray-600">
           {offers.data?.map((offer, i) => (

@@ -41,6 +41,22 @@ export const offers = pgTable("offers", {
   importedAt: timestamp("imported_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+/**
+ * REMA 1000's own published recipes (madogdrikke.rema1000.dk/opskrifter),
+ * fetched via `RemaRecipeSource` and cached here so the "best meals from
+ * this week's offers" view doesn't re-scrape on every page load. Separate
+ * from the hand-authored recipe catalog (`app/domain/recipes/recipeCatalog.ts`),
+ * which stays code-only.
+ */
+export const externalRecipes = pgTable("external_recipes", {
+  id: text("id").primaryKey(),
+  title: text("title").notNull(),
+  url: text("url").notNull(),
+  imageUrl: text("image_url"),
+  ingredients: jsonb("ingredients").notNull(),
+  fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const weekPlans = pgTable("week_plans", {
   id: uuid("id").primaryKey().defaultRandom(),
   familyId: uuid("family_id")

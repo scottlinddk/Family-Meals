@@ -1,4 +1,5 @@
 import { useRegenerateDay } from "~/ui/hooks/useRegenerateDay";
+import { t } from "~/i18n/t";
 
 export function RegenerateDayButton({ weekStart, dayIndex }: { weekStart: string; dayIndex: number }) {
   const regenerate = useRegenerateDay(weekStart);
@@ -10,7 +11,7 @@ export function RegenerateDayButton({ weekStart, dayIndex }: { weekStart: string
       disabled={regenerate.isPending}
       className="rounded border border-gray-300 px-2 py-1 text-xs hover:bg-gray-50 disabled:opacity-50"
     >
-      {regenerate.isPending ? "Regenerating..." : "Regenerate this day"}
+      {regenerate.isPending ? t("dayCard.regenerating") : t("dayCard.regenerateThisDay")}
     </button>
   );
 }

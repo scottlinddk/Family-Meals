@@ -6,6 +6,7 @@ import { WeekGrid } from "~/ui/components/WeekGrid";
 import { InfantNote } from "~/ui/components/InfantNote";
 import { SubscribeCalloutModal } from "~/ui/components/SubscribeCalloutModal";
 import { addDays } from "~/lib/time";
+import { t } from "~/i18n/t";
 
 export async function loader({ request }: Route.LoaderArgs) {
   const headers = new Headers();
@@ -27,21 +28,21 @@ export default function WeekPage({ params }: Route.ComponentProps) {
       <header className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Link to={`/weeks/${prevWeek}`} className="text-sm text-gray-500">
-            ← Prev
+            {t("week.prev")}
           </Link>
-          <h1 className="text-xl font-semibold">Week of {weekStart}</h1>
+          <h1 className="text-xl font-semibold">{t("week.heading", { date: weekStart })}</h1>
           <Link to={`/weeks/${nextWeek}`} className="text-sm text-gray-500">
-            Next →
+            {t("week.next")}
           </Link>
         </div>
         <div className="flex items-center gap-2">
           <Link to="/offers" className="text-sm text-gray-500 underline">
-            Manage offers
+            {t("week.manageOffers")}
           </Link>
           <SubscribeCalloutModal />
           <Form method="post" action="/auth/logout">
             <button type="submit" className="text-sm text-gray-500 underline">
-              Sign out
+              {t("week.signOut")}
             </button>
           </Form>
         </div>
@@ -51,18 +52,18 @@ export default function WeekPage({ params }: Route.ComponentProps) {
         <InfantNote />
       </div>
 
-      {weekPlan.isLoading && <p>Loading…</p>}
+      {weekPlan.isLoading && <p>{t("week.loading")}</p>}
 
       {!weekPlan.isLoading && !weekPlan.data && (
         <div className="rounded-lg border border-dashed border-gray-300 p-6 text-center">
-          <p className="mb-3 text-gray-600">No plan generated for this week yet.</p>
+          <p className="mb-3 text-gray-600">{t("week.empty")}</p>
           <button
             type="button"
             onClick={() => generate.mutate()}
             disabled={generate.isPending}
             className="rounded bg-gray-900 px-4 py-2 text-white disabled:opacity-50"
           >
-            {generate.isPending ? "Generating..." : "Generate week plan"}
+            {generate.isPending ? t("week.generating") : t("week.generate")}
           </button>
         </div>
       )}
@@ -76,7 +77,7 @@ export default function WeekPage({ params }: Route.ComponentProps) {
               disabled={generate.isPending}
               className="rounded border border-gray-300 px-3 py-1.5 text-sm disabled:opacity-50"
             >
-              {generate.isPending ? "Regenerating..." : "Regenerate whole week"}
+              {generate.isPending ? t("week.regeneratingWhole") : t("week.regenerateWhole")}
             </button>
           </div>
           <WeekGrid week={weekPlan.data} />
