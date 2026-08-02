@@ -7,6 +7,7 @@ import { DayCard } from "~/ui/components/DayCard";
 import { RECIPE_CATALOG } from "~/domain/recipes/recipeCatalog";
 import { Card } from "~/ui/components/ui/Card";
 import { FieldLabel, Select } from "~/ui/components/ui/Input";
+import { t } from "~/i18n/t";
 
 export async function loader({ request }: Route.LoaderArgs) {
   const headers = new Headers();
@@ -25,7 +26,7 @@ export default function DayPage({ params }: Route.ComponentProps) {
   return (
     <main className="mx-auto max-w-2xl p-6">
       <Link to={`/weeks/${weekStart}`} className="font-mono text-xs tracking-wide text-muted hover:text-ink">
-        ← Back to week
+        {t("day.backToWeek")}
       </Link>
 
       {day && (
@@ -33,7 +34,7 @@ export default function DayPage({ params }: Route.ComponentProps) {
           <DayCard day={day} weekStart={weekStart} dayIndex={dayIndex} />
 
           <Card className="mt-4">
-            <FieldLabel htmlFor="swap-recipe">Swap to a different recipe</FieldLabel>
+            <FieldLabel htmlFor="swap-recipe">{t("day.swapLabel")}</FieldLabel>
             <Select
               id="swap-recipe"
               defaultValue=""
@@ -42,7 +43,7 @@ export default function DayPage({ params }: Route.ComponentProps) {
               }}
             >
               <option value="" disabled>
-                Choose a recipe…
+                {t("day.choosePlaceholder")}
               </option>
               {RECIPE_CATALOG.map((entry) => (
                 <option key={entry.recipe.id} value={entry.recipe.id}>

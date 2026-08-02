@@ -7,7 +7,7 @@ import { Card } from "~/ui/components/ui/Card";
 
 export function DayCard({ day, weekStart, dayIndex }: { day: DayPlan; weekStart: string; dayIndex: number }) {
   const entry = getRecipeById(day.baseRecipeId);
-  const weekday = new Date(`${day.date}T00:00:00`).toLocaleDateString("en-GB", { weekday: "long" });
+  const weekday = new Date(`${day.date}T00:00:00`).toLocaleDateString("da-DK", { weekday: "long" });
 
   return (
     <Card as="article">

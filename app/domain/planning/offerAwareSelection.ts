@@ -1,11 +1,10 @@
 import type { Offer } from "~/domain/types";
 import type { CatalogEntry } from "~/domain/recipes/recipeCatalog";
+import { offersMatchingIngredient } from "~/domain/recipes/ingredientOfferScore";
 
 /**
  * Scores a recipe against this week's offers by counting how many of its
- * ingredients are named in a current offer (simple case-insensitive
- * substring match in both directions — good enough for a small, hand-picked
- * recipe catalog; not intended as general-purpose product matching).
+ * ingredients are named in a current offer.
  */
 export function scoreEntryAgainstOffers(
   entry: CatalogEntry,
@@ -13,12 +12,7 @@ export function scoreEntryAgainstOffers(
 ): number {
   let score = 0;
   for (const ingredient of entry.recipe.ingredients) {
-    const ingredientName = ingredient.name.toLowerCase();
-    const matches = offers.some((offer) => {
-      const offerName = offer.name.toLowerCase();
-      return offerName.includes(ingredientName) || ingredientName.includes(offerName);
-    });
-    if (matches) score += 1;
+    if (offersMatchingIngredient(ingredient.name, offers).length > 0) score += 1;
   }
   return score;
 }

@@ -16,9 +16,14 @@ export default [
   route("api/weeks/:weekStart/regenerate-day", "routes/api.weeks.$weekStart.regenerate-day.tsx"),
   route("api/weeks/:weekStart/swap-day", "routes/api.weeks.$weekStart.swap-day.tsx"),
   route("api/offers", "routes/api.offers.tsx"),
+  route("api/offers/refresh", "routes/api.offers.refresh.tsx"),
+  route("api/recipes/refresh", "routes/api.recipes.refresh.tsx"),
+  route("api/recipes/suggestions", "routes/api.recipes.suggestions.tsx"),
   route("api/family", "routes/api.family.tsx"),
   route("api/calendar-token/rotate", "routes/api.calendar-token.rotate.tsx"),
 
+  route("auth/signup", "routes/auth.signup.tsx"),
   route("auth/login", "routes/auth.login.tsx"),
   route("auth/callback", "routes/auth.callback.tsx"),
+  route("auth/logout", "routes/auth.logout.tsx"),
 ] satisfies RouteConfig;

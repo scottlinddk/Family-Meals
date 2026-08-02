@@ -1,10 +1,11 @@
 import type { AdultVariant, ChildVariant } from "~/domain/types";
+import { t } from "~/i18n/t";
 
 export function AdultVariantPanel({ variant }: { variant: AdultVariant }) {
   return (
     <div className="rounded-lg border border-line bg-surface p-4">
       <p className="font-mono text-[10.5px] tracking-[0.14em] text-muted uppercase">
-        Adults · calorie-minimized
+        {t("variant.adultsHeading")}
       </p>
       {variant.substitutions.length > 0 && (
         <ul className="mt-2 list-disc pl-4 text-sm text-ink-2">
@@ -31,13 +32,12 @@ export function ChildVariantPanel({ variant }: { variant: ChildVariant }) {
   return (
     <div className="rounded-lg border border-line bg-surface p-4">
       <p className="font-mono text-[10.5px] tracking-[0.14em] text-muted uppercase">
-        Toddler · base dish + calorie-dense addition
+        {t("variant.childHeading")}
       </p>
       <ul className="mt-2 list-disc pl-4 text-sm text-ink-2">
         {variant.additions.map((addition, i) => (
           <li key={i}>
-            Add {addition.quantity}
-            {addition.unit} {addition.name}
+            {t("variant.addLabel", { qty: addition.quantity, unit: addition.unit, name: addition.name })}
           </li>
         ))}
       </ul>
