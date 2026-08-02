@@ -6,9 +6,10 @@ import { familyRepository } from "~/data/repositories/familyRepository";
 /**
  * Builds a request-scoped Supabase client for use in RR7 loaders/actions,
  * wiring cookie read/write through the Request/Headers objects RR7 gives us.
- * Used to gate the edit UI (weeks.*, offers.*) behind Supabase Auth magic-link
- * sessions — the ICS feed route deliberately does NOT use this, since it's
- * authenticated by the separate calendar token instead (see lib/tokens.ts).
+ * Used to gate the edit UI (weeks.*, offers.*) behind Supabase Auth
+ * email/password sessions — the ICS feed route deliberately does NOT use
+ * this, since it's authenticated by the separate calendar token instead
+ * (see lib/tokens.ts).
  */
 export function createSupabaseServerClient(request: Request, headers: Headers): SupabaseClient {
   const supabaseUrl = process.env.SUPABASE_URL;

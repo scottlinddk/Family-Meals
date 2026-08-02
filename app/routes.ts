@@ -19,6 +19,7 @@ export default [
   route("api/family", "routes/api.family.tsx"),
   route("api/calendar-token/rotate", "routes/api.calendar-token.rotate.tsx"),
 
+  route("auth/signup", "routes/auth.signup.tsx"),
   route("auth/login", "routes/auth.login.tsx"),
   route("auth/callback", "routes/auth.callback.tsx"),
   route("auth/logout", "routes/auth.logout.tsx"),

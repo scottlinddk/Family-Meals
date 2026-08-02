@@ -13,8 +13,8 @@ for the generator, and `app/domain/calendar/icsBuilder.ts` for the ICS feed.
 ## Stack
 
 - React Router v7 (framework/data mode) + Vite + Tailwind
-- Supabase Postgres (via Drizzle ORM) for persistence, Supabase Auth (magic
-  link) for the edit UI
+- Supabase Postgres (via Drizzle ORM) for persistence, Supabase Auth
+  (email/password) for the edit UI
 - Deploy target: Vercel
 
 ## Setup
