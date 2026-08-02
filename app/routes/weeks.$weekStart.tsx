@@ -1,4 +1,4 @@
-import { Link, redirect } from "react-router";
+import { Form, Link, redirect } from "react-router";
 import type { Route } from "./+types/weeks.$weekStart";
 import { requireUser } from "~/lib/auth";
 import { useWeekPlan, useGenerateWeekPlan } from "~/ui/hooks/useWeekPlan";
@@ -39,6 +39,11 @@ export default function WeekPage({ params }: Route.ComponentProps) {
             Manage offers
           </Link>
           <SubscribeCalloutModal />
+          <Form method="post" action="/auth/logout">
+            <button type="submit" className="text-sm text-gray-500 underline">
+              Sign out
+            </button>
+          </Form>
         </div>
       </header>
 
