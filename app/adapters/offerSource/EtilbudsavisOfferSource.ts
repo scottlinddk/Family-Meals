@@ -10,15 +10,17 @@ import { offerListSchema } from "~/adapters/offerSource/offerSchema";
  * "future scraper-based source" the `OfferSource` interface was designed to
  * accommodate — see `app/adapters/offerSource/OfferSource.ts`.
  *
- * NOTE: the Tjek API (api.etilbudsavis.dk/v2) isn't formally documented;
- * this adapter is built from third-party client implementations that use
- * it (e.g. github.com/elvios/discount-getter). The dealer-lookup and
- * offer-search endpoints below returned 403 from this sandbox's network
- * (likely bot protection on the API edge, not a policy block), so the
- * request/response shapes have not been exercised against live traffic —
- * verify against the real API in an environment with normal outbound
- * network access before relying on this in production, and adjust
- * `toOffer`'s field mapping if the live response shape differs.
+ * Flow: resolve REMA 1000's dealer id, find its current catalog (weekly
+ * flyer), then list that catalog's offers. `/v2/offers/search` looks like
+ * the obvious endpoint but requires a non-empty `query` (returns
+ * `MISSING_QUERY` otherwise) — there's no per-dealer "list everything"
+ * search, so we go through the catalog instead.
+ *
+ * Endpoint shapes and field mappings below (dealer id "11deC", catalog id
+ * shape, `quantity.unit` as a sibling of `quantity.size`, no `unitPrice`
+ * field — computed from `size.to × unit.si.factor`) were verified against
+ * live API responses fetched from outside this project's dev sandbox
+ * (whose outbound requests get 403'd by bot protection on api.etilbudsavis.dk).
  */
 export class EtilbudsavisOfferSource implements OfferSource {
   private static readonly API_BASE = "https://api.etilbudsavis.dk/v2";
@@ -29,8 +31,13 @@ export class EtilbudsavisOfferSource implements OfferSource {
 
   async fetchCurrentOffers(): Promise<Offer[]> {
     const dealerId = await this.resolveDealerId();
-    const raw = await this.fetchOffersForDealer(dealerId);
-    const mapped = raw.map((offer) => this.toOfferInput(offer)).filter((o): o is NonNullable<typeof o> => o !== null);
+    const catalog = await this.resolveCurrentCatalog(dealerId);
+    const raw = await this.fetchOffersForCatalog(catalog.id);
+    const departmentSlug = catalog.categoryIds[0] ?? "unspecified";
+
+    const mapped = raw
+      .map((offer) => this.toOfferInput(offer, departmentSlug))
+      .filter((o): o is NonNullable<typeof o> => o !== null);
 
     // Re-validate against the same reference schema manual entry uses, so a
     // shape drift in the third-party API fails loudly instead of silently
@@ -60,27 +67,59 @@ export class EtilbudsavisOfferSource implements OfferSource {
     return rema.id;
   }
 
-  private async fetchOffersForDealer(dealerId: string): Promise<TjekOffer[]> {
+  private async resolveCurrentCatalog(
+    dealerId: string,
+  ): Promise<{ id: string; categoryIds: string[] }> {
     const url =
-      `${EtilbudsavisOfferSource.API_BASE}/offers/search` +
-      `?dealer_ids=${encodeURIComponent(dealerId)}` +
-      `&r_locale=da_DK&offset=0&limit=${EtilbudsavisOfferSource.PAGE_SIZE}&order_by=-published`;
+      `${EtilbudsavisOfferSource.API_BASE}/catalogs` +
+      `?dealer_ids=${encodeURIComponent(dealerId)}&order_by=-publication_date&offset=0&limit=1`;
     const res = await this.fetchImpl(url);
     if (!res.ok) {
-      throw new Error(`EtilbudsavisOfferSource: offer search failed (${res.status})`);
+      throw new Error(`EtilbudsavisOfferSource: catalog lookup failed (${res.status})`);
     }
-    return (await res.json()) as TjekOffer[];
+    const catalogs = (await res.json()) as Array<{ id: string; category_ids?: string[] }>;
+    const current = catalogs[0];
+    if (!current) {
+      throw new Error("EtilbudsavisOfferSource: REMA 1000 has no current catalog");
+    }
+    return { id: current.id, categoryIds: current.category_ids ?? [] };
   }
 
-  private toOfferInput(raw: TjekOffer): OfferInputCandidate | null {
+  private async fetchOffersForCatalog(catalogId: string): Promise<TjekOffer[]> {
+    const offers: TjekOffer[] = [];
+    let offset = 0;
+    // Safety cap: 10 pages (1000 offers) is far beyond a single weekly
+    // catalog's offer count, so this only guards against an unexpected
+    // non-terminating response shape.
+    for (let page = 0; page < 10; page++) {
+      const url =
+        `${EtilbudsavisOfferSource.API_BASE}/offers` +
+        `?catalog_ids=${encodeURIComponent(catalogId)}&offset=${offset}&limit=${EtilbudsavisOfferSource.PAGE_SIZE}`;
+      const res = await this.fetchImpl(url);
+      if (!res.ok) {
+        throw new Error(`EtilbudsavisOfferSource: offer list failed (${res.status})`);
+      }
+      const batch = (await res.json()) as TjekOffer[];
+      offers.push(...batch);
+      if (batch.length < EtilbudsavisOfferSource.PAGE_SIZE) break;
+      offset += EtilbudsavisOfferSource.PAGE_SIZE;
+    }
+    return offers;
+  }
+
+  private toOfferInput(raw: TjekOffer, departmentSlug: string): OfferInputCandidate | null {
     if (!raw.heading || !raw.run_from || !raw.run_till) return null;
     if (raw.pricing?.currency && raw.pricing.currency !== "DKK") return null;
 
-    const unitSymbol = raw.quantity?.size?.unit?.symbol ?? "stk";
+    const unitSymbol = raw.quantity?.unit?.symbol ?? "stk";
+    const siSymbol = raw.quantity?.unit?.si?.symbol;
+    const siFactor = raw.quantity?.unit?.si?.factor;
     const unitSizeFrom = raw.quantity?.size?.from ?? 1;
     const unitSizeTo = raw.quantity?.size?.to ?? unitSizeFrom;
     const price = raw.pricing?.price ?? 0;
-    const unitPrice = unitSizeTo > 0 ? price / unitSizeTo : price;
+
+    const sizeInBaseUnit = siFactor ? unitSizeTo * siFactor : unitSizeTo;
+    const unitPrice = sizeInBaseUnit > 0 ? price / sizeInBaseUnit : price;
 
     return {
       name: raw.heading,
@@ -90,25 +129,38 @@ export class EtilbudsavisOfferSource implements OfferSource {
       price,
       currencyCode: "DKK",
       unitPrice,
-      baseUnit: unitSymbol,
-      departmentSlug: raw.catalog?.dealer_id ?? "unspecified",
+      baseUnit: baseUnitName(siSymbol ?? unitSymbol),
+      departmentSlug,
       validFrom: raw.run_from,
       validUntil: raw.run_till,
     };
   }
 }
 
-/** Minimal shape of a Tjek API offer object, per third-party client usage. */
+/** REMA's own manual-entry reference schema spells units out ("kilogram", not "kg"). */
+const BASE_UNIT_NAMES: Record<string, string> = {
+  kg: "kilogram",
+  g: "gram",
+  l: "liter",
+  cl: "liter",
+  ml: "liter",
+  stk: "styk",
+};
+
+function baseUnitName(symbol: string): string {
+  return BASE_UNIT_NAMES[symbol] ?? symbol;
+}
+
+/** Shape of a Tjek API offer object (`/v2/offers?catalog_ids=...`), verified against live data. */
 interface TjekOffer {
-  id: string;
   heading: string;
   run_from: string;
   run_till: string;
   pricing?: { price: number; currency: string };
   quantity?: {
-    size?: { from?: number; to?: number; unit?: { symbol?: string } };
+    unit?: { symbol?: string; si?: { symbol?: string; factor?: number } };
+    size?: { from?: number; to?: number };
   };
-  catalog?: { dealer_id?: string };
 }
 
 interface OfferInputCandidate {

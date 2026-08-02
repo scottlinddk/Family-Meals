@@ -39,10 +39,16 @@ third-party tilbudsavis aggregator built on the Tjek platform that publishes
 REMA's weekly offers as structured data (name, price, validity period),
 rather than the webshop itself. Trigger it from the "Fetch offers now"
 button on `/offers`, which calls `POST /api/offers/refresh`. The Tjek API
-isn't formally documented and returned 403 from this project's development
-sandbox (bot protection), so the request/response shapes are based on
-third-party client implementations and should be verified against live
-traffic before relying on it in production.
+isn't formally documented, but the endpoints and field shapes this adapter
+uses (`/v2/dealers`, `/v2/catalogs`, `/v2/offers?catalog_ids=...` — note
+`/v2/offers/search` requires a non-empty `query` and can't list a whole
+dealer's offers) were confirmed against live responses and are covered by
+`EtilbudsavisOfferSource.test.ts` with real fixture data. It still couldn't
+be exercised end-to-end from this project's dev sandbox (api.etilbudsavis.dk
+403s this sandbox's outbound requests specifically — bot protection, not a
+ToS/auth issue), so do one live `POST /api/offers/refresh` after deploying
+to confirm nothing about the catalog/offer volume surprises the pagination
+loop.
 
 Both sources implement the same `OfferSource` interface
 (`app/adapters/offerSource/OfferSource.ts`), so meal-planning logic doesn't
