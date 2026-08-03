@@ -77,6 +77,22 @@ Danish (`da`) is the app's default and only fully-translated locale — see
 falling back to `en.ts` (kept as a secondary locale) then the raw key.
 `<html lang>` is set from `DEFAULT_LOCALE` in `app/root.tsx`.
 
+## Families and invites
+
+A family can have several members sharing the same meal plan (`app/data/db/schema.ts`'s
+`family_members` join table). Signing up auto-creates a family with you as its
+`owner` (`requireFamilyMembership` in `app/lib/auth.ts`). From `/family` you can
+rename the family and invite another person by email — this generates an
+unguessable `/invite/{token}` link (`family_invites` table, `app/lib/tokens.ts`)
+for you to send them yourself (there's no transactional email sending yet, same
+tradeoff as the calendar subscription link). Visiting that link prompts sign-up/
+login if needed, preserving the invite via `redirectTo` through
+`auth.signup`/`auth.login`/`auth.callback`, then joins the invited user to the
+inviting family as a `member` — see `app/routes/invite.$token.tsx` and
+`app/routes/api.family.invites.$token.accept.tsx`. Accepting deliberately
+bypasses `requireFamily`'s auto-create so an invited user doesn't get
+provisioned their own family before they get a chance to join yours.
+
 ## Calendar subscription
 
 Each family gets a stable, unguessable `/calendar/{token}.ics` URL (shown via

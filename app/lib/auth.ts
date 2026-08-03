@@ -1,7 +1,11 @@
 import { createServerClient, parseCookieHeader, serializeCookieHeader } from "@supabase/ssr";
 import type { SetAllCookies } from "@supabase/ssr";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { familyRepository } from "~/data/repositories/familyRepository";
+import { db } from "~/data/db/client";
+import { familyRepository, familyToDomain, type Family } from "~/data/repositories/familyRepository";
+import { familyMemberRepository } from "~/data/repositories/familyMemberRepository";
+import { families, familyMembers } from "~/data/db/schema";
+import { generateCalendarToken } from "~/lib/tokens";
 
 /**
  * Builds a request-scoped Supabase client for use in RR7 loaders/actions,
@@ -42,17 +46,40 @@ export async function requireUser(request: Request, headers: Headers) {
 }
 
 /**
- * Resolves the signed-in user's family, creating one on first login (this
- * is a single-family personal app, not a multi-tenant product — one
- * Supabase user maps to exactly one family). Throws a 401 Response if not
- * signed in, so callers can just `await requireFamily(...)` in a loader/action.
+ * Resolves the signed-in user's family and their user id, creating a family
+ * (and an "owner" membership row) on first login. A user belongs to exactly
+ * one family — either one they created, or one they joined via an invite
+ * link — and a family can have several members sharing the same meal plan.
+ * Throws a 401 Response if not signed in.
  */
-export async function requireFamily(request: Request, headers: Headers) {
+export async function requireFamilyMembership(
+  request: Request,
+  headers: Headers,
+): Promise<{ family: Family; userId: string }> {
   const user = await requireUser(request, headers);
   if (!user) {
     throw new Response("Unauthorized", { status: 401 });
   }
 
-  const existing = await familyRepository.getByOwnerUserId(user.id);
-  return existing ?? familyRepository.createFamily(user.id);
+  const membership = await familyMemberRepository.getFirstMembershipForUser(user.id);
+  if (membership) {
+    const family = await familyRepository.getById(membership.familyId);
+    if (family) return { family, userId: user.id };
+  }
+
+  const family = await db.transaction(async (tx) => {
+    const [familyRow] = await tx
+      .insert(families)
+      .values({ ownerUserId: user.id, calendarToken: generateCalendarToken() })
+      .returning();
+    await tx.insert(familyMembers).values({ familyId: familyRow!.id, userId: user.id, role: "owner" });
+    return familyToDomain(familyRow!);
+  });
+  return { family, userId: user.id };
+}
+
+/** Resolves the signed-in user's family, creating one on first login (see `requireFamilyMembership`). */
+export async function requireFamily(request: Request, headers: Headers): Promise<Family> {
+  const { family } = await requireFamilyMembership(request, headers);
+  return family;
 }

@@ -5,6 +5,8 @@ export default [
   route("weeks/:weekStart", "routes/weeks.$weekStart.tsx"),
   route("weeks/:weekStart/day/:day", "routes/weeks.$weekStart.day.$day.tsx"),
   route("offers", "routes/offers.tsx"),
+  route("family", "routes/family.tsx"),
+  route("invite/:token", "routes/invite.$token.tsx"),
 
   // Live ICS subscription feed — a resource route (no HTML), authenticated
   // by the opaque token in the path rather than a Supabase Auth session.
@@ -20,6 +22,10 @@ export default [
   route("api/recipes/refresh", "routes/api.recipes.refresh.tsx"),
   route("api/recipes/suggestions", "routes/api.recipes.suggestions.tsx"),
   route("api/family", "routes/api.family.tsx"),
+  route("api/family/members", "routes/api.family.members.tsx"),
+  route("api/family/invites", "routes/api.family.invites.tsx"),
+  route("api/family/invites/:id/revoke", "routes/api.family.invites.$id.revoke.tsx"),
+  route("api/family/invites/:token/accept", "routes/api.family.invites.$token.accept.tsx"),
   route("api/calendar-token/rotate", "routes/api.calendar-token.rotate.tsx"),
 
   route("auth/signup", "routes/auth.signup.tsx"),

@@ -9,3 +9,8 @@ import { nanoid } from "nanoid";
 export function generateCalendarToken(): string {
   return nanoid(32);
 }
+
+/** Generates the unguessable token embedded in a `/invite/{token}` family-join link. */
+export function generateInviteToken(): string {
+  return nanoid(32);
+}

@@ -4,9 +4,11 @@ import {
   doublePrecision,
   integer,
   jsonb,
+  pgEnum,
   pgTable,
   text,
   timestamp,
+  unique,
   uuid,
 } from "drizzle-orm/pg-core";
 
@@ -20,8 +22,52 @@ export const families = pgTable("families", {
   id: uuid("id").primaryKey().defaultRandom(),
   /** Supabase Auth user id that owns/edits this family's plan. */
   ownerUserId: uuid("owner_user_id").notNull(),
+  name: text("name"),
   calendarToken: text("calendar_token").notNull().unique(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const familyMemberRole = pgEnum("family_member_role", ["owner", "member"]);
+
+/**
+ * Membership join table: which Supabase Auth users can see/edit a family's
+ * plan. `families.ownerUserId` stays as a historical "who created this"
+ * pointer, but access control is driven entirely by this table so a family
+ * can have more than one member.
+ */
+export const familyMembers = pgTable(
+  "family_members",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    familyId: uuid("family_id")
+      .notNull()
+      .references(() => families.id, { onDelete: "cascade" }),
+    userId: uuid("user_id").notNull(),
+    role: familyMemberRole("role").notNull().default("member"),
+    joinedAt: timestamp("joined_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [unique("family_members_family_id_user_id_unique").on(table.familyId, table.userId)],
+);
+
+export const familyInviteStatus = pgEnum("family_invite_status", ["pending", "accepted", "revoked"]);
+
+/**
+ * A pending (or resolved) invitation to join a family, identified by an
+ * unguessable `token` embedded in the `/invite/{token}` link the inviter
+ * shares out-of-band (no transactional email sending in this app yet).
+ */
+export const familyInvites = pgTable("family_invites", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  familyId: uuid("family_id")
+    .notNull()
+    .references(() => families.id, { onDelete: "cascade" }),
+  email: text("email").notNull(),
+  token: text("token").notNull().unique(),
+  invitedByUserId: uuid("invited_by_user_id").notNull(),
+  status: familyInviteStatus("status").notNull().default("pending"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  acceptedAt: timestamp("accepted_at", { withTimezone: true }),
 });
 
 /** Manually entered/imported weekly offers (the "safe default" OfferSource). */

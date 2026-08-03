@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 
 interface FamilyResponse {
   id: string;
+  name: string | null;
   calendarToken: string;
 }
 
