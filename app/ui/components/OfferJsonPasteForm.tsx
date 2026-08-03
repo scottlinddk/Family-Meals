@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { useImportOffers, useOffers, useRefreshOffers } from "~/ui/hooks/useOffers";
+import { Button } from "~/ui/components/ui/Button";
+import { Card } from "~/ui/components/ui/Card";
+import { Textarea } from "~/ui/components/ui/Input";
 import { t } from "~/i18n/t";
 
 const PLACEHOLDER = `[
@@ -37,47 +40,43 @@ export function OfferJsonPasteForm() {
   }
 
   return (
-    <section className="rounded-lg border border-gray-200 p-4">
-      <h2 className="text-lg font-semibold">{t("offers.autoFetchHeading")}</h2>
-      <p className="mt-1 text-sm text-gray-600">{t("offers.autoFetchDescription")}</p>
-      <button
+    <Card as="section" className="p-4">
+      <h2 className="text-xl">{t("offers.autoFetchHeading")}</h2>
+      <p className="-mt-1 text-sm opacity-80">{t("offers.autoFetchDescription")}</p>
+      <Button
         type="button"
+        variant="secondary"
+        block
         onClick={() => refreshOffers.mutate()}
         disabled={refreshOffers.isPending}
-        className="mt-2 rounded bg-gray-900 px-3 py-1.5 text-sm text-white disabled:opacity-50"
       >
         {refreshOffers.isPending ? t("offers.fetching") : t("offers.fetchNow")}
-      </button>
+      </Button>
       {refreshOffers.isError && (
-        <p className="mt-1 text-sm text-red-700">
+        <p className="text-sm text-red-700">
           {t("offers.fetchError")} {refreshOffers.error instanceof Error ? refreshOffers.error.message : ""}
         </p>
       )}
 
-      <h2 className="mt-6 text-lg font-semibold">{t("offers.formHeading")}</h2>
-      <p className="mt-1 text-sm text-gray-600">{t("offers.formDescription")}</p>
-      <textarea
-        value={raw}
-        onChange={(e) => setRaw(e.target.value)}
-        placeholder={PLACEHOLDER}
-        rows={10}
-        className="mt-3 w-full rounded border border-gray-300 p-2 font-mono text-xs"
-      />
-      {error && <p className="mt-1 text-sm text-red-700">{error}</p>}
-      <button
+      <h2 className="mt-4 text-xl">{t("offers.formHeading")}</h2>
+      <p className="-mt-1 text-sm opacity-80">{t("offers.formDescription")}</p>
+      <Textarea value={raw} onChange={(e) => setRaw(e.target.value)} placeholder={PLACEHOLDER} rows={10} />
+      {error && <p className="text-sm text-red-700">{error}</p>}
+      <Button
         type="button"
+        variant="secondary"
+        block
         onClick={handleImport}
         disabled={importOffers.isPending || raw.trim().length === 0}
-        className="mt-2 rounded bg-gray-900 px-3 py-1.5 text-sm text-white disabled:opacity-50"
       >
         {importOffers.isPending ? t("offers.importing") : t("offers.import")}
-      </button>
+      </Button>
 
-      <div className="mt-4">
-        <h3 className="text-sm font-medium text-gray-700">
+      <div className="mt-3">
+        <h3 className="text-[11px] tracking-wide text-muted uppercase">
           {t("offers.currentlyImported", { count: offers.data?.length ?? 0 })}
         </h3>
-        <ul className="mt-1 max-h-48 space-y-1 overflow-y-auto text-sm text-gray-600">
+        <ul className="mt-1.5 max-h-48 space-y-1 overflow-y-auto text-sm">
           {offers.data?.map((offer, i) => (
             <li key={i}>
               {offer.name} — {offer.price} {offer.currencyCode}
@@ -85,6 +84,6 @@ export function OfferJsonPasteForm() {
           ))}
         </ul>
       </div>
-    </section>
+    </Card>
   );
 }

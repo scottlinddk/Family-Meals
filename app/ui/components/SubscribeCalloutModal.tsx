@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useIcsUrl } from "~/ui/hooks/useIcsUrl";
+import { Button } from "~/ui/components/ui/Button";
 import { t } from "~/i18n/t";
 
 export function SubscribeCalloutModal() {
@@ -8,41 +9,39 @@ export function SubscribeCalloutModal() {
 
   return (
     <div>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="rounded bg-gray-900 px-3 py-1.5 text-sm text-white"
-      >
+      <Button type="button" variant="secondary" size="sm" onClick={() => setOpen(true)}>
         {t("calendar.subscribeButton")}
-      </button>
+      </Button>
 
       {open && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-lg bg-white p-5">
-            <h2 className="text-lg font-semibold">{t("calendar.modalHeading")}</h2>
-            <p className="mt-2 text-sm text-gray-600">{t("calendar.modalDescription")}</p>
+        <div className="fixed inset-0 grid place-items-center bg-neutral-900/50 p-4">
+          <div className="flex w-full max-w-md flex-col gap-3 rounded-lg border border-divider bg-surface p-4 shadow-lg">
+            <h2 className="text-xl">{t("calendar.modalHeading")}</h2>
+            <p className="text-sm opacity-85">{t("calendar.modalDescription")}</p>
 
-            <div className="mt-3 rounded bg-gray-50 p-2 text-xs break-all">{webcalUrl}</div>
+            <div className="rounded-md border border-divider bg-bg p-2 font-mono text-xs break-all">
+              {webcalUrl}
+            </div>
 
-            <ul className="mt-3 list-disc space-y-1 pl-4 text-sm text-gray-700">
+            <ul className="m-0 list-disc pl-4.5 text-sm">
               <li>{t("calendar.apple")}</li>
               <li>{t("calendar.google")}</li>
               <li>{t("calendar.outlook")}</li>
             </ul>
 
             {httpsUrl && (
-              <div className="mt-2 rounded bg-gray-50 p-2 text-xs break-all">{httpsUrl}</div>
+              <div className="rounded-md border border-divider bg-bg p-2 font-mono text-xs break-all">
+                {httpsUrl}
+              </div>
             )}
 
-            <p className="mt-3 text-xs text-gray-500">{t("calendar.refreshNote")}</p>
+            <p className="m-0 text-xs text-muted">{t("calendar.refreshNote")}</p>
 
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="mt-4 rounded border border-gray-300 px-3 py-1.5 text-sm"
-            >
-              {t("calendar.close")}
-            </button>
+            <div className="mt-1 flex justify-end">
+              <Button type="button" variant="secondary" onClick={() => setOpen(false)}>
+                {t("calendar.close")}
+              </Button>
+            </div>
           </div>
         </div>
       )}

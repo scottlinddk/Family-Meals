@@ -5,6 +5,7 @@ import { useWeekPlan, useGenerateWeekPlan } from "~/ui/hooks/useWeekPlan";
 import { WeekGrid } from "~/ui/components/WeekGrid";
 import { InfantNote } from "~/ui/components/InfantNote";
 import { SubscribeCalloutModal } from "~/ui/components/SubscribeCalloutModal";
+import { Button } from "~/ui/components/ui/Button";
 import { addDays } from "~/lib/time";
 import { t } from "~/i18n/t";
 
@@ -24,65 +25,62 @@ export default function WeekPage({ params }: Route.ComponentProps) {
   const nextWeek = addDays(weekStart, 7);
 
   return (
-    <main className="mx-auto max-w-3xl p-6">
-      <header className="mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link to={`/weeks/${prevWeek}`} className="text-sm text-gray-500">
-            {t("week.prev")}
-          </Link>
-          <h1 className="text-xl font-semibold">{t("week.heading", { date: weekStart })}</h1>
-          <Link to={`/weeks/${nextWeek}`} className="text-sm text-gray-500">
-            {t("week.next")}
-          </Link>
-        </div>
-        <div className="flex items-center gap-2">
-          <Link to="/offers" className="text-sm text-gray-500 underline">
-            {t("week.manageOffers")}
-          </Link>
-          <SubscribeCalloutModal />
-          <Form method="post" action="/auth/logout">
-            <button type="submit" className="text-sm text-gray-500 underline">
-              {t("week.signOut")}
-            </button>
-          </Form>
-        </div>
-      </header>
-
-      <div className="mb-4">
-        <InfantNote />
+    <div className="mx-auto max-w-3xl">
+      <div className="flex items-center gap-4 border-b border-divider px-6 py-3">
+        <span className="mr-auto text-lg font-semibold">{t("app.title")}</span>
+        <Link to="/offers" className="text-sm hover:text-accent">
+          {t("week.manageOffers")}
+        </Link>
+        <SubscribeCalloutModal />
+        <Form method="post" action="/auth/logout">
+          <button type="submit" className="text-sm hover:text-accent">
+            {t("week.signOut")}
+          </button>
+        </Form>
       </div>
 
-      {weekPlan.isLoading && <p>{t("week.loading")}</p>}
-
-      {!weekPlan.isLoading && !weekPlan.data && (
-        <div className="rounded-lg border border-dashed border-gray-300 p-6 text-center">
-          <p className="mb-3 text-gray-600">{t("week.empty")}</p>
-          <button
-            type="button"
-            onClick={() => generate.mutate()}
-            disabled={generate.isPending}
-            className="rounded bg-gray-900 px-4 py-2 text-white disabled:opacity-50"
-          >
-            {generate.isPending ? t("week.generating") : t("week.generate")}
-          </button>
+      <main className="p-6">
+        <div className="mb-4 flex items-center justify-center gap-2">
+          <Link to={`/weeks/${prevWeek}`} className="text-muted hover:text-accent" aria-label={t("week.prev")}>
+            ←
+          </Link>
+          <h1 className="min-w-40 text-center text-2xl">{t("week.heading", { date: weekStart })}</h1>
+          <Link to={`/weeks/${nextWeek}`} className="text-muted hover:text-accent" aria-label={t("week.next")}>
+            →
+          </Link>
         </div>
-      )}
 
-      {weekPlan.data && (
-        <>
-          <div className="mb-3 flex justify-end">
-            <button
+        <div className="mb-4">
+          <InfantNote />
+        </div>
+
+        {weekPlan.isLoading && <p className="text-muted">{t("week.loading")}</p>}
+
+        {!weekPlan.isLoading && !weekPlan.data && (
+          <div className="rounded-lg border border-dashed border-divider p-8 text-center">
+            <p className="mb-4 opacity-80">{t("week.empty")}</p>
+            <Button type="button" variant="primary" onClick={() => generate.mutate()} disabled={generate.isPending}>
+              {generate.isPending ? t("week.generating") : t("week.generate")}
+            </Button>
+          </div>
+        )}
+
+        {weekPlan.data && (
+          <>
+            <Button
               type="button"
+              variant="secondary"
+              block
+              className="mb-4"
               onClick={() => generate.mutate()}
               disabled={generate.isPending}
-              className="rounded border border-gray-300 px-3 py-1.5 text-sm disabled:opacity-50"
             >
               {generate.isPending ? t("week.regeneratingWhole") : t("week.regenerateWhole")}
-            </button>
-          </div>
-          <WeekGrid week={weekPlan.data} />
-        </>
-      )}
-    </main>
+            </Button>
+            <WeekGrid week={weekPlan.data} />
+          </>
+        )}
+      </main>
+    </div>
   );
 }

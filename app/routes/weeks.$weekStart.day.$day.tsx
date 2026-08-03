@@ -5,6 +5,8 @@ import { useWeekPlan } from "~/ui/hooks/useWeekPlan";
 import { useSwapDayRecipe } from "~/ui/hooks/useRegenerateDay";
 import { DayCard } from "~/ui/components/DayCard";
 import { RECIPE_CATALOG } from "~/domain/recipes/recipeCatalog";
+import { Card } from "~/ui/components/ui/Card";
+import { FieldLabel, Select } from "~/ui/components/ui/Input";
 import { t } from "~/i18n/t";
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -23,7 +25,7 @@ export default function DayPage({ params }: Route.ComponentProps) {
 
   return (
     <main className="mx-auto max-w-2xl p-6">
-      <Link to={`/weeks/${weekStart}`} className="text-sm text-gray-500">
+      <Link to={`/weeks/${weekStart}`} className="text-sm text-accent hover:text-accent-700">
         {t("day.backToWeek")}
       </Link>
 
@@ -31,17 +33,14 @@ export default function DayPage({ params }: Route.ComponentProps) {
         <div className="mt-4">
           <DayCard day={day} weekStart={weekStart} dayIndex={dayIndex} />
 
-          <div className="mt-4 rounded-lg border border-gray-200 p-4">
-            <label htmlFor="swap-recipe" className="text-sm font-medium">
-              {t("day.swapLabel")}
-            </label>
-            <select
+          <Card className="mt-4">
+            <FieldLabel htmlFor="swap-recipe">{t("day.swapLabel")}</FieldLabel>
+            <Select
               id="swap-recipe"
               defaultValue=""
               onChange={(e) => {
                 if (e.target.value) swap.mutate({ dayIndex, recipeId: e.target.value });
               }}
-              className="mt-1 w-full rounded border border-gray-300 p-2 text-sm"
             >
               <option value="" disabled>
                 {t("day.choosePlaceholder")}
@@ -51,8 +50,8 @@ export default function DayPage({ params }: Route.ComponentProps) {
                   {entry.recipe.title}
                 </option>
               ))}
-            </select>
-          </div>
+            </Select>
+          </Card>
         </div>
       )}
     </main>
