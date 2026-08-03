@@ -72,6 +72,24 @@ export const en: Record<keyof typeof da, string> = {
   "recipes.viewRecipe": "View recipe →",
   "recipes.noMatch": "No ingredients currently on offer.",
 
+  "week.recipes": "Recipes",
+
+  "recipesPage.title": "All recipes",
+  "recipesPage.searchLabel": "Search by name or ingredient",
+  "recipesPage.searchPlaceholder": "e.g. broccoli, salmon…",
+  "recipesPage.clearFilters": "Clear filters",
+  "recipesPage.resultCount": "{{count}} recipe(s)",
+  "recipesPage.none": "No recipes match these filters.",
+
+  "recipeDetail.backToRecipes": "← Back to recipes",
+  "recipeDetail.notFound": "This recipe doesn't exist.",
+  "recipeDetail.ingredientsHeading": "Ingredients",
+  "recipeDetail.instructionsHeading": "Instructions",
+  "recipeDetail.relatedHeading": "Matching REMA 1000 recipes",
+  "recipeDetail.relatedDescription":
+    "REMA 1000's own recipes (madogdrikke.rema1000.dk/opskrifter) that share ingredients with this dish.",
+  "recipeDetail.relatedNone": "No matching REMA 1000 recipes found — try refreshing recipes from the offers page.",
+
   "calendar.subscribeButton": "Subscribe in your calendar app",
   "calendar.modalHeading": "Subscribe to your meal calendar",
   "calendar.modalDescription":

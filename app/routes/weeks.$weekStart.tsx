@@ -28,6 +28,9 @@ export default function WeekPage({ params }: Route.ComponentProps) {
     <div className="mx-auto max-w-3xl">
       <div className="flex items-center gap-4 border-b border-divider px-6 py-3">
         <span className="mr-auto text-lg font-semibold">{t("app.title")}</span>
+        <Link to="/recipes" className="text-sm hover:text-accent">
+          {t("week.recipes")}
+        </Link>
         <Link to="/offers" className="text-sm hover:text-accent">
           {t("week.manageOffers")}
         </Link>

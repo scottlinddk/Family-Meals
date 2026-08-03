@@ -70,6 +70,24 @@ export const da = {
   "recipes.viewRecipe": "Se opskrift →",
   "recipes.noMatch": "Ingen ingredienser aktuelt på tilbud.",
 
+  "week.recipes": "Opskrifter",
+
+  "recipesPage.title": "Alle opskrifter",
+  "recipesPage.searchLabel": "Søg på navn eller ingrediens",
+  "recipesPage.searchPlaceholder": "f.eks. broccoli, laks…",
+  "recipesPage.clearFilters": "Ryd filtre",
+  "recipesPage.resultCount": "{{count}} opskrift(er)",
+  "recipesPage.none": "Ingen opskrifter matcher disse filtre.",
+
+  "recipeDetail.backToRecipes": "← Tilbage til opskrifter",
+  "recipeDetail.notFound": "Denne opskrift findes ikke.",
+  "recipeDetail.ingredientsHeading": "Ingredienser",
+  "recipeDetail.instructionsHeading": "Fremgangsmåde",
+  "recipeDetail.relatedHeading": "Matchende REMA 1000-opskrifter",
+  "recipeDetail.relatedDescription":
+    "REMA 1000's egne opskrifter (madogdrikke.rema1000.dk/opskrifter), der deler ingredienser med denne ret.",
+  "recipeDetail.relatedNone": "Ingen matchende REMA 1000-opskrifter fundet — prøv at opdatere opskrifter fra tilbudssiden.",
+
   "calendar.subscribeButton": "Abonnér i din kalenderapp",
   "calendar.modalHeading": "Abonnér på din madplan-kalender",
   "calendar.modalDescription":

@@ -5,6 +5,8 @@ export default [
   route("weeks/:weekStart", "routes/weeks.$weekStart.tsx"),
   route("weeks/:weekStart/day/:day", "routes/weeks.$weekStart.day.$day.tsx"),
   route("offers", "routes/offers.tsx"),
+  route("recipes", "routes/recipes.tsx"),
+  route("recipes/:id", "routes/recipes.$id.tsx"),
   route("family", "routes/family.tsx"),
   route("invite/:token", "routes/invite.$token.tsx"),
 
@@ -21,6 +23,7 @@ export default [
   route("api/offers/refresh", "routes/api.offers.refresh.tsx"),
   route("api/recipes/refresh", "routes/api.recipes.refresh.tsx"),
   route("api/recipes/suggestions", "routes/api.recipes.suggestions.tsx"),
+  route("api/recipes/:id/related", "routes/api.recipes.$id.related.tsx"),
   route("api/family", "routes/api.family.tsx"),
   route("api/family/mine", "routes/api.family.mine.tsx"),
   route("api/family/switch", "routes/api.family.switch.tsx"),
