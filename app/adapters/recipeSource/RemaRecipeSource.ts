@@ -20,6 +20,8 @@ const LISTING_PATH = "/opskrifter";
  * in production — `RemaRecipeSource.test.ts` covers the parsing logic
  * against representative fixture HTML in the meantime.
  */
+const DETAIL_FETCH_CONCURRENCY = 8;
+
 export class RemaRecipeSource implements RecipeSource {
   constructor(
     private readonly fetchImpl: typeof fetch = fetch,
@@ -28,11 +30,22 @@ export class RemaRecipeSource implements RecipeSource {
 
   async fetchRecipes(): Promise<ExternalRecipe[]> {
     const links = await this.fetchRecipeLinks();
+    const queue = links.slice(0, this.maxRecipes);
     const recipes: ExternalRecipe[] = [];
-    for (const link of links.slice(0, this.maxRecipes)) {
-      const recipe = await this.fetchRecipeDetail(link);
-      if (recipe) recipes.push(recipe);
-    }
+
+    // Fetch detail pages with bounded concurrency instead of one-by-one —
+    // sequential fetches of up to `maxRecipes` real pages risk exceeding the
+    // serverless function's execution timeout.
+    let nextIndex = 0;
+    const worker = async () => {
+      while (nextIndex < queue.length) {
+        const link = queue[nextIndex++]!;
+        const recipe = await this.fetchRecipeDetail(link);
+        if (recipe) recipes.push(recipe);
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(DETAIL_FETCH_CONCURRENCY, queue.length) }, worker));
+
     return recipes;
   }
 
