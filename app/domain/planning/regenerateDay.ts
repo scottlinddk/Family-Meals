@@ -1,31 +1,18 @@
-import type { DayPlan, Offer, WeekPlan } from "~/domain/types";
-import { RECIPE_CATALOG, getRecipeById, type CatalogEntry } from "~/domain/recipes/recipeCatalog";
-import { deriveAdultVariant, deriveChildVariant } from "~/domain/recipes/variantDerivation";
-import {
-  createInitialVarietyState,
-  isAllowedByVariety,
-  recordPlacement,
-  type WeekVarietyState,
-} from "~/domain/recipes/varietyConstraints";
-import { rankEntriesByOffers } from "~/domain/planning/offerAwareSelection";
+import type { DayPlan, ExternalRecipe, Offer, RecipeSnapshot, WeekPlan } from "~/domain/types";
+import { deriveUncuratedAdultVariant, deriveUncuratedChildVariant } from "~/domain/recipes/variantDerivation";
+import { rankExternalRecipesByOffers } from "~/domain/recipes/externalRecipeMatch";
 
-/** Rebuilds variety state from every day in the week except the one being replaced. */
-function varietyStateExcludingDay(week: WeekPlan, dayIndex: number): WeekVarietyState {
-  let state = createInitialVarietyState();
-  week.days.forEach((day, index) => {
-    if (index === dayIndex) return;
-    const entry = getRecipeById(day.baseRecipeId);
-    if (entry) state = recordPlacement(entry, state);
-  });
-  return state;
+function toRecipeSnapshot(recipe: ExternalRecipe): RecipeSnapshot {
+  return { title: recipe.title, source: "external", url: recipe.url, tags: [], ingredientLines: recipe.ingredients };
 }
 
-function toDayPlan(entry: CatalogEntry, existing: DayPlan, now: string): DayPlan {
+function toDayPlan(recipe: ExternalRecipe, existing: DayPlan, now: string): DayPlan {
   return {
     ...existing,
-    baseRecipeId: entry.recipe.id,
-    adultVariant: deriveAdultVariant(entry),
-    childVariant: deriveChildVariant(entry),
+    baseRecipeId: recipe.id,
+    recipeSnapshot: toRecipeSnapshot(recipe),
+    adultVariant: deriveUncuratedAdultVariant(recipe.id),
+    childVariant: deriveUncuratedChildVariant(recipe.id),
     isManualOverride: true,
     editedAt: now,
     sequence: existing.sequence + 1,
@@ -33,23 +20,24 @@ function toDayPlan(entry: CatalogEntry, existing: DayPlan, now: string): DayPlan
 }
 
 /**
- * Regenerates a single day's recipe pick, respecting the rest of the week's
- * variety state (so regenerating Tuesday doesn't ignore what's already
- * planned Mon/Wed-Sun). Excludes the day's current recipe from the pool so
- * "regenerate" always produces a different dish.
+ * Regenerates a single day's recipe pick, avoiding every recipe already
+ * used elsewhere in the week (so regenerating Tuesday doesn't ignore what's
+ * already planned Mon/Wed-Sun) as well as the day's current recipe.
  */
-export function regenerateDay(week: WeekPlan, dayIndex: number, offers: Offer[]): WeekPlan {
+export function regenerateDay(week: WeekPlan, dayIndex: number, offers: Offer[], externalRecipes: ExternalRecipe[]): WeekPlan {
   const existing = week.days[dayIndex];
   if (!existing) {
     throw new Error(`Day index ${dayIndex} is out of range for a 7-day week plan.`);
   }
 
-  const state = varietyStateExcludingDay(week, dayIndex);
-  const candidates = RECIPE_CATALOG.filter((entry) => entry.recipe.id !== existing.baseRecipeId);
-  const ranked = rankEntriesByOffers(candidates, offers);
+  const usedElsewhere = new Set(
+    week.days.filter((_, index) => index !== dayIndex).map((day) => day.baseRecipeId),
+  );
+  const candidates = externalRecipes.filter((recipe) => recipe.id !== existing.baseRecipeId);
+  const ranked = rankExternalRecipesByOffers(candidates, offers).map((r) => r.recipe);
 
-  const allowed = ranked.find((entry) => isAllowedByVariety(entry, state));
-  const chosen = allowed ?? ranked[0];
+  const unused = ranked.find((recipe) => !usedElsewhere.has(recipe.id));
+  const chosen = unused ?? ranked[0];
   if (!chosen) {
     throw new Error("No alternative recipe available to regenerate this day.");
   }
@@ -63,20 +51,25 @@ export function regenerateDay(week: WeekPlan, dayIndex: number, offers: Offer[])
 }
 
 /** Manually swaps a day to a specific recipe id, chosen by the user rather than the generator. */
-export function swapDayRecipe(week: WeekPlan, dayIndex: number, recipeId: string): WeekPlan {
+export function swapDayRecipe(
+  week: WeekPlan,
+  dayIndex: number,
+  recipeId: string,
+  externalRecipes: ExternalRecipe[],
+): WeekPlan {
   const existing = week.days[dayIndex];
   if (!existing) {
     throw new Error(`Day index ${dayIndex} is out of range for a 7-day week plan.`);
   }
 
-  const entry = getRecipeById(recipeId);
-  if (!entry) {
+  const recipe = externalRecipes.find((r) => r.id === recipeId);
+  if (!recipe) {
     throw new Error(`Unknown recipe id "${recipeId}".`);
   }
 
   const now = new Date().toISOString();
   const days = week.days.map((day, index) =>
-    index === dayIndex ? toDayPlan(entry, existing, now) : day,
+    index === dayIndex ? toDayPlan(recipe, existing, now) : day,
   );
 
   return { ...week, days, updatedAt: now };

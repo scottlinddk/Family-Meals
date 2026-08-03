@@ -61,18 +61,28 @@ export interface Substitution {
  * Calorie-minimized version of the base recipe for the two adults.
  * Achieved only through substitution/portioning notes layered on top of
  * the base — never by editing BaseRecipe.ingredients directly.
+ *
+ * `curated: false` means this recipe has no hand-authored guidance (e.g. it
+ * was sourced from REMA 1000's own recipe site rather than the curated
+ * catalog) — `portioningNotes` then holds a generic disclaimer instead of
+ * dish-specific advice.
  */
 export interface AdultVariant {
   baseRecipeId: string;
   substitutions: Substitution[];
   portioningNotes: string[];
   estimatedCalories?: number;
+  curated: boolean;
 }
 
 /**
  * Base recipe plus a calorie-dense addition for the toddler, so their
  * calories are never reduced by the adults' calorie-cutting. Never
  * inherits AdultVariant substitutions.
+ *
+ * `curated: false` means no hand-authored calorie-dense addition exists for
+ * this recipe — `additions` is empty and `saltSugarNotes`/`textureNotes`
+ * hold a generic disclaimer instead of the usual guarantee.
  */
 export interface ChildVariant {
   baseRecipeId: string;
@@ -80,15 +90,32 @@ export interface ChildVariant {
   textureNotes: string[];
   saltSugarNotes: string[];
   estimatedCalories?: number;
+  curated: boolean;
 }
 
 export type MealSlot = "dinner";
+
+/**
+ * Denormalized display data for `DayPlan.baseRecipeId`, snapshotted at
+ * generation/swap time so day cards, the calendar feed, etc. don't need an
+ * extra lookup (and stay correct even if the source recipe later changes).
+ */
+export interface RecipeSnapshot {
+  title: string;
+  source: "catalog" | "external";
+  /** Link to the original recipe page, for externally-sourced recipes. */
+  url?: string;
+  tags: string[];
+  /** Ingredients as display lines (already formatted, no separate qty/unit). */
+  ingredientLines: string[];
+}
 
 export interface DayPlan {
   /** ISO date (yyyy-mm-dd), Europe/Copenhagen. */
   date: string;
   mealSlot: MealSlot;
   baseRecipeId: string;
+  recipeSnapshot: RecipeSnapshot;
   adultVariant: AdultVariant;
   childVariant: ChildVariant;
   isManualOverride: boolean;

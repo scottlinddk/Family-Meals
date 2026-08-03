@@ -84,11 +84,7 @@ export const en: Record<keyof typeof da, string> = {
   "recipeDetail.backToRecipes": "← Back to recipes",
   "recipeDetail.notFound": "This recipe doesn't exist.",
   "recipeDetail.ingredientsHeading": "Ingredients",
-  "recipeDetail.instructionsHeading": "Instructions",
-  "recipeDetail.relatedHeading": "Matching REMA 1000 recipes",
-  "recipeDetail.relatedDescription":
-    "REMA 1000's own recipes (madogdrikke.rema1000.dk/opskrifter) that share ingredients with this dish.",
-  "recipeDetail.relatedNone": "No matching REMA 1000 recipes found — try refreshing recipes from the offers page.",
+  "recipeDetail.viewOriginal": "View original recipe on REMA 1000 →",
 
   "calendar.subscribeButton": "Subscribe in your calendar app",
   "calendar.modalHeading": "Subscribe to your meal calendar",
@@ -104,6 +100,7 @@ export const en: Record<keyof typeof da, string> = {
   "variant.adultsHeading": "Adults (calorie-minimized)",
   "variant.childHeading": "Toddler (base dish + calorie-dense addition)",
   "variant.addLabel": "Add {{qty}}{{unit}} {{name}}",
+  "variant.notCurated": "No calorie guidance is available for this recipe yet — adjust portions manually.",
 
   "family.pageTitle": "Family",
   "family.yourFamiliesHeading": "Your families",

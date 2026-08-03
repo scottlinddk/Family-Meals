@@ -2,6 +2,7 @@ import type { Route } from "./+types/api.weeks.$weekStart";
 import { requireFamily } from "~/lib/auth";
 import { weekPlanRepository } from "~/data/repositories/weekPlanRepository";
 import { offerRepository } from "~/data/repositories/offerRepository";
+import { externalRecipeRepository } from "~/data/repositories/externalRecipeRepository";
 import { generateWeekPlan } from "~/domain/planning/generateWeekPlan";
 
 /** GET: fetch the week plan (404 if not generated yet). */
@@ -30,13 +31,17 @@ export async function action({ request, params }: Route.ActionArgs) {
 
   const headers = new Headers();
   const family = await requireFamily(request, headers);
-  const offers = await offerRepository.listCurrentOffers();
+  const [offers, externalRecipes] = await Promise.all([
+    offerRepository.listCurrentOffers(),
+    externalRecipeRepository.listAll(),
+  ]);
 
   const week = generateWeekPlan({
     familyId: family.id,
     weekStartDate: params.weekStart!,
     offers,
     offerSnapshotId: new Date().toISOString(),
+    externalRecipes,
   });
 
   const saved = await weekPlanRepository.saveWeekPlan(week);

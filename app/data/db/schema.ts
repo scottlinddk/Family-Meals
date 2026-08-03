@@ -129,6 +129,8 @@ export const dayPlans = pgTable("day_plans", {
   date: date("date").notNull(),
   mealSlot: text("meal_slot").notNull().default("dinner"),
   baseRecipeId: text("base_recipe_id").notNull(),
+  /** Denormalized display data for baseRecipeId (title/source/url/tags/ingredients), matching RecipeSnapshot. */
+  recipeSnapshot: jsonb("recipe_snapshot").notNull(),
   adultVariant: jsonb("adult_variant").notNull(),
   childVariant: jsonb("child_variant").notNull(),
   isManualOverride: boolean("is_manual_override").notNull().default(false),

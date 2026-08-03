@@ -29,6 +29,7 @@ export function useRefreshRecipes() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: SUGGESTIONS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ["external-recipes"] });
     },
   });
 }

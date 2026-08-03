@@ -1,3 +1,4 @@
+import { eq } from "drizzle-orm";
 import { db } from "~/data/db/client";
 import { externalRecipes as externalRecipesTable } from "~/data/db/schema";
 import type { ExternalRecipe } from "~/domain/types";
@@ -17,6 +18,11 @@ export const externalRecipeRepository = {
   async listAll(): Promise<ExternalRecipe[]> {
     const rows = await db.select().from(externalRecipesTable);
     return rows.map(toDomain);
+  },
+
+  async getById(id: string): Promise<ExternalRecipe | undefined> {
+    const [row] = await db.select().from(externalRecipesTable).where(eq(externalRecipesTable.id, id));
+    return row ? toDomain(row) : undefined;
   },
 
   /** Replaces the whole cached recipe set with a fresh scrape. */

@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "~/data/db/client";
 import { dayPlans, weekPlans } from "~/data/db/schema";
-import type { AdultVariant, ChildVariant, DayPlan, WeekPlan } from "~/domain/types";
+import type { AdultVariant, ChildVariant, DayPlan, RecipeSnapshot, WeekPlan } from "~/domain/types";
 
 function toIsoDate(value: string | Date): string {
   return typeof value === "string" ? value : value.toISOString().slice(0, 10);
@@ -21,6 +21,7 @@ async function loadWeekPlan(
         date: toIsoDate(row.date),
         mealSlot: row.mealSlot as DayPlan["mealSlot"],
         baseRecipeId: row.baseRecipeId,
+        recipeSnapshot: row.recipeSnapshot as RecipeSnapshot,
         adultVariant: row.adultVariant as AdultVariant,
         childVariant: row.childVariant as ChildVariant,
         isManualOverride: row.isManualOverride,
@@ -100,6 +101,7 @@ export const weekPlanRepository = {
           date: day.date,
           mealSlot: day.mealSlot,
           baseRecipeId: day.baseRecipeId,
+          recipeSnapshot: day.recipeSnapshot,
           adultVariant: day.adultVariant,
           childVariant: day.childVariant,
           isManualOverride: day.isManualOverride,
