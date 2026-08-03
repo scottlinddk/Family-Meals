@@ -82,7 +82,10 @@ export const da = {
   "recipeDetail.backToRecipes": "← Tilbage til opskrifter",
   "recipeDetail.notFound": "Denne opskrift findes ikke.",
   "recipeDetail.ingredientsHeading": "Ingredienser",
+  "recipeDetail.instructionsHeading": "Fremgangsmåde",
   "recipeDetail.viewOriginal": "Se den originale opskrift på REMA 1000 →",
+  "recipeDetail.servings": "{{count}} portioner",
+  "recipeDetail.totalTime": "{{minutes}} min",
 
   "calendar.subscribeButton": "Abonnér i din kalenderapp",
   "calendar.modalHeading": "Abonnér på din madplan-kalender",

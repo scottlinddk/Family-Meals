@@ -11,6 +11,7 @@ function fixtureRecipes(count: number): ExternalRecipe[] {
     title: `Recipe ${i}`,
     url: `https://madogdrikke.rema1000.dk/opskrifter/recipe-${i}`,
     ingredients: [`Ingredient ${i}`],
+    instructions: [`Step for recipe ${i}`],
   }));
 }
 

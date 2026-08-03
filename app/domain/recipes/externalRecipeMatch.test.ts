@@ -19,7 +19,7 @@ function offer(name: string): Offer {
 }
 
 function recipe(id: string, ingredients: string[]): ExternalRecipe {
-  return { id, title: id, url: `https://x/opskrifter/${id}`, ingredients };
+  return { id, title: id, url: `https://x/opskrifter/${id}`, ingredients, instructions: [] };
 }
 
 describe("rankExternalRecipesByOffers", () => {

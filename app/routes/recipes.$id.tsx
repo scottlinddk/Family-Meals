@@ -27,6 +27,26 @@ export default function RecipeDetailPage({ params }: Route.ComponentProps) {
       {recipe.data && (
         <>
           <h1 className="mt-3 mb-2 text-3xl">{recipe.data.title}</h1>
+
+          {recipe.data.imageUrl && (
+            <img
+              src={recipe.data.imageUrl}
+              alt=""
+              className="mb-3 aspect-video w-full rounded-md object-cover"
+            />
+          )}
+
+          {recipe.data.description && <p className="mb-3 text-sm">{recipe.data.description}</p>}
+
+          {(recipe.data.servings || recipe.data.totalTimeMinutes) && (
+            <p className="mb-3 flex flex-wrap gap-x-4 text-sm text-muted">
+              {recipe.data.servings && <span>{t("recipeDetail.servings", { count: recipe.data.servings })}</span>}
+              {recipe.data.totalTimeMinutes && (
+                <span>{t("recipeDetail.totalTime", { minutes: recipe.data.totalTimeMinutes })}</span>
+              )}
+            </p>
+          )}
+
           <a
             href={recipe.data.url}
             target="_blank"
@@ -44,6 +64,17 @@ export default function RecipeDetailPage({ params }: Route.ComponentProps) {
               ))}
             </ul>
           </Card>
+
+          {recipe.data.instructions.length > 0 && (
+            <Card className="mb-4">
+              <CardTitle>{t("recipeDetail.instructionsHeading")}</CardTitle>
+              <ol className="m-0 list-decimal pl-4.5 text-sm">
+                {recipe.data.instructions.map((step, i) => (
+                  <li key={i}>{step}</li>
+                ))}
+              </ol>
+            </Card>
+          )}
         </>
       )}
     </main>

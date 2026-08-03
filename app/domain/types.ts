@@ -105,9 +105,12 @@ export interface RecipeSnapshot {
   source: "catalog" | "external";
   /** Link to the original recipe page, for externally-sourced recipes. */
   url?: string;
+  imageUrl?: string;
   tags: string[];
   /** Ingredients as display lines (already formatted, no separate qty/unit). */
   ingredientLines: string[];
+  /** Step-by-step method, in order, if the source recipe had one. */
+  instructionLines: string[];
 }
 
 export interface DayPlan {
@@ -152,7 +155,15 @@ export interface ExternalRecipe {
   /** Canonical URL on madogdrikke.rema1000.dk. */
   url: string;
   imageUrl?: string;
+  /** Short teaser/summary text from the recipe page, if present. */
+  description?: string;
   ingredients: string[];
+  /** Step-by-step method, in order, if the page exposes one. */
+  instructions: string[];
+  /** Number of people the recipe serves, if stated. */
+  servings?: number;
+  /** Total time to make the dish, in minutes, if stated. */
+  totalTimeMinutes?: number;
 }
 
 /**

@@ -3,7 +3,15 @@ import { deriveUncuratedAdultVariant, deriveUncuratedChildVariant } from "~/doma
 import { rankExternalRecipesByOffers } from "~/domain/recipes/externalRecipeMatch";
 
 function toRecipeSnapshot(recipe: ExternalRecipe): RecipeSnapshot {
-  return { title: recipe.title, source: "external", url: recipe.url, tags: [], ingredientLines: recipe.ingredients };
+  return {
+    title: recipe.title,
+    source: "external",
+    url: recipe.url,
+    imageUrl: recipe.imageUrl,
+    tags: [],
+    ingredientLines: recipe.ingredients,
+    instructionLines: recipe.instructions,
+  };
 }
 
 function toDayPlan(recipe: ExternalRecipe, existing: DayPlan, now: string): DayPlan {

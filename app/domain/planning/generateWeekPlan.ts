@@ -25,7 +25,15 @@ function pickRecipeForDay(
 }
 
 function toRecipeSnapshot(recipe: ExternalRecipe): RecipeSnapshot {
-  return { title: recipe.title, source: "external", url: recipe.url, tags: [], ingredientLines: recipe.ingredients };
+  return {
+    title: recipe.title,
+    source: "external",
+    url: recipe.url,
+    imageUrl: recipe.imageUrl,
+    tags: [],
+    ingredientLines: recipe.ingredients,
+    instructionLines: recipe.instructions,
+  };
 }
 
 function buildDayPlan(recipe: ExternalRecipe, date: string, now: string): DayPlan {

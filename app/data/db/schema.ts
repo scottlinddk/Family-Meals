@@ -99,7 +99,11 @@ export const externalRecipes = pgTable("external_recipes", {
   title: text("title").notNull(),
   url: text("url").notNull(),
   imageUrl: text("image_url"),
+  description: text("description"),
   ingredients: jsonb("ingredients").notNull(),
+  instructions: jsonb("instructions").notNull().default([]),
+  servings: integer("servings"),
+  totalTimeMinutes: integer("total_time_minutes"),
   fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

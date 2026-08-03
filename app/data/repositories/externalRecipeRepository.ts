@@ -9,7 +9,11 @@ function toDomain(row: typeof externalRecipesTable.$inferSelect): ExternalRecipe
     title: row.title,
     url: row.url,
     imageUrl: row.imageUrl ?? undefined,
+    description: row.description ?? undefined,
     ingredients: row.ingredients as string[],
+    instructions: row.instructions as string[],
+    servings: row.servings ?? undefined,
+    totalTimeMinutes: row.totalTimeMinutes ?? undefined,
   };
 }
 
@@ -36,7 +40,11 @@ export const externalRecipeRepository = {
           title: r.title,
           url: r.url,
           imageUrl: r.imageUrl,
+          description: r.description,
           ingredients: r.ingredients,
+          instructions: r.instructions,
+          servings: r.servings,
+          totalTimeMinutes: r.totalTimeMinutes,
         })),
       );
     });

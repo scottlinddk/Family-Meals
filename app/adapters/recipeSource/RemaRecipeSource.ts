@@ -85,12 +85,48 @@ export function parseRecipeDetail(html: string, url: string): ExternalRecipe | n
   if (!title) return null;
 
   const ingredients = extractIngredients(root);
+  const instructions = extractInstructions(root);
   const imageUrl = root.querySelector("meta[property='og:image']")?.getAttribute("content");
+  const description = root.querySelector("meta[property='og:description'], meta[name='description']")
+    ?.getAttribute("content")
+    ?.trim();
+  const servings = extractServings(root);
+  const totalTimeMinutes = extractTotalTimeMinutes(root);
 
   const slugMatch = url.match(/\/opskrifter\/([^/?#]+)/);
   const id = slugMatch?.[1] ?? url;
 
-  return { id, title, url, imageUrl, ingredients };
+  return {
+    id,
+    title,
+    url,
+    imageUrl,
+    description: description || undefined,
+    ingredients,
+    instructions,
+    servings,
+    totalTimeMinutes,
+  };
+}
+
+/** Finds the first list of `<li>` text following a heading matching `headingPattern`. */
+function listAfterHeading(root: HTMLElement, headingPattern: RegExp): string[] {
+  const headings = root.querySelectorAll("h2, h3, h4");
+  for (const heading of headings) {
+    if (!headingPattern.test(heading.text)) continue;
+    let sibling = heading.nextElementSibling;
+    while (sibling && sibling.tagName !== "UL" && sibling.tagName !== "OL") {
+      sibling = sibling.nextElementSibling;
+    }
+    if (sibling) {
+      const items = sibling
+        .querySelectorAll("li")
+        .map((el) => el.text.trim())
+        .filter(Boolean);
+      if (items.length > 0) return items;
+    }
+  }
+  return [];
 }
 
 /**
@@ -109,21 +145,67 @@ function extractIngredients(root: HTMLElement): string[] {
     if (items.length > 0) return items;
   }
 
+  return listAfterHeading(root, /ingrediens/i);
+}
+
+/**
+ * Same defensive approach as ingredients: try common class-name patterns for
+ * a numbered/step method list, then fall back to the list following a
+ * "Fremgangsmåde"/"Sådan gør du"/"Tilberedning" heading. If no list markup is
+ * found, falls back to `<p>` paragraphs under the heading (some sites write
+ * the method as prose rather than a list).
+ */
+function extractInstructions(root: HTMLElement): string[] {
+  const candidateSelectors = ["[class*='fremgangsmaade'] li", "[class*='instruction'] li", "[class*='step'] li"];
+  for (const selector of candidateSelectors) {
+    const items = root
+      .querySelectorAll(selector)
+      .map((el) => el.text.trim())
+      .filter(Boolean);
+    if (items.length > 0) return items;
+  }
+
+  const headingPattern = /fremgangsm[aå]de|s[aå]dan g[oø]r du|tilberedning/i;
+  const listItems = listAfterHeading(root, headingPattern);
+  if (listItems.length > 0) return listItems;
+
   const headings = root.querySelectorAll("h2, h3, h4");
   for (const heading of headings) {
-    if (!/ingrediens/i.test(heading.text)) continue;
+    if (!headingPattern.test(heading.text)) continue;
+    const paragraphs: string[] = [];
     let sibling = heading.nextElementSibling;
-    while (sibling && sibling.tagName !== "UL" && sibling.tagName !== "OL") {
+    while (sibling && sibling.tagName === "P") {
+      const text = sibling.text.trim();
+      if (text) paragraphs.push(text);
       sibling = sibling.nextElementSibling;
     }
-    if (sibling) {
-      const items = sibling
-        .querySelectorAll("li")
-        .map((el) => el.text.trim())
-        .filter(Boolean);
-      if (items.length > 0) return items;
-    }
+    if (paragraphs.length > 0) return paragraphs;
   }
 
   return [];
+}
+
+/** Extracts a leading integer from the first element matching any of `selectors`' text. */
+function firstIntegerMatching(root: HTMLElement, selectors: string[]): number | undefined {
+  for (const selector of selectors) {
+    for (const el of root.querySelectorAll(selector)) {
+      const match = el.text.match(/\d+/);
+      if (match) return Number(match[0]);
+    }
+  }
+  return undefined;
+}
+
+/** "Antal personer"/"Portioner" — how many people the recipe serves. */
+function extractServings(root: HTMLElement): number | undefined {
+  return firstIntegerMatching(root, [
+    "[class*='portion']",
+    "[class*='servings']",
+    "[class*='personer']",
+  ]);
+}
+
+/** "Tilberedningstid"/"Tid i alt" — total time in minutes. */
+function extractTotalTimeMinutes(root: HTMLElement): number | undefined {
+  return firstIntegerMatching(root, ["[class*='tilberedningstid']", "[class*='cooktime']", "[class*='totaltime']", "time"]);
 }

@@ -82,7 +82,26 @@ export default function RecipesPage() {
           <li key={recipe.id}>
             <Link to={`/recipes/${recipe.id}`} className="block">
               <Card>
-                <CardTitle>{recipe.title}</CardTitle>
+                <div className="flex items-center gap-3">
+                  {recipe.imageUrl && (
+                    <img
+                      src={recipe.imageUrl}
+                      alt=""
+                      className="h-16 w-16 shrink-0 rounded-md object-cover"
+                    />
+                  )}
+                  <div>
+                    <CardTitle>{recipe.title}</CardTitle>
+                    {(recipe.servings || recipe.totalTimeMinutes) && (
+                      <p className="m-0 flex gap-x-3 text-xs text-muted">
+                        {recipe.servings && <span>{t("recipeDetail.servings", { count: recipe.servings })}</span>}
+                        {recipe.totalTimeMinutes && (
+                          <span>{t("recipeDetail.totalTime", { minutes: recipe.totalTimeMinutes })}</span>
+                        )}
+                      </p>
+                    )}
+                  </div>
+                </div>
               </Card>
             </Link>
           </li>

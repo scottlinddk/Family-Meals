@@ -21,6 +21,12 @@ function describeDay(week: WeekPlan, dayIndex: number): string {
   }
   lines.push("");
 
+  if (day.recipeSnapshot.instructionLines.length > 0) {
+    lines.push("Instructions:");
+    day.recipeSnapshot.instructionLines.forEach((step, i) => lines.push(`${i + 1}. ${step}`));
+    lines.push("");
+  }
+
   lines.push("Adult variant (calorie-minimized):");
   if (!day.adultVariant.curated) lines.push("- No curated calorie guidance available for this recipe.");
   for (const sub of day.adultVariant.substitutions) {

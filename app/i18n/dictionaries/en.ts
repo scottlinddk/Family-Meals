@@ -84,7 +84,10 @@ export const en: Record<keyof typeof da, string> = {
   "recipeDetail.backToRecipes": "← Back to recipes",
   "recipeDetail.notFound": "This recipe doesn't exist.",
   "recipeDetail.ingredientsHeading": "Ingredients",
+  "recipeDetail.instructionsHeading": "Instructions",
   "recipeDetail.viewOriginal": "View original recipe on REMA 1000 →",
+  "recipeDetail.servings": "{{count}} servings",
+  "recipeDetail.totalTime": "{{minutes}} min",
 
   "calendar.subscribeButton": "Subscribe in your calendar app",
   "calendar.modalHeading": "Subscribe to your meal calendar",
