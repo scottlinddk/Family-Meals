@@ -1,11 +1,9 @@
-import { Link, redirect } from "react-router";
+import { Link, redirect, useSearchParams } from "react-router";
+import { useMemo } from "react";
 import type { Route } from "./+types/recipes";
 import { requireUser } from "~/lib/auth";
-import { RECIPE_CATALOG } from "~/domain/recipes/recipeCatalog";
-import { filterRecipes } from "~/domain/recipes/recipeFilters";
-import { useRecipeFilters } from "~/ui/hooks/useRecipeFilters";
+import { useExternalRecipes } from "~/ui/hooks/useExternalRecipes";
 import { Card, CardTitle } from "~/ui/components/ui/Card";
-import { Tag } from "~/ui/components/ui/Tag";
 import { FieldLabel, Input } from "~/ui/components/ui/Input";
 import { Button } from "~/ui/components/ui/Button";
 import { t } from "~/i18n/t";
@@ -17,13 +15,21 @@ export async function loader({ request }: Route.LoaderArgs) {
   return null;
 }
 
-const ALL_PROTEINS = [...new Set(RECIPE_CATALOG.map((entry) => entry.recipe.proteinType))].sort();
-const ALL_TAGS = [...new Set(RECIPE_CATALOG.flatMap((entry) => entry.recipe.tags))].sort();
-
 export default function RecipesPage() {
-  const { filters, setQuery, toggleProtein, toggleTag, clear } = useRecipeFilters();
-  const results = filterRecipes(RECIPE_CATALOG, filters);
-  const hasActiveFilters = filters.q !== "" || filters.proteins.length > 0 || filters.tags.length > 0;
+  const [searchParams, setSearchParams] = useSearchParams();
+  const q = searchParams.get("q") ?? "";
+  const recipes = useExternalRecipes();
+
+  const results = useMemo(() => {
+    if (!recipes.data) return [];
+    if (!q) return recipes.data;
+    const needle = q.toLowerCase();
+    return recipes.data.filter(
+      (recipe) =>
+        recipe.title.toLowerCase().includes(needle) ||
+        recipe.ingredients.some((ingredient) => ingredient.toLowerCase().includes(needle)),
+    );
+  }, [recipes.data, q]);
 
   return (
     <main className="mx-auto max-w-2xl p-6">
@@ -32,56 +38,69 @@ export default function RecipesPage() {
       </Link>
       <h1 className="mt-3 mb-5 text-3xl">{t("recipesPage.title")}</h1>
 
-      <div className="mb-3">
+      <div className="mb-4">
         <FieldLabel htmlFor="recipe-search">{t("recipesPage.searchLabel")}</FieldLabel>
         <Input
           id="recipe-search"
-          value={filters.q}
-          onChange={(e) => setQuery(e.target.value)}
+          value={q}
+          onChange={(e) => {
+            const value = e.target.value;
+            setSearchParams(
+              (prev) => {
+                const next = new URLSearchParams(prev);
+                if (value) next.set("q", value);
+                else next.delete("q");
+                return next;
+              },
+              { replace: true },
+            );
+          }}
           placeholder={t("recipesPage.searchPlaceholder")}
         />
       </div>
 
-      <div className="mb-2 flex flex-wrap gap-1.5">
-        {ALL_PROTEINS.map((protein) => (
-          <button key={protein} type="button" onClick={() => toggleProtein(protein)}>
-            <Tag variant={filters.proteins.includes(protein) ? "accent" : "outline"}>{protein}</Tag>
-          </button>
-        ))}
-      </div>
+      {recipes.isLoading && <p className="text-sm text-muted">{t("week.loading")}</p>}
 
-      <div className="mb-3 flex flex-wrap gap-1.5">
-        {ALL_TAGS.map((tag) => (
-          <button key={tag} type="button" onClick={() => toggleTag(tag)}>
-            <Tag variant={filters.tags.includes(tag) ? "accent-2" : "outline"}>{tag}</Tag>
-          </button>
-        ))}
-      </div>
+      {recipes.data && (
+        <div className="mb-4 flex items-center justify-between">
+          <p className="m-0 text-sm text-muted">{t("recipesPage.resultCount", { count: results.length })}</p>
+          {q && (
+            <Button type="button" variant="ghost" size="sm" onClick={() => setSearchParams({})}>
+              {t("recipesPage.clearFilters")}
+            </Button>
+          )}
+        </div>
+      )}
 
-      <div className="mb-4 flex items-center justify-between">
-        <p className="m-0 text-sm text-muted">{t("recipesPage.resultCount", { count: results.length })}</p>
-        {hasActiveFilters && (
-          <Button type="button" variant="ghost" size="sm" onClick={clear}>
-            {t("recipesPage.clearFilters")}
-          </Button>
-        )}
-      </div>
-
-      {results.length === 0 && <p className="text-sm text-muted">{t("recipesPage.none")}</p>}
+      {recipes.data && recipes.data.length === 0 && <p className="text-sm text-muted">{t("recipes.none")}</p>}
+      {recipes.data && recipes.data.length > 0 && results.length === 0 && (
+        <p className="text-sm text-muted">{t("recipesPage.none")}</p>
+      )}
 
       <ul className="m-0 flex list-none flex-col gap-2 p-0">
-        {results.map(({ recipe }) => (
+        {results.map((recipe) => (
           <li key={recipe.id}>
             <Link to={`/recipes/${recipe.id}`} className="block">
               <Card>
-                <CardTitle>{recipe.title}</CardTitle>
-                <div className="flex flex-wrap gap-1.5">
-                  <Tag variant="neutral">{recipe.proteinType}</Tag>
-                  {recipe.tags.map((tag) => (
-                    <Tag key={tag} variant="outline">
-                      {tag}
-                    </Tag>
-                  ))}
+                <div className="flex items-center gap-3">
+                  {recipe.imageUrl && (
+                    <img
+                      src={recipe.imageUrl}
+                      alt=""
+                      className="h-16 w-16 shrink-0 rounded-md object-cover"
+                    />
+                  )}
+                  <div>
+                    <CardTitle>{recipe.title}</CardTitle>
+                    {(recipe.servings || recipe.totalTimeMinutes) && (
+                      <p className="m-0 flex gap-x-3 text-xs text-muted">
+                        {recipe.servings && <span>{t("recipeDetail.servings", { count: recipe.servings })}</span>}
+                        {recipe.totalTimeMinutes && (
+                          <span>{t("recipeDetail.totalTime", { minutes: recipe.totalTimeMinutes })}</span>
+                        )}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </Card>
             </Link>

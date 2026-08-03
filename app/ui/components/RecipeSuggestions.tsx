@@ -38,7 +38,22 @@ export function RecipeSuggestions() {
         <ul className="mt-3 flex flex-col gap-2">
           {suggestions.data.map(({ recipe, matchedOfferNames }) => (
             <Card as="li" key={recipe.id}>
-              <CardTitle>{recipe.title}</CardTitle>
+              <div className="flex items-center gap-3">
+                {recipe.imageUrl && (
+                  <img src={recipe.imageUrl} alt="" className="h-14 w-14 shrink-0 rounded-md object-cover" />
+                )}
+                <div>
+                  <CardTitle>{recipe.title}</CardTitle>
+                  {(recipe.servings || recipe.totalTimeMinutes) && (
+                    <p className="m-0 flex gap-x-3 text-xs text-muted">
+                      {recipe.servings && <span>{t("recipeDetail.servings", { count: recipe.servings })}</span>}
+                      {recipe.totalTimeMinutes && (
+                        <span>{t("recipeDetail.totalTime", { minutes: recipe.totalTimeMinutes })}</span>
+                      )}
+                    </p>
+                  )}
+                </div>
+              </div>
               <div className="flex flex-wrap gap-1.5">
                 {matchedOfferNames.length > 0 ? (
                   matchedOfferNames.map((name) => (

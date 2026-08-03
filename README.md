@@ -54,16 +54,30 @@ Both sources implement the same `OfferSource` interface
 (`app/adapters/offerSource/OfferSource.ts`), so meal-planning logic doesn't
 care which one populated the current offer set.
 
-## Recipe suggestions from REMA 1000's own recipes
+## Recipes: REMA 1000's own recipe site
 
 `RemaRecipeSource` (`app/adapters/recipeSource/RemaRecipeSource.ts`) fetches
 and parses REMA 1000's public recipe site
-(madogdrikke.rema1000.dk/opskrifter), separate from the hand-authored
-`RECIPE_CATALOG` used for the adult/child variant pipeline. Click "Refresh
-recipes" on `/offers` (`POST /api/recipes/refresh`) to re-scrape, and the
-"Best meals from this week's offers" panel
-(`GET /api/recipes/suggestions`, `app/domain/recipes/externalRecipeMatch.ts`)
-ranks the cached recipes by how many ingredients are on offer this week.
+(madogdrikke.rema1000.dk/opskrifter) and caches the result in the
+`external_recipes` table via `externalRecipeRepository`. Click "Refresh
+recipes" on `/offers` (`POST /api/recipes/refresh`) to re-scrape.
+
+This cache is the single source of recipes for the whole app: the `/recipes`
+browse page (`GET /api/recipes`), a recipe's detail page (`GET
+/api/recipes/:id`), the "Best meals from this week's offers" panel
+(`GET /api/recipes/suggestions`, `app/domain/recipes/externalRecipeMatch.ts`),
+and the weekly plan generator (`generateWeekPlan.ts`/`regenerateDay.ts`,
+ranked by offer overlap the same way). Because REMA's own recipes only
+expose a title, ingredient list, and image (no structured quantities or a
+protein type), days generated from them get a *generic* adult/child variant
+disclaimer (`AdultVariant.curated`/`ChildVariant.curated` = `false`) instead
+of the hand-authored substitutions/calorie-dense-addition guarantee — see
+`deriveUncuratedAdultVariant`/`deriveUncuratedChildVariant` in
+`app/domain/recipes/variantDerivation.ts`. The original hand-authored
+`RECIPE_CATALOG` (`app/domain/recipes/recipeCatalog.ts`) and its curated
+variant derivation still exist in the codebase but are no longer wired into
+any route — they're kept in case curated-content generation comes back.
+
 Like the offer source above, madogdrikke.rema1000.dk returned 403 from this
 sandbox, so the HTML selectors are written defensively against common
 markup patterns and covered by fixture-based tests

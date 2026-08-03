@@ -4,7 +4,7 @@ import { requireUser } from "~/lib/auth";
 import { useWeekPlan } from "~/ui/hooks/useWeekPlan";
 import { useSwapDayRecipe } from "~/ui/hooks/useRegenerateDay";
 import { DayCard } from "~/ui/components/DayCard";
-import { RECIPE_CATALOG } from "~/domain/recipes/recipeCatalog";
+import { useExternalRecipes } from "~/ui/hooks/useExternalRecipes";
 import { Card } from "~/ui/components/ui/Card";
 import { FieldLabel, Select } from "~/ui/components/ui/Input";
 import { t } from "~/i18n/t";
@@ -21,6 +21,7 @@ export default function DayPage({ params }: Route.ComponentProps) {
   const dayIndex = Number(params.day);
   const weekPlan = useWeekPlan(weekStart);
   const swap = useSwapDayRecipe(weekStart);
+  const recipes = useExternalRecipes();
   const day = weekPlan.data?.days[dayIndex];
 
   return (
@@ -45,9 +46,9 @@ export default function DayPage({ params }: Route.ComponentProps) {
               <option value="" disabled>
                 {t("day.choosePlaceholder")}
               </option>
-              {RECIPE_CATALOG.map((entry) => (
-                <option key={entry.recipe.id} value={entry.recipe.id}>
-                  {entry.recipe.title}
+              {recipes.data?.map((recipe) => (
+                <option key={recipe.id} value={recipe.id}>
+                  {recipe.title}
                 </option>
               ))}
             </Select>

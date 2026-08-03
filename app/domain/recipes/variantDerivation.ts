@@ -14,6 +14,7 @@ export function deriveAdultVariant(entry: CatalogEntry): AdultVariant {
     baseRecipeId: entry.recipe.id,
     substitutions: entry.template.adultSubstitutions,
     portioningNotes: entry.template.adultPortioningNotes,
+    curated: true,
   };
 }
 
@@ -39,5 +40,44 @@ export function deriveChildVariant(entry: CatalogEntry): ChildVariant {
     additions: entry.template.childAdditions,
     textureNotes: entry.template.childTextureNotes,
     saltSugarNotes: entry.template.childSaltSugarNotes,
+    curated: true,
+  };
+}
+
+const GENERIC_ADULT_NOTE =
+  "No calorie-adjustment guidance is available for this recipe — check ingredient quantities on the original recipe page and adjust portions manually.";
+const GENERIC_CHILD_TEXTURE_NOTE =
+  "No child-specific texture guidance is available for this recipe — adapt consistency for a toddler manually.";
+const GENERIC_CHILD_ADDITION_NOTE =
+  "No curated calorie-dense addition is available for this recipe, so the toddler's calories aren't guaranteed to meet their needs — consider adding a side (e.g. bread with butter, avocado, or cheese) manually.";
+
+/**
+ * Fallback adult variant for recipes with no hand-authored template (e.g.
+ * REMA 1000's own recipes, which aren't curated with substitutions/notes) —
+ * surfaces a generic disclaimer instead of dish-specific guidance.
+ */
+export function deriveUncuratedAdultVariant(baseRecipeId: string): AdultVariant {
+  return {
+    baseRecipeId,
+    substitutions: [],
+    portioningNotes: [GENERIC_ADULT_NOTE],
+    curated: false,
+  };
+}
+
+/**
+ * Fallback child variant for recipes with no hand-authored template. Unlike
+ * `deriveChildVariant`, this does not guarantee a calorie-dense addition —
+ * that guarantee only holds for the curated catalog — so the missing
+ * guarantee is surfaced explicitly via `curated: false` and a disclaimer
+ * rather than silently omitted.
+ */
+export function deriveUncuratedChildVariant(baseRecipeId: string): ChildVariant {
+  return {
+    baseRecipeId,
+    additions: [],
+    textureNotes: [GENERIC_CHILD_TEXTURE_NOTE],
+    saltSugarNotes: [GENERIC_CHILD_ADDITION_NOTE],
+    curated: false,
   };
 }

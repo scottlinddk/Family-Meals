@@ -1,33 +1,36 @@
 import ical from "ical-generator";
 import type { WeekPlan } from "~/domain/types";
-import { getRecipeById } from "~/domain/recipes/recipeCatalog";
 import { buildEventUid } from "~/domain/calendar/uid";
 import { FAMILY_TIMEZONE } from "~/lib/time";
 
 const DINNER_DURATION_MINUTES = 60;
+const DEFAULT_DINNER_TIME_LOCAL = "18:00";
 
 function describeDay(week: WeekPlan, dayIndex: number): string {
   const day = week.days[dayIndex];
   if (!day) return "";
 
-  const entry = getRecipeById(day.baseRecipeId);
   const lines: string[] = [];
 
-  if (entry) {
-    lines.push(`Base dish: ${entry.recipe.title}`);
-    lines.push("");
-    lines.push("Ingredients:");
-    for (const ingredient of entry.recipe.ingredients) {
-      lines.push(`- ${ingredient.quantity}${ingredient.unit} ${ingredient.name}`);
-    }
+  lines.push(`Base dish: ${day.recipeSnapshot.title}`);
+  if (day.recipeSnapshot.url) lines.push(`Recipe: ${day.recipeSnapshot.url}`);
+  lines.push("");
+  lines.push("Ingredients:");
+  for (const line of day.recipeSnapshot.ingredientLines) {
+    lines.push(`- ${line}`);
+  }
+  lines.push("");
+
+  if (day.recipeSnapshot.instructionLines.length > 0) {
+    lines.push("Instructions:");
+    day.recipeSnapshot.instructionLines.forEach((step, i) => lines.push(`${i + 1}. ${step}`));
     lines.push("");
   }
 
   lines.push("Adult variant (calorie-minimized):");
-  if (day.adultVariant.substitutions.length > 0) {
-    for (const sub of day.adultVariant.substitutions) {
-      lines.push(`- ${sub.originalIngredient} -> ${sub.substituteIngredient} (${sub.reason})`);
-    }
+  if (!day.adultVariant.curated) lines.push("- No curated calorie guidance available for this recipe.");
+  for (const sub of day.adultVariant.substitutions) {
+    lines.push(`- ${sub.originalIngredient} -> ${sub.substituteIngredient} (${sub.reason})`);
   }
   for (const note of day.adultVariant.portioningNotes) {
     lines.push(`- ${note}`);
@@ -35,6 +38,7 @@ function describeDay(week: WeekPlan, dayIndex: number): string {
 
   lines.push("");
   lines.push("Child variant (base + calorie-dense addition, unaffected by adult calorie cuts):");
+  if (!day.childVariant.curated) lines.push("- No curated calorie-dense addition available for this recipe.");
   for (const addition of day.childVariant.additions) {
     lines.push(`- Add ${addition.quantity}${addition.unit} ${addition.name}`);
   }
@@ -65,8 +69,7 @@ export function buildIcsFeed(week: WeekPlan): string {
   });
 
   week.days.forEach((day, index) => {
-    const entry = getRecipeById(day.baseRecipeId);
-    const start = dinnerDateTime(day.date, entry?.recipe.dinnerTimeLocal ?? "18:00");
+    const start = dinnerDateTime(day.date, DEFAULT_DINNER_TIME_LOCAL);
     const end = new Date(start.getTime() + DINNER_DURATION_MINUTES * 60_000);
 
     calendar.createEvent({
@@ -75,7 +78,7 @@ export function buildIcsFeed(week: WeekPlan): string {
       start,
       end,
       timezone: FAMILY_TIMEZONE,
-      summary: entry?.recipe.title ?? "Family dinner",
+      summary: day.recipeSnapshot.title,
       description: describeDay(week, index),
       lastModified: new Date(day.editedAt),
     });

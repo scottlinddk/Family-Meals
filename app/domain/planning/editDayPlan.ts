@@ -18,7 +18,7 @@ export function editDayPlan(week: WeekPlan, dayIndex: number, edit: DayPlanEdit)
     throw new Error(`Day index ${dayIndex} is out of range for a 7-day week plan.`);
   }
 
-  if (edit.childVariant?.additions?.length === 0) {
+  if (existing.childVariant.curated && edit.childVariant?.additions?.length === 0) {
     throw new Error(
       "Cannot remove all of the child's calorie-dense additions — the toddler's calories must " +
         "never be reduced by the adults' calorie-cutting. Edit the addition instead of clearing it.",

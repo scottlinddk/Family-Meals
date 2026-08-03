@@ -99,7 +99,11 @@ export const externalRecipes = pgTable("external_recipes", {
   title: text("title").notNull(),
   url: text("url").notNull(),
   imageUrl: text("image_url"),
+  description: text("description"),
   ingredients: jsonb("ingredients").notNull(),
+  instructions: jsonb("instructions").notNull().default([]),
+  servings: integer("servings"),
+  totalTimeMinutes: integer("total_time_minutes"),
   fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -129,6 +133,8 @@ export const dayPlans = pgTable("day_plans", {
   date: date("date").notNull(),
   mealSlot: text("meal_slot").notNull().default("dinner"),
   baseRecipeId: text("base_recipe_id").notNull(),
+  /** Denormalized display data for baseRecipeId (title/source/url/tags/ingredients), matching RecipeSnapshot. */
+  recipeSnapshot: jsonb("recipe_snapshot").notNull(),
   adultVariant: jsonb("adult_variant").notNull(),
   childVariant: jsonb("child_variant").notNull(),
   isManualOverride: boolean("is_manual_override").notNull().default(false),

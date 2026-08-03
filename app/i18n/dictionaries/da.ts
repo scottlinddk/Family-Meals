@@ -71,6 +71,7 @@ export const da = {
   "recipes.noMatch": "Ingen ingredienser aktuelt på tilbud.",
 
   "week.recipes": "Opskrifter",
+  "nav.toggleMenu": "Menu",
 
   "recipesPage.title": "Alle opskrifter",
   "recipesPage.searchLabel": "Søg på navn eller ingrediens",
@@ -83,10 +84,9 @@ export const da = {
   "recipeDetail.notFound": "Denne opskrift findes ikke.",
   "recipeDetail.ingredientsHeading": "Ingredienser",
   "recipeDetail.instructionsHeading": "Fremgangsmåde",
-  "recipeDetail.relatedHeading": "Matchende REMA 1000-opskrifter",
-  "recipeDetail.relatedDescription":
-    "REMA 1000's egne opskrifter (madogdrikke.rema1000.dk/opskrifter), der deler ingredienser med denne ret.",
-  "recipeDetail.relatedNone": "Ingen matchende REMA 1000-opskrifter fundet — prøv at opdatere opskrifter fra tilbudssiden.",
+  "recipeDetail.viewOriginal": "Se den originale opskrift på REMA 1000 →",
+  "recipeDetail.servings": "{{count}} portioner",
+  "recipeDetail.totalTime": "{{minutes}} min",
 
   "calendar.subscribeButton": "Abonnér i din kalenderapp",
   "calendar.modalHeading": "Abonnér på din madplan-kalender",
@@ -102,6 +102,7 @@ export const da = {
   "variant.adultsHeading": "Voksne (kaloriereduceret)",
   "variant.childHeading": "Mindre barn (grundret + kalorietæt tilføjelse)",
   "variant.addLabel": "Tilføj {{qty}}{{unit}} {{name}}",
+  "variant.notCurated": "Der er endnu ingen kalorievejledning til denne opskrift — juster portionerne manuelt.",
 
   "family.pageTitle": "Familie",
   "family.yourFamiliesHeading": "Dine familier",
