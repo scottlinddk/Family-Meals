@@ -8,7 +8,7 @@ export function RegenerateDayButton({ weekStart, dayIndex }: { weekStart: string
   return (
     <Button
       type="button"
-      variant="outline"
+      variant="secondary"
       size="sm"
       onClick={() => regenerate.mutate(dayIndex)}
       disabled={regenerate.isPending}

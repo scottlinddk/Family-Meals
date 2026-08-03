@@ -1,6 +1,7 @@
 import { useRecipeSuggestions, useRefreshRecipes } from "~/ui/hooks/useRecipeSuggestions";
 import { Button } from "~/ui/components/ui/Button";
-import { Card } from "~/ui/components/ui/Card";
+import { Card, CardTitle } from "~/ui/components/ui/Card";
+import { Tag } from "~/ui/components/ui/Tag";
 import { t } from "~/i18n/t";
 
 /** REMA 1000's own recipes, cross-checked against this week's offers and ranked best-match-first. */
@@ -9,22 +10,21 @@ export function RecipeSuggestions() {
   const refreshRecipes = useRefreshRecipes();
 
   return (
-    <Card as="section" className="mt-6">
-      <h2 className="font-display text-2xl">{t("recipes.suggestionsHeading")}</h2>
-      <p className="mt-1 text-sm text-ink-2">{t("recipes.suggestionsDescription")}</p>
+    <div className="mt-4">
+      <h3 className="text-lg">{t("recipes.suggestionsHeading")}</h3>
+      <p className="-mt-1 text-sm opacity-80">{t("recipes.suggestionsDescription")}</p>
 
       <Button
         type="button"
-        variant="outline"
-        size="sm"
-        className="mt-2"
+        variant="secondary"
+        block
         onClick={() => refreshRecipes.mutate()}
         disabled={refreshRecipes.isPending}
       >
         {refreshRecipes.isPending ? t("recipes.refreshing") : t("recipes.refresh")}
       </Button>
       {refreshRecipes.isError && (
-        <p className="mt-1 text-sm text-brick">
+        <p className="mt-1 text-sm text-red-700">
           {t("recipes.refreshError")}{" "}
           {refreshRecipes.error instanceof Error ? refreshRecipes.error.message : ""}
         </p>
@@ -35,27 +35,33 @@ export function RecipeSuggestions() {
       )}
 
       {suggestions.data && suggestions.data.length > 0 && (
-        <ul className="mt-3 space-y-3">
+        <ul className="mt-3 flex flex-col gap-2">
           {suggestions.data.map(({ recipe, matchedOfferNames }) => (
-            <li key={recipe.id} className="rounded-lg border border-line bg-surface p-3">
-              <p className="font-medium text-ink">{recipe.title}</p>
-              <p className="mt-1 text-sm text-ink-2">
-                {matchedOfferNames.length > 0
-                  ? t("recipes.onOffer", { names: matchedOfferNames.join(", ") })
-                  : t("recipes.noMatch")}
-              </p>
+            <Card as="li" key={recipe.id}>
+              <CardTitle>{recipe.title}</CardTitle>
+              <div className="flex flex-wrap gap-1.5">
+                {matchedOfferNames.length > 0 ? (
+                  matchedOfferNames.map((name) => (
+                    <Tag key={name} variant="accent">
+                      {name}
+                    </Tag>
+                  ))
+                ) : (
+                  <Tag variant="neutral">{t("recipes.noMatch")}</Tag>
+                )}
+              </div>
               <a
                 href={recipe.url}
                 target="_blank"
                 rel="noreferrer"
-                className="mt-1 inline-block text-sm text-muted underline hover:text-ink"
+                className="text-sm text-muted underline hover:text-text"
               >
                 {t("recipes.viewRecipe")}
               </a>
-            </li>
+            </Card>
           ))}
         </ul>
       )}
-    </Card>
+    </div>
   );
 }

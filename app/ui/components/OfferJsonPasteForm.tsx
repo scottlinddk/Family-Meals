@@ -40,51 +40,43 @@ export function OfferJsonPasteForm() {
   }
 
   return (
-    <Card as="section">
-      <h2 className="font-display text-2xl">{t("offers.autoFetchHeading")}</h2>
-      <p className="mt-1 text-sm text-ink-2">{t("offers.autoFetchDescription")}</p>
+    <Card as="section" className="p-4">
+      <h2 className="text-xl">{t("offers.autoFetchHeading")}</h2>
+      <p className="-mt-1 text-sm opacity-80">{t("offers.autoFetchDescription")}</p>
       <Button
         type="button"
         variant="secondary"
-        size="sm"
-        className="mt-2"
+        block
         onClick={() => refreshOffers.mutate()}
         disabled={refreshOffers.isPending}
       >
         {refreshOffers.isPending ? t("offers.fetching") : t("offers.fetchNow")}
       </Button>
       {refreshOffers.isError && (
-        <p className="mt-1 text-sm text-brick">
+        <p className="text-sm text-red-700">
           {t("offers.fetchError")} {refreshOffers.error instanceof Error ? refreshOffers.error.message : ""}
         </p>
       )}
 
-      <h2 className="mt-6 font-display text-2xl">{t("offers.formHeading")}</h2>
-      <p className="mt-1 text-sm text-ink-2">{t("offers.formDescription")}</p>
-      <Textarea
-        value={raw}
-        onChange={(e) => setRaw(e.target.value)}
-        placeholder={PLACEHOLDER}
-        rows={10}
-        className="mt-3"
-      />
-      {error && <p className="mt-1 text-sm text-brick">{error}</p>}
+      <h2 className="mt-4 text-xl">{t("offers.formHeading")}</h2>
+      <p className="-mt-1 text-sm opacity-80">{t("offers.formDescription")}</p>
+      <Textarea value={raw} onChange={(e) => setRaw(e.target.value)} placeholder={PLACEHOLDER} rows={10} />
+      {error && <p className="text-sm text-red-700">{error}</p>}
       <Button
         type="button"
         variant="secondary"
-        size="sm"
-        className="mt-2"
+        block
         onClick={handleImport}
         disabled={importOffers.isPending || raw.trim().length === 0}
       >
         {importOffers.isPending ? t("offers.importing") : t("offers.import")}
       </Button>
 
-      <div className="mt-5">
-        <h3 className="font-mono text-[10.5px] tracking-[0.16em] text-muted uppercase">
+      <div className="mt-3">
+        <h3 className="text-[11px] tracking-wide text-muted uppercase">
           {t("offers.currentlyImported", { count: offers.data?.length ?? 0 })}
         </h3>
-        <ul className="mt-2 max-h-48 space-y-1 overflow-y-auto text-sm text-ink-2">
+        <ul className="mt-1.5 max-h-48 space-y-1 overflow-y-auto text-sm">
           {offers.data?.map((offer, i) => (
             <li key={i}>
               {offer.name} — {offer.price} {offer.currencyCode}

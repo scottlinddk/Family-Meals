@@ -15,10 +15,10 @@ export async function loader({ request }: Route.LoaderArgs) {
 export default function OffersPage() {
   return (
     <main className="mx-auto max-w-2xl p-6">
-      <Link to="/" className="font-mono text-xs tracking-wide text-muted hover:text-ink">
+      <Link to="/" className="text-sm text-accent hover:text-accent-700">
         {t("offers.backToPlan")}
       </Link>
-      <h1 className="mt-3 mb-5 font-display text-4xl">{t("offers.pageTitle")}</h1>
+      <h1 className="mt-3 mb-5 text-3xl">{t("offers.pageTitle")}</h1>
       <OfferJsonPasteForm />
       <RecipeSuggestions />
     </main>

@@ -25,12 +25,12 @@ export function Layout({ children }: { children: ReactNode }) {
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
           rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Lora:ital,wght@0,400;0,500;1,400&display=swap"
         />
         <Meta />
         <Links />
       </head>
-      <body className="min-h-screen bg-canvas font-sans text-ink antialiased">
+      <body className="min-h-screen bg-bg font-body text-text antialiased">
         {children}
         <ScrollRestoration />
         <Scripts />
@@ -67,10 +67,10 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
 
   return (
     <main className="mx-auto max-w-2xl p-8">
-      <h1 className="font-display text-4xl">{message}</h1>
-      <p className="mt-2 text-ink-2">{details}</p>
+      <h1 className="text-4xl">{message}</h1>
+      <p className="mt-2 text-muted">{details}</p>
       {stack && (
-        <pre className="mt-4 w-full overflow-x-auto rounded-md border border-line bg-surface-2 p-4 font-mono text-sm">
+        <pre className="mt-4 w-full overflow-x-auto rounded-md border border-divider bg-surface p-4 font-mono text-sm">
           <code>{stack}</code>
         </pre>
       )}

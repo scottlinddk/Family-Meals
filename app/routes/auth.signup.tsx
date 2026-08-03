@@ -28,21 +28,21 @@ export default function SignupPage() {
   return (
     <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-5 p-8">
       <div>
-        <p className="font-mono text-[11px] tracking-[0.18em] text-muted uppercase">{t("app.title")}</p>
-        <h1 className="mt-2 font-display text-4xl">{t("auth.signup.heading")}</h1>
+        <p className="text-sm text-muted">{t("app.title")}</p>
+        <h1 className="mt-1 text-4xl">{t("auth.signup.heading")}</h1>
       </div>
       <Form method="post" className="flex flex-col gap-3">
         <Input type="email" name="email" required placeholder="dig@example.com" />
         <Input type="password" name="password" required minLength={6} placeholder={t("common.password")} />
-        <Button type="submit" variant="primary" disabled={navigation.state === "submitting"}>
+        <Button type="submit" variant="primary" block disabled={navigation.state === "submitting"}>
           {navigation.state === "submitting" ? t("auth.signup.submitting") : t("auth.signup.submit")}
         </Button>
       </Form>
-      {actionData?.ok && <p className="text-sm text-olive">{t("auth.signup.confirmEmail")}</p>}
-      {actionData?.error && <p className="text-sm text-brick">{actionData.error}</p>}
-      <p className="text-sm text-ink-2">
+      {actionData?.ok && <p className="text-sm text-accent-700">{t("auth.signup.confirmEmail")}</p>}
+      {actionData?.error && <p className="text-sm text-red-700">{actionData.error}</p>}
+      <p className="text-sm opacity-80">
         {t("auth.signup.hasAccount")}{" "}
-        <Link to="/auth/login" className="text-ink underline">
+        <Link to="/auth/login" className="text-accent hover:text-accent-700">
           {t("auth.signup.link")}
         </Link>
       </p>

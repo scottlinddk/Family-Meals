@@ -25,7 +25,7 @@ export default function DayPage({ params }: Route.ComponentProps) {
 
   return (
     <main className="mx-auto max-w-2xl p-6">
-      <Link to={`/weeks/${weekStart}`} className="font-mono text-xs tracking-wide text-muted hover:text-ink">
+      <Link to={`/weeks/${weekStart}`} className="text-sm text-accent hover:text-accent-700">
         {t("day.backToWeek")}
       </Link>
 

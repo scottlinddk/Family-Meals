@@ -2,38 +2,23 @@ import type { InputHTMLAttributes, SelectHTMLAttributes, TextareaHTMLAttributes 
 
 export function FieldLabel({ children, htmlFor }: { children: string; htmlFor?: string }) {
   return (
-    <label
-      htmlFor={htmlFor}
-      className="mb-2 block font-mono text-[10.5px] tracking-[0.16em] text-muted uppercase"
-    >
+    <label htmlFor={htmlFor} className="mb-1 block text-xs text-text/70">
       {children}
     </label>
   );
 }
 
+const fieldClasses =
+  "w-full min-h-9 rounded-md border border-divider bg-transparent px-2.5 py-1.5 text-sm text-text outline-none placeholder:text-muted hover:border-text/45 focus-visible:border-accent";
+
 export function Input({ className = "", ...props }: InputHTMLAttributes<HTMLInputElement>) {
-  return (
-    <input
-      className={`w-full rounded-md border border-line-2 bg-surface px-3.5 py-3 font-sans text-sm text-ink outline-none placeholder:text-muted focus:border-ember focus:ring-3 focus:ring-ember/20 ${className}`}
-      {...props}
-    />
-  );
+  return <input className={`${fieldClasses} ${className}`} {...props} />;
 }
 
 export function Textarea({ className = "", ...props }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return (
-    <textarea
-      className={`w-full rounded-md border border-line-2 bg-surface px-3.5 py-3 font-mono text-xs text-ink outline-none placeholder:text-muted focus:border-ember focus:ring-3 focus:ring-ember/20 ${className}`}
-      {...props}
-    />
-  );
+  return <textarea className={`${fieldClasses} min-h-24 resize-y font-mono text-xs ${className}`} {...props} />;
 }
 
 export function Select({ className = "", ...props }: SelectHTMLAttributes<HTMLSelectElement>) {
-  return (
-    <select
-      className={`w-full rounded-md border border-line-2 bg-surface px-3.5 py-3 font-sans text-sm text-ink outline-none focus:border-ember focus:ring-3 focus:ring-ember/20 ${className}`}
-      {...props}
-    />
-  );
+  return <select className={`${fieldClasses} ${className}`} {...props} />;
 }

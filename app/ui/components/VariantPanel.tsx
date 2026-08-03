@@ -1,14 +1,13 @@
 import type { AdultVariant, ChildVariant } from "~/domain/types";
+import { Card, CardTitle } from "~/ui/components/ui/Card";
 import { t } from "~/i18n/t";
 
 export function AdultVariantPanel({ variant }: { variant: AdultVariant }) {
   return (
-    <div className="rounded-lg border border-line bg-surface p-4">
-      <p className="font-mono text-[10.5px] tracking-[0.14em] text-muted uppercase">
-        {t("variant.adultsHeading")}
-      </p>
+    <Card>
+      <CardTitle>{t("variant.adultsHeading")}</CardTitle>
       {variant.substitutions.length > 0 && (
-        <ul className="mt-2 list-disc pl-4 text-sm text-ink-2">
+        <ul className="m-0 list-disc pl-4.5 text-[13px]">
           {variant.substitutions.map((sub, i) => (
             <li key={i}>
               {sub.originalIngredient} → {sub.substituteIngredient}
@@ -18,23 +17,21 @@ export function AdultVariantPanel({ variant }: { variant: AdultVariant }) {
         </ul>
       )}
       {variant.portioningNotes.length > 0 && (
-        <ul className="mt-2 list-disc pl-4 text-sm text-ink-2">
+        <ul className="m-0 list-disc pl-4.5 text-[13px]">
           {variant.portioningNotes.map((note, i) => (
             <li key={i}>{note}</li>
           ))}
         </ul>
       )}
-    </div>
+    </Card>
   );
 }
 
 export function ChildVariantPanel({ variant }: { variant: ChildVariant }) {
   return (
-    <div className="rounded-lg border border-line bg-surface p-4">
-      <p className="font-mono text-[10.5px] tracking-[0.14em] text-muted uppercase">
-        {t("variant.childHeading")}
-      </p>
-      <ul className="mt-2 list-disc pl-4 text-sm text-ink-2">
+    <Card>
+      <CardTitle>{t("variant.childHeading")}</CardTitle>
+      <ul className="m-0 list-disc pl-4.5 text-[13px]">
         {variant.additions.map((addition, i) => (
           <li key={i}>
             {t("variant.addLabel", { qty: addition.quantity, unit: addition.unit, name: addition.name })}
@@ -42,12 +39,12 @@ export function ChildVariantPanel({ variant }: { variant: ChildVariant }) {
         ))}
       </ul>
       {variant.textureNotes.length > 0 && (
-        <ul className="mt-2 list-disc pl-4 text-sm text-muted">
+        <ul className="m-0 list-disc pl-4.5 text-[13px] opacity-75">
           {variant.textureNotes.map((note, i) => (
             <li key={i}>{note}</li>
           ))}
         </ul>
       )}
-    </div>
+    </Card>
   );
 }
