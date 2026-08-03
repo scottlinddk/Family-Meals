@@ -10,15 +10,16 @@ export async function action({ request }: Route.ActionArgs) {
   }
 
   const headers = new Headers();
-  await requireFamily(request, headers);
 
   try {
+    await requireFamily(request, headers);
     const recipes = await new RemaRecipeSource().fetchRecipes();
     await externalRecipeRepository.replaceAll(recipes);
     return new Response(JSON.stringify({ ok: true, count: recipes.length }), {
       headers: { ...Object.fromEntries(headers), "Content-Type": "application/json" },
     });
   } catch (error) {
+    if (error instanceof Response) throw error;
     return new Response(
       JSON.stringify({
         error: "fetch_failed",
