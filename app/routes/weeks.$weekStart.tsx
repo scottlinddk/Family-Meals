@@ -31,6 +31,9 @@ export default function WeekPage({ params }: Route.ComponentProps) {
         <Link to="/offers" className="text-sm hover:text-accent">
           {t("week.manageOffers")}
         </Link>
+        <Link to="/family" className="text-sm hover:text-accent">
+          {t("week.family")}
+        </Link>
         <SubscribeCalloutModal />
         <Form method="post" action="/auth/logout">
           <button type="submit" className="text-sm hover:text-accent">

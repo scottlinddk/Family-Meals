@@ -13,5 +13,6 @@ export async function loader({ request }: Route.LoaderArgs) {
     await supabase.auth.exchangeCodeForSession(code);
   }
 
-  return redirect("/", { headers });
+  const redirectTo = url.searchParams.get("redirectTo") || "/";
+  return redirect(redirectTo, { headers });
 }
