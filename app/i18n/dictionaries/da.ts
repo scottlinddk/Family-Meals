@@ -86,6 +86,9 @@ export const da = {
   "variant.addLabel": "Tilføj {{qty}}{{unit}} {{name}}",
 
   "family.pageTitle": "Familie",
+  "family.yourFamiliesHeading": "Dine familier",
+  "family.switch": "Skift",
+  "family.active": "Aktiv",
   "family.nameHeading": "Familienavn",
   "family.namePlaceholder": "Familien Jensen",
   "family.saving": "Gemmer...",

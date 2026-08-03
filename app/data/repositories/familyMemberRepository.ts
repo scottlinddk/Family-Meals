@@ -32,10 +32,10 @@ export const familyMemberRepository = {
     return row ? toDomain(row) : undefined;
   },
 
-  /** The first family a user belongs to (this app has each user in exactly one family). */
-  async getFirstMembershipForUser(userId: string): Promise<FamilyMember | undefined> {
-    const [row] = await db.select().from(familyMembers).where(eq(familyMembers.userId, userId));
-    return row ? toDomain(row) : undefined;
+  /** Every family a user belongs to — a user may be a member of several. */
+  async getMembershipsForUser(userId: string): Promise<FamilyMember[]> {
+    const rows = await db.select().from(familyMembers).where(eq(familyMembers.userId, userId));
+    return rows.map(toDomain);
   },
 
   async listByFamily(familyId: string): Promise<FamilyMember[]> {

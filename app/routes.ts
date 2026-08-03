@@ -22,6 +22,8 @@ export default [
   route("api/recipes/refresh", "routes/api.recipes.refresh.tsx"),
   route("api/recipes/suggestions", "routes/api.recipes.suggestions.tsx"),
   route("api/family", "routes/api.family.tsx"),
+  route("api/family/mine", "routes/api.family.mine.tsx"),
+  route("api/family/switch", "routes/api.family.switch.tsx"),
   route("api/family/members", "routes/api.family.members.tsx"),
   route("api/family/invites", "routes/api.family.invites.tsx"),
   route("api/family/invites/:id/revoke", "routes/api.family.invites.$id.revoke.tsx"),

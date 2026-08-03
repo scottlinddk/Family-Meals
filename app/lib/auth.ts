@@ -3,7 +3,7 @@ import type { SetAllCookies } from "@supabase/ssr";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { db } from "~/data/db/client";
 import { familyRepository, familyToDomain, type Family } from "~/data/repositories/familyRepository";
-import { familyMemberRepository } from "~/data/repositories/familyMemberRepository";
+import { familyMemberRepository, type FamilyMember } from "~/data/repositories/familyMemberRepository";
 import { families, familyMembers } from "~/data/db/schema";
 import { generateCalendarToken } from "~/lib/tokens";
 
@@ -46,40 +46,98 @@ export async function requireUser(request: Request, headers: Headers) {
 }
 
 /**
- * Resolves the signed-in user's family and their user id, creating a family
- * (and an "owner" membership row) on first login. A user belongs to exactly
- * one family — either one they created, or one they joined via an invite
- * link — and a family can have several members sharing the same meal plan.
+ * Cookie remembering which of the signed-in user's (possibly several)
+ * families is currently "active" — i.e. which one their meal plan, offers,
+ * and family-settings pages operate on.
+ */
+const ACTIVE_FAMILY_COOKIE = "active_family_id";
+
+function getRequestedFamilyId(request: Request): string | undefined {
+  return parseCookieHeader(request.headers.get("Cookie") ?? "").find(
+    (cookie) => cookie.name === ACTIVE_FAMILY_COOKIE,
+  )?.value;
+}
+
+export function setActiveFamilyCookie(headers: Headers, familyId: string) {
+  headers.append(
+    "Set-Cookie",
+    serializeCookieHeader(ACTIVE_FAMILY_COOKIE, familyId, {
+      path: "/",
+      httpOnly: true,
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 365,
+    }),
+  );
+}
+
+/**
+ * Resolves the signed-in user's *active* family and their user id, creating
+ * a family (and an "owner" membership row) on first login. A user can
+ * belong to several families at once (one they created, plus any they've
+ * joined via invite links); the active one is whichever the
+ * `active_family_id` cookie points at, falling back to their first
+ * membership. A family can have several members sharing the same meal plan.
  * Throws a 401 Response if not signed in.
  */
 export async function requireFamilyMembership(
   request: Request,
   headers: Headers,
-): Promise<{ family: Family; userId: string }> {
+): Promise<{ family: Family; userId: string; memberships: FamilyMember[] }> {
   const user = await requireUser(request, headers);
   if (!user) {
     throw new Response("Unauthorized", { status: 401 });
   }
 
-  const membership = await familyMemberRepository.getFirstMembershipForUser(user.id);
-  if (membership) {
-    const family = await familyRepository.getById(membership.familyId);
-    if (family) return { family, userId: user.id };
+  const memberships = await familyMemberRepository.getMembershipsForUser(user.id);
+  if (memberships.length > 0) {
+    const requestedFamilyId = getRequestedFamilyId(request);
+    const active = memberships.find((m) => m.familyId === requestedFamilyId) ?? memberships[0]!;
+    const family = await familyRepository.getById(active.familyId);
+    if (family) {
+      if (active.familyId !== requestedFamilyId) setActiveFamilyCookie(headers, active.familyId);
+      return { family, userId: user.id, memberships };
+    }
   }
 
-  const family = await db.transaction(async (tx) => {
+  const { family, membership } = await db.transaction(async (tx) => {
     const [familyRow] = await tx
       .insert(families)
       .values({ ownerUserId: user.id, calendarToken: generateCalendarToken() })
       .returning();
-    await tx.insert(familyMembers).values({ familyId: familyRow!.id, userId: user.id, role: "owner" });
-    return familyToDomain(familyRow!);
+    const [memberRow] = await tx
+      .insert(familyMembers)
+      .values({ familyId: familyRow!.id, userId: user.id, role: "owner" })
+      .returning();
+    return { family: familyToDomain(familyRow!), membership: memberRow! };
   });
-  return { family, userId: user.id };
+  setActiveFamilyCookie(headers, family.id);
+  return {
+    family,
+    userId: user.id,
+    memberships: [
+      { id: membership.id, familyId: membership.familyId, userId: membership.userId, role: membership.role, joinedAt: membership.joinedAt.toISOString() },
+    ],
+  };
 }
 
-/** Resolves the signed-in user's family, creating one on first login (see `requireFamilyMembership`). */
+/** Resolves the signed-in user's active family, creating one on first login (see `requireFamilyMembership`). */
 export async function requireFamily(request: Request, headers: Headers): Promise<Family> {
   const { family } = await requireFamilyMembership(request, headers);
   return family;
+}
+
+/**
+ * Switches the signed-in user's active family to `familyId`, provided
+ * they're actually a member of it. Returns false (and leaves the active
+ * family untouched) if they're not.
+ */
+export async function switchActiveFamily(request: Request, headers: Headers, familyId: string): Promise<boolean> {
+  const user = await requireUser(request, headers);
+  if (!user) {
+    throw new Response("Unauthorized", { status: 401 });
+  }
+  const membership = await familyMemberRepository.getMembership(familyId, user.id);
+  if (!membership) return false;
+  setActiveFamilyCookie(headers, familyId);
+  return true;
 }

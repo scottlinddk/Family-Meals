@@ -2,7 +2,15 @@ import { useState } from "react";
 import { Link, redirect } from "react-router";
 import type { Route } from "./+types/family";
 import { requireUser } from "~/lib/auth";
-import { useFamilyMembers, useFamilyInvites, useCreateInvite, useRevokeInvite, useRenameFamily } from "~/ui/hooks/useFamily";
+import {
+  useFamilyMembers,
+  useFamilyInvites,
+  useCreateInvite,
+  useRevokeInvite,
+  useRenameFamily,
+  useMyFamilies,
+  useSwitchFamily,
+} from "~/ui/hooks/useFamily";
 import { useIcsUrl } from "~/ui/hooks/useIcsUrl";
 import { Card, CardTitle } from "~/ui/components/ui/Card";
 import { Button } from "~/ui/components/ui/Button";
@@ -23,6 +31,8 @@ export default function FamilyPage() {
   const createInvite = useCreateInvite();
   const revokeInvite = useRevokeInvite();
   const renameFamily = useRenameFamily();
+  const myFamilies = useMyFamilies();
+  const switchFamily = useSwitchFamily();
   const [email, setEmail] = useState("");
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [name, setName] = useState("");
@@ -33,6 +43,32 @@ export default function FamilyPage() {
         {t("offers.backToPlan")}
       </Link>
       <h1 className="mt-3 mb-5 text-3xl">{t("family.pageTitle")}</h1>
+
+      {(myFamilies.data?.length ?? 0) > 1 && (
+        <Card className="mb-5">
+          <CardTitle>{t("family.yourFamiliesHeading")}</CardTitle>
+          <ul className="m-0 list-none p-0 text-sm">
+            {myFamilies.data!.map((f) => (
+              <li key={f.id} className="flex items-center justify-between border-b border-divider py-1.5 last:border-0">
+                <span>{f.name ?? t("family.namePlaceholder")}</span>
+                {f.active ? (
+                  <span className="text-xs text-muted uppercase">{t("family.active")}</span>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => switchFamily.mutate(f.id)}
+                    disabled={switchFamily.isPending}
+                  >
+                    {t("family.switch")}
+                  </Button>
+                )}
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
 
       <Card className="mb-5">
         <CardTitle>{t("family.nameHeading")}</CardTitle>

@@ -1,11 +1,12 @@
 import type { Route } from "./+types/api.family.invites.$token.accept";
-import { requireUser } from "~/lib/auth";
+import { requireUser, setActiveFamilyCookie } from "~/lib/auth";
 import { familyInviteRepository } from "~/data/repositories/familyInviteRepository";
 import { familyMemberRepository } from "~/data/repositories/familyMemberRepository";
 
 /**
- * POST: accept a family invite by its token. Deliberately does NOT go
- * through `requireFamily` — that would auto-provision a brand new family
+ * POST: accept a family invite by its token, joining that family in
+ * addition to any others the user already belongs to. Deliberately does NOT
+ * go through `requireFamily` — that would auto-provision a brand new family
  * for the invited user before they get a chance to join the inviting one.
  */
 export async function action({ request, params }: Route.ActionArgs) {
@@ -37,13 +38,7 @@ export async function action({ request, params }: Route.ActionArgs) {
     return new Response(JSON.stringify({ error: "This invite has expired." }), { status: 400, headers: jsonHeaders });
   }
 
-  const existingMembership = await familyMemberRepository.getFirstMembershipForUser(user.id);
-  if (existingMembership && existingMembership.familyId !== invite.familyId) {
-    return new Response(JSON.stringify({ error: "You already belong to a family." }), {
-      status: 409,
-      headers: jsonHeaders,
-    });
-  }
+  const existingMembership = await familyMemberRepository.getMembership(invite.familyId, user.id);
 
   if (invite.status === "pending") {
     await familyInviteRepository.markAccepted(invite.id);
@@ -52,5 +47,10 @@ export async function action({ request, params }: Route.ActionArgs) {
     await familyMemberRepository.addMember(invite.familyId, user.id, "member");
   }
 
-  return new Response(JSON.stringify({ familyId: invite.familyId }), { headers: jsonHeaders });
+  // Make the newly-joined family the active one so the user lands there next.
+  setActiveFamilyCookie(headers, invite.familyId);
+
+  return new Response(JSON.stringify({ familyId: invite.familyId }), {
+    headers: { ...Object.fromEntries(headers), "Content-Type": "application/json" },
+  });
 }
