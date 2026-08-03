@@ -88,6 +88,9 @@ export const en: Record<keyof typeof da, string> = {
   "variant.addLabel": "Add {{qty}}{{unit}} {{name}}",
 
   "family.pageTitle": "Family",
+  "family.yourFamiliesHeading": "Your families",
+  "family.switch": "Switch",
+  "family.active": "Active",
   "family.nameHeading": "Family name",
   "family.namePlaceholder": "The Smiths",
   "family.saving": "Saving...",
