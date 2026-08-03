@@ -1,10 +1,10 @@
-import { Form, Link, redirect } from "react-router";
+import { Link, redirect } from "react-router";
 import type { Route } from "./+types/weeks.$weekStart";
 import { requireUser } from "~/lib/auth";
 import { useWeekPlan, useGenerateWeekPlan } from "~/ui/hooks/useWeekPlan";
 import { WeekGrid } from "~/ui/components/WeekGrid";
 import { InfantNote } from "~/ui/components/InfantNote";
-import { SubscribeCalloutModal } from "~/ui/components/SubscribeCalloutModal";
+import { TopNav } from "~/ui/components/TopNav";
 import { Button } from "~/ui/components/ui/Button";
 import { addDays } from "~/lib/time";
 import { t } from "~/i18n/t";
@@ -26,24 +26,7 @@ export default function WeekPage({ params }: Route.ComponentProps) {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <div className="flex items-center gap-4 border-b border-divider px-6 py-3">
-        <span className="mr-auto text-lg font-semibold">{t("app.title")}</span>
-        <Link to="/recipes" className="text-sm hover:text-accent">
-          {t("week.recipes")}
-        </Link>
-        <Link to="/offers" className="text-sm hover:text-accent">
-          {t("week.manageOffers")}
-        </Link>
-        <Link to="/family" className="text-sm hover:text-accent">
-          {t("week.family")}
-        </Link>
-        <SubscribeCalloutModal />
-        <Form method="post" action="/auth/logout">
-          <button type="submit" className="text-sm hover:text-accent">
-            {t("week.signOut")}
-          </button>
-        </Form>
-      </div>
+      <TopNav />
 
       <main className="p-6">
         <div className="mb-4 flex items-center justify-center gap-2">

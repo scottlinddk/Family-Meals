@@ -73,6 +73,7 @@ export const en: Record<keyof typeof da, string> = {
   "recipes.noMatch": "No ingredients currently on offer.",
 
   "week.recipes": "Recipes",
+  "nav.toggleMenu": "Menu",
 
   "recipesPage.title": "All recipes",
   "recipesPage.searchLabel": "Search by name or ingredient",

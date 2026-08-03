@@ -71,6 +71,7 @@ export const da = {
   "recipes.noMatch": "Ingen ingredienser aktuelt på tilbud.",
 
   "week.recipes": "Opskrifter",
+  "nav.toggleMenu": "Menu",
 
   "recipesPage.title": "Alle opskrifter",
   "recipesPage.searchLabel": "Søg på navn eller ingrediens",
