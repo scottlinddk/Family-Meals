@@ -1,6 +1,7 @@
-import type { DayPlan, ExternalRecipe, Offer, RecipeSnapshot, WeekPlan } from "~/domain/types";
+import type { DayPlan, ExternalRecipe, Offer, WeekPlan } from "~/domain/types";
 import { deriveUncuratedAdultVariant, deriveUncuratedChildVariant } from "~/domain/recipes/variantDerivation";
 import { rankExternalRecipesByOffers } from "~/domain/recipes/externalRecipeMatch";
+import { toRecipeSnapshot } from "~/domain/recipes/recipeSnapshot";
 import { addDays } from "~/lib/time";
 
 export const GENERATOR_VERSION = "2.0.0";
@@ -24,24 +25,12 @@ function pickRecipeForDay(
   return notSameAsYesterday ?? rankedRecipes[0]!;
 }
 
-function toRecipeSnapshot(recipe: ExternalRecipe): RecipeSnapshot {
-  return {
-    title: recipe.title,
-    source: "external",
-    url: recipe.url,
-    imageUrl: recipe.imageUrl,
-    tags: [],
-    ingredientLines: recipe.ingredients,
-    instructionLines: recipe.instructions,
-  };
-}
-
-function buildDayPlan(recipe: ExternalRecipe, date: string, now: string): DayPlan {
+function buildDayPlan(recipe: ExternalRecipe, date: string, now: string, offers: Offer[]): DayPlan {
   return {
     date,
     mealSlot: "dinner",
     baseRecipeId: recipe.id,
-    recipeSnapshot: toRecipeSnapshot(recipe),
+    recipeSnapshot: toRecipeSnapshot(recipe, offers),
     adultVariant: deriveUncuratedAdultVariant(recipe.id),
     childVariant: deriveUncuratedChildVariant(recipe.id),
     isManualOverride: false,
@@ -82,7 +71,7 @@ export function generateWeekPlan({
   for (let i = 0; i < 7; i++) {
     const date = addDays(weekStartDate, i);
     const recipe = pickRecipeForDay(rankedRecipes, usedRecipeIds, previousDayRecipeId);
-    days.push(buildDayPlan(recipe, date, now));
+    days.push(buildDayPlan(recipe, date, now, offers));
     usedRecipeIds.add(recipe.id);
     previousDayRecipeId = recipe.id;
   }

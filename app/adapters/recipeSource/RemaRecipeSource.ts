@@ -1,6 +1,7 @@
 import { parse, type HTMLElement } from "node-html-parser";
 import type { ExternalRecipe } from "~/domain/types";
 import type { RecipeSource } from "~/adapters/recipeSource/RecipeSource";
+import { extractRecipeFromJsonLd, parseDurationMinutes } from "~/adapters/recipeSource/recipeJsonLd";
 
 const BASE_URL = "https://madogdrikke.rema1000.dk";
 const LISTING_PATH = "/opskrifter";
@@ -11,14 +12,19 @@ const LISTING_PATH = "/opskrifter";
  * this week's offers against REMA's own suggested meals, separate from the
  * hand-authored `RECIPE_CATALOG` used for the adult/child variant pipeline.
  *
- * NOTE: madogdrikke.rema1000.dk returned 403 from this sandbox's network
- * (bot protection, not a policy block), so the selectors in
- * `extractIngredients`/`extractRecipeLinks` below are written defensively
- * against a few common recipe-markup patterns but have not been verified
- * against the live page. Verify (and adjust selectors if needed) in an
- * environment with normal outbound network access before relying on this
- * in production — `RemaRecipeSource.test.ts` covers the parsing logic
- * against representative fixture HTML in the meantime.
+ * Extraction runs three strategies in order of durability:
+ *   1. schema.org/Recipe JSON-LD (`recipeJsonLd.ts`) — the contract recipe
+ *      sites maintain for Google rich results, so it survives redesigns.
+ *   2. Microdata `itemprop` attributes — the same vocabulary, inline.
+ *   3. CSS class-name / heading heuristics — last resort.
+ *
+ * The heuristics alone previously produced 0-ingredient recipes for the whole
+ * cache (the class names guessed here never matched the live markup), which
+ * silently disabled offer matching, since a recipe with no ingredients can
+ * never overlap an offer. `parseRecipeDetail` therefore merges the
+ * strategies field-by-field rather than picking one wholesale, and
+ * `summarizeExtraction` lets the refresh endpoint report when a scrape comes
+ * back empty instead of reporting success.
  */
 const DETAIL_FETCH_CONCURRENCY = 8;
 
@@ -78,20 +84,56 @@ export function extractRecipeLinks(html: string): string[] {
   return [...hrefs];
 }
 
-/** Parses a single recipe detail page into an ExternalRecipe, or null if it doesn't look like one. */
+/** Reads the text (or `content`) of microdata elements carrying `itemprop`. */
+function microdataValues(root: HTMLElement, prop: string): string[] {
+  return root
+    .querySelectorAll(`[itemprop='${prop}']`)
+    .map((el) => (el.getAttribute("content") ?? el.text).replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+}
+
+/**
+ * Merges the three extraction strategies field-by-field, preferring the more
+ * durable source but letting a weaker one fill a gap the stronger one left
+ * empty (e.g. JSON-LD that omits `description` but has full ingredients).
+ */
 export function parseRecipeDetail(html: string, url: string): ExternalRecipe | null {
   const root = parse(html);
-  const title = root.querySelector("h1")?.text.trim();
+  const jsonLd = extractRecipeFromJsonLd(root);
+
+  const title = jsonLd?.name ?? root.querySelector("h1")?.text.trim();
   if (!title) return null;
 
-  const ingredients = extractIngredients(root);
-  const instructions = extractInstructions(root);
-  const imageUrl = root.querySelector("meta[property='og:image']")?.getAttribute("content");
-  const description = root.querySelector("meta[property='og:description'], meta[name='description']")
-    ?.getAttribute("content")
-    ?.trim();
-  const servings = extractServings(root);
-  const totalTimeMinutes = extractTotalTimeMinutes(root);
+  const ingredients = firstNonEmpty(
+    jsonLd?.ingredients ?? [],
+    microdataValues(root, "recipeIngredient"),
+    extractIngredients(root),
+  );
+
+  const instructions = firstNonEmpty(
+    jsonLd?.instructions ?? [],
+    microdataValues(root, "recipeInstructions"),
+    extractInstructions(root),
+  );
+
+  const imageUrl =
+    jsonLd?.image ??
+    root.querySelector("meta[property='og:image']")?.getAttribute("content") ??
+    undefined;
+
+  const description =
+    jsonLd?.description ??
+    root
+      .querySelector("meta[property='og:description'], meta[name='description']")
+      ?.getAttribute("content")
+      ?.trim();
+
+  const servings = jsonLd?.servings ?? extractServings(root);
+
+  const totalTimeMinutes =
+    jsonLd?.totalTimeMinutes ??
+    parseDurationMinutes(microdataValues(root, "totalTime")[0]) ??
+    extractTotalTimeMinutes(root);
 
   const slugMatch = url.match(/\/opskrifter\/([^/?#]+)/);
   const id = slugMatch?.[1] ?? url;
@@ -106,6 +148,29 @@ export function parseRecipeDetail(html: string, url: string): ExternalRecipe | n
     instructions,
     servings,
     totalTimeMinutes,
+  };
+}
+
+function firstNonEmpty(...candidates: string[][]): string[] {
+  return candidates.find((list) => list.length > 0) ?? [];
+}
+
+export interface ExtractionSummary {
+  total: number;
+  withIngredients: number;
+  withInstructions: number;
+}
+
+/**
+ * Extraction health for a scrape result. The refresh endpoint surfaces this
+ * so a run that stores recipes with no ingredients — which silently breaks
+ * offer matching — is visible instead of reporting a bare success count.
+ */
+export function summarizeExtraction(recipes: ExternalRecipe[]): ExtractionSummary {
+  return {
+    total: recipes.length,
+    withIngredients: recipes.filter((r) => r.ingredients.length > 0).length,
+    withInstructions: recipes.filter((r) => r.instructions.length > 0).length,
   };
 }
 

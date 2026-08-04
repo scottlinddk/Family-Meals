@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { extractRecipeLinks, parseRecipeDetail } from "~/adapters/recipeSource/RemaRecipeSource";
+import {
+  extractRecipeLinks,
+  parseRecipeDetail,
+  summarizeExtraction,
+} from "~/adapters/recipeSource/RemaRecipeSource";
 
 const LISTING_HTML = `
 <html><body>
@@ -91,5 +95,129 @@ describe("parseRecipeDetail", () => {
     ]);
     expect(recipe?.servings).toBe(4);
     expect(recipe?.totalTimeMinutes).toBe(30);
+  });
+});
+
+describe("parseRecipeDetail via schema.org JSON-LD", () => {
+  /**
+   * The primary extraction path. The class-name heuristics above never matched
+   * the live markup, which cached 40 recipes with zero ingredients and
+   * silently disabled offer matching entirely.
+   */
+  const jsonLdPage = (recipeJson: unknown, body = "<h1>Fallback titel</h1>") => `
+    <html><head>
+      <script type="application/ld+json">${JSON.stringify(recipeJson)}</script>
+    </head><body>${body}</body></html>
+  `;
+
+  it("prefers JSON-LD over the DOM heuristics", () => {
+    const html = jsonLdPage({
+      "@context": "https://schema.org",
+      "@type": "Recipe",
+      name: "Kylling i karry",
+      description: "En hurtig karryret.",
+      image: "https://cdn.example/kylling.jpg",
+      recipeIngredient: ["500 g kyllingebryst", "1 dåse kokosmælk"],
+      recipeInstructions: [
+        { "@type": "HowToStep", text: "Skær kyllingen i tern." },
+        { "@type": "HowToStep", text: "Steg den gylden." },
+      ],
+      recipeYield: "4 personer",
+      totalTime: "PT35M",
+    });
+
+    const recipe = parseRecipeDetail(html, "https://madogdrikke.rema1000.dk/opskrifter/kylling-i-karry");
+
+    expect(recipe).toEqual({
+      id: "kylling-i-karry",
+      title: "Kylling i karry",
+      url: "https://madogdrikke.rema1000.dk/opskrifter/kylling-i-karry",
+      imageUrl: "https://cdn.example/kylling.jpg",
+      description: "En hurtig karryret.",
+      ingredients: ["500 g kyllingebryst", "1 dåse kokosmælk"],
+      instructions: ["Skær kyllingen i tern.", "Steg den gylden."],
+      servings: 4,
+      totalTimeMinutes: 35,
+    });
+  });
+
+  it("finds a Recipe nested inside an @graph wrapper", () => {
+    const html = jsonLdPage({
+      "@context": "https://schema.org",
+      "@graph": [
+        { "@type": "WebPage", name: "Ikke opskriften" },
+        { "@type": ["Recipe"], name: "Laks", recipeIngredient: ["2 laksefileter"] },
+      ],
+    });
+
+    const recipe = parseRecipeDetail(html, "https://x/opskrifter/laks");
+    expect(recipe?.title).toBe("Laks");
+    expect(recipe?.ingredients).toEqual(["2 laksefileter"]);
+  });
+
+  it("flattens HowToSection steps and sums prep + cook time", () => {
+    const html = jsonLdPage({
+      "@type": "Recipe",
+      name: "Gryderet",
+      recipeInstructions: [
+        {
+          "@type": "HowToSection",
+          name: "Forberedelse",
+          itemListElement: [{ "@type": "HowToStep", text: "Snit løgene." }],
+        },
+        {
+          "@type": "HowToSection",
+          itemListElement: [{ "@type": "HowToStep", text: "Lad simre en time." }],
+        },
+      ],
+      prepTime: "PT15M",
+      cookTime: "PT1H",
+    });
+
+    const recipe = parseRecipeDetail(html, "https://x/opskrifter/gryderet");
+    expect(recipe?.instructions).toEqual(["Snit løgene.", "Lad simre en time."]);
+    expect(recipe?.totalTimeMinutes).toBe(75);
+  });
+
+  it("falls back to the DOM when JSON-LD is malformed", () => {
+    const html = `
+      <html><head>
+        <script type="application/ld+json">{ not valid json </script>
+      </head><body>
+        <h1>Kylling i karry</h1>
+        <h2>Ingredienser</h2>
+        <ul><li>500 g kyllingebryst</li></ul>
+      </body></html>
+    `;
+
+    const recipe = parseRecipeDetail(html, "https://x/opskrifter/kylling-i-karry");
+    expect(recipe?.title).toBe("Kylling i karry");
+    expect(recipe?.ingredients).toEqual(["500 g kyllingebryst"]);
+  });
+
+  it("reads microdata itemprop when there is no JSON-LD", () => {
+    const html = `
+      <html><body itemscope itemtype="https://schema.org/Recipe">
+        <h1>Frikadeller</h1>
+        <li itemprop="recipeIngredient">500 g hakket svinekød</li>
+        <li itemprop="recipeIngredient">1 løg</li>
+      </body></html>
+    `;
+
+    const recipe = parseRecipeDetail(html, "https://x/opskrifter/frikadeller");
+    expect(recipe?.ingredients).toEqual(["500 g hakket svinekød", "1 løg"]);
+  });
+});
+
+describe("summarizeExtraction", () => {
+  it("counts how many recipes actually yielded ingredients and instructions", () => {
+    const base = { url: "https://x", title: "t" };
+    const summary = summarizeExtraction([
+      { ...base, id: "a", ingredients: ["x"], instructions: ["y"] },
+      { ...base, id: "b", ingredients: ["x"], instructions: [] },
+      { ...base, id: "c", ingredients: [], instructions: [] },
+    ]);
+
+    expect(summary).toEqual({ total: 3, withIngredients: 2, withInstructions: 1 });
   });
 });

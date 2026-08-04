@@ -32,7 +32,7 @@ export default function DayPage({ params }: Route.ComponentProps) {
 
       {day && (
         <div className="mt-4">
-          <DayCard day={day} weekStart={weekStart} dayIndex={dayIndex} />
+          <DayCard day={day} weekStart={weekStart} dayIndex={dayIndex} expanded />
 
           <Card className="mt-4">
             <FieldLabel htmlFor="swap-recipe">{t("day.swapLabel")}</FieldLabel>
