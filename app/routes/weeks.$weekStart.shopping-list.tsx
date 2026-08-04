@@ -6,6 +6,7 @@ import { Card } from "~/ui/components/ui/Card";
 import { Button } from "~/ui/components/ui/Button";
 import { Tag } from "~/ui/components/ui/Tag";
 import { t, type TranslationKey } from "~/i18n/t";
+import { SchemaOutOfDateError } from "~/lib/dbErrors";
 
 /**
  * REMA's department slugs, translated where we know them. An unrecognised
@@ -63,10 +64,17 @@ export default function ShoppingListPage({ params }: Route.ComponentProps) {
       */}
       {list.isError && (
         <div className="flex flex-col items-start gap-2">
-          <p className="m-0 text-sm text-red-700">{t("shoppingList.loadFailed")}</p>
-          <Button type="button" variant="secondary" size="sm" onClick={() => list.refetch()}>
-            {t("shoppingList.retry")}
-          </Button>
+          <p className="m-0 text-sm text-red-700">
+            {list.error instanceof SchemaOutOfDateError
+              ? t("week.schemaOutOfDate")
+              : t("shoppingList.loadFailed")}
+          </p>
+          {/* Retrying a schema mismatch can't help, so only offer it otherwise. */}
+          {!(list.error instanceof SchemaOutOfDateError) && (
+            <Button type="button" variant="secondary" size="sm" onClick={() => list.refetch()}>
+              {t("shoppingList.retry")}
+            </Button>
+          )}
         </div>
       )}
 

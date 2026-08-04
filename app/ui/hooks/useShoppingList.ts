@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useSyncExternalStore } from "react";
 import type { ShoppingList } from "~/domain/planning/shoppingList";
+import { SCHEMA_OUT_OF_DATE_STATUS, SchemaOutOfDateError } from "~/lib/dbErrors";
 
 export function shoppingListQueryKey(weekStart: string) {
   return ["shopping-list", weekStart] as const;
@@ -12,6 +13,7 @@ export function useShoppingList(weekStart: string) {
     queryFn: async (): Promise<ShoppingList | null> => {
       const res = await fetch(`/api/weeks/${weekStart}/shopping-list`);
       if (res.status === 404) return null;
+      if (res.status === SCHEMA_OUT_OF_DATE_STATUS) throw new SchemaOutOfDateError();
       if (!res.ok) throw new Error("Failed to load shopping list");
       return res.json();
     },

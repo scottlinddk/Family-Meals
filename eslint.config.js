@@ -25,6 +25,13 @@ export default [
     },
   },
   {
+    // Build-time Node scripts: no browser, no TypeScript.
+    files: ["scripts/**/*.mjs"],
+    languageOptions: {
+      globals: { ...globals.node, ...globals.es2022 },
+    },
+  },
+  {
     ignores: ["build/**", ".react-router/**", "node_modules/**"],
   },
 ];

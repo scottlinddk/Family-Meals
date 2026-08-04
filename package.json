@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "db:deploy-migrate": "node ./scripts/deployMigrate.mjs"
   },
   "dependencies": {
     "@react-router/node": "^7.9.0",

@@ -123,3 +123,7 @@ how event identity stays stable across edits.
 - `npm run typecheck` — `react-router typegen && tsc --noEmit`
 - `npm test` — Vitest unit tests (domain logic only)
 - `npm run db:generate` / `npm run db:migrate` — Drizzle schema migrations
+- `npm run db:deploy-migrate` — runs `db:migrate` during a Vercel *production*
+  build (skipped on previews and locally), so a release can't go live against a
+  database that hasn't got its schema yet. Needs `DATABASE_URL` exposed to the
+  Build step as a direct connection string (port 5432, not the 6543 pooler).
