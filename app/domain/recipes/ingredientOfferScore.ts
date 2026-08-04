@@ -41,6 +41,26 @@ const STOPWORDS = new Set([
   "rema", "1000", "dansk", "danske", "økologisk", "økologiske", "øko", "frisk",
   "friske", "hel", "hele", "ready", "to", "go", "serve", "mini", "stor", "store",
   "lille", "små", "ny", "nye", "original",
+  /*
+   * Colours, qualities and containers. These are modifiers, not products, and
+   * as standalone tokens they were the single largest source of false matches
+   * against a real offer set: "hvid-" in "Chilensk rød-, hvid- eller rosévin"
+   * matched every "hvidløg" in 184 ingredient lines, "grøn" matched
+   * "grøntsager"/"grønkål"/"grønlandske rejer", and "flaske" (a jar-and-bottle
+   * offer) matched every "1 flaske øl". Dropping them from both sides leaves
+   * the noun that actually names the product.
+   */
+  "hvid", "hvide", "rød", "røde", "grøn", "grønne", "grønt", "gul", "gule", "brun",
+  "brune", "sort", "sorte", "blandet", "blandede", "flydende", "spicy", "sød",
+  "søde", "mager", "magre", "let", "lette", "kold", "kolde", "varm", "varme",
+  "fin", "fint", "fine", "grov", "groft", "grove",
+  "flaske", "flasker", "krukke", "potte", "spand", "rulle",
+  // Non-food that collides with a food word: a "shampoo eller balsam" offer
+  // matched every "balsamico"/"balsamicoeddike" line. Nothing cooks with
+  // conditioner, so the word only ever costs precision here.
+  "balsam",
+  // "…, kan udelades" — an optionality note, not part of the product.
+  "kan", "udelades",
   // Function words.
   "og", "eller", "med", "uden", "i", "til", "af", "på", "for", "samt", "en", "et",
   "den", "det", "de", "der", "som", "fra",
@@ -92,6 +112,42 @@ export function productTokens(text: string): string[] {
 }
 
 /**
+ * Heads that turn a raw ingredient into a different product. A compound whose
+ * *tail* is one of these is not the thing its prefix names: a jar of
+ * kyllinge|bouillon is not chicken, bacon|postej is not bacon, smør|e|ost is
+ * not butter, and an ingefær|shot is not ginger. Buying the offer would not
+ * get you the ingredient.
+ *
+ * Derived from the mismatches an actual offer set produced — "smør" matched
+ * "smøreost" on 117 ingredient lines and "grøntsagsbouillon" matched the
+ * "35% grønt" in a mince offer on 52 — rather than from a general theory of
+ * Danish compounds, which is also why it stays short.
+ */
+const DERIVED_PRODUCT_HEADS = [
+  "bouillon", "bouillion", "fond", "terning", "pulver", "krydderi",
+  "postej", "paté", "pate", "pesto", "ost", "shot", "saft", "snacks",
+  "sauce", "sauc", "mel", "sukker", "sukk", "bog", "stativ", "glas",
+  // "lage" (brine, as in "rejer i lage") is not "lagereddike".
+  "eddike", "eddik",
+];
+
+/**
+ * True when `longer` is `shorter` plus one of the heads above.
+ *
+ * Danish compounds insert a joining letter ("smør·e·ost", "kylling·e·fond",
+ * "grøntsag·s·bouillon"), so the remainder is tested both as-is and with a
+ * leading `e`/`s` removed — as-is matters, because stripping it blindly turns
+ * "ingefær|shot" into "hot" and lets the ginger shot through.
+ */
+function isDerivedProduct(shorter: string, longer: string): boolean {
+  const remainder = longer.slice(shorter.length);
+  const candidates = [remainder, remainder.replace(/^[es]/, "")];
+  return candidates.some((candidate) =>
+    DERIVED_PRODUCT_HEADS.some((head) => candidate === head || candidate.endsWith(head)),
+  );
+}
+
+/**
  * Compares two product tokens, allowing for Danish compound nouns.
  *
  * Compounds are head-final ("kyllinge|bryst"), so the *leading* element names
@@ -105,12 +161,24 @@ function tokensMatch(a: string, b: string): boolean {
   const [shorter, longer] = a.length <= b.length ? [a, b] : [b, a];
 
   // Compound prefix: "kyllingebrystfilet" starts with "kyllingebryst".
-  if (shorter.length >= 4 && longer.startsWith(shorter)) return true;
+  if (shorter.length >= 4 && longer.startsWith(shorter) && !isDerivedProduct(shorter, longer)) return true;
 
-  // Shared lead for longer words absorbs irregular plurals the stemmer
-  // misses ("kartofler" / "kartoffel") without matching on short stems.
-  if (shorter.length >= 6 && longer.slice(0, 5) === shorter.slice(0, 5)) return true;
-
+  /*
+   * There used to be a third rule: any two tokens of 6+ characters sharing
+   * their first five matched, to absorb stem alternations like
+   * "kartofler"/"kartoffel". Measured against a real offer set it produced 115
+   * distinct pairs, and most were two unrelated products that happen to share
+   * a compound modifier: "spids"kommen with "spids"kål, "sylte"de asier with a
+   * "sylte"bog, "frisk"revet parmesan with "frisk"ost, "fuldkorns"tortilla
+   * with "fuldkorns"pasta. The alternation it was for barely occurs — both
+   * sides normally say "kartofler", which the stemmer already equalizes — so
+   * shared leads are no longer accepted at all.
+   *
+   * What that costs: "kyllingebryst" no longer reaches "kyllingekød" directly,
+   * since neither is a prefix of the other. In practice REMA's bundled offer
+   * names spell the family out anyway ("… eller hel kylling"), which the
+   * prefix rule above matches.
+   */
   return false;
 }
 

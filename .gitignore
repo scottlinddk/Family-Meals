@@ -6,3 +6,7 @@ build/
 .env.local
 *.log
 .DS_Store
+
+# Scrape output from scripts/scrapeRemaRecipes.ts / fetchRemaOffers.ts (CI commits it
+# on demand; it is a transfer artifact, not source).
+scrape-output/

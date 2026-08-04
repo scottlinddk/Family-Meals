@@ -115,6 +115,26 @@ via `scripts/scrapeRemaRecipes.ts`, printing coverage and committing/
 uploading the scraped JSON. Run that after changing the crawler — it fails
 if a theme comes back short of its own stated total.
 
+### Matching recipes to offers
+
+`ingredientOfferScore.ts` reduces both an ingredient line and an offer name to
+product tokens and compares them with Danish compound nouns in mind. Its rules
+are now tuned against real data — the 350 scraped dinner recipes against a
+week's 91 REMA offers — rather than against invented examples, and
+`ingredientOfferScore.test.ts` pins the wrong matches that measurement found:
+"hvid-" in a wine offer matching every *hvidløg*, a jar-and-bottle offer
+matching every "1 flaske øl", *spidskommen* matching *spidskål*, and raw
+ingredients matching processed versions of themselves (butter → *smøreost*,
+chicken → *kyllingebouillon*, bacon → *baconpostej*).
+
+It is still text matching, so some imprecision remains in both directions:
+*bønnespir* matches an offer for *bønner*, and an offer for "REMA 1000
+Frilandsgris" does not reach an ingredient line saying *grisekød*. The durable
+fix is already in reach — REMA's listing payload links every recipe ingredient
+to a specific product (`digitalProduct`, with `is_campaign`/`is_advertised`
+price flags), so ingredient-to-offer could become an exact product-id join
+instead of a string comparison. Nothing in the app uses that field yet.
+
 ## Locale
 
 Danish (`da`) is the app's default and only fully-translated locale — see
