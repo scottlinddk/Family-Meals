@@ -1,13 +1,21 @@
-import { type RouteConfig, index, route } from "@react-router/dev/routes";
+import { type RouteConfig, index, layout, route } from "@react-router/dev/routes";
 
 export default [
   index("routes/_index.tsx"),
-  route("weeks/:weekStart", "routes/weeks.$weekStart.tsx"),
-  route("weeks/:weekStart/day/:day", "routes/weeks.$weekStart.day.$day.tsx"),
-  route("offers", "routes/offers.tsx"),
-  route("recipes", "routes/recipes.tsx"),
-  route("recipes/:id", "routes/recipes.$id.tsx"),
-  route("family", "routes/family.tsx"),
+
+  // Every signed-in page shares one layout: the auth guard plus the top nav
+  // (which collapses into the mobile menu below `sm`) and the content column.
+  layout("routes/_app.tsx", [
+    route("weeks/:weekStart", "routes/weeks.$weekStart.tsx"),
+    route("weeks/:weekStart/day/:day", "routes/weeks.$weekStart.day.$day.tsx"),
+    route("weeks/:weekStart/shopping-list", "routes/weeks.$weekStart.shopping-list.tsx"),
+    route("offers", "routes/offers.tsx"),
+    route("recipes", "routes/recipes.tsx"),
+    route("recipes/:id", "routes/recipes.$id.tsx"),
+    route("family", "routes/family.tsx"),
+  ]),
+
+  // Reachable signed out — the invite target renders its own sign-in prompt.
   route("invite/:token", "routes/invite.$token.tsx"),
 
   // Live ICS subscription feed — a resource route (no HTML), authenticated
@@ -19,6 +27,7 @@ export default [
   route("api/weeks/:weekStart/day/:day", "routes/api.weeks.$weekStart.day.$day.tsx"),
   route("api/weeks/:weekStart/regenerate-day", "routes/api.weeks.$weekStart.regenerate-day.tsx"),
   route("api/weeks/:weekStart/swap-day", "routes/api.weeks.$weekStart.swap-day.tsx"),
+  route("api/weeks/:weekStart/shopping-list", "routes/api.weeks.$weekStart.shopping-list.tsx"),
   route("api/offers", "routes/api.offers.tsx"),
   route("api/offers/refresh", "routes/api.offers.refresh.tsx"),
   route("api/recipes", "routes/api.recipes.tsx"),

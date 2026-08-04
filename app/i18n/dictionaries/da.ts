@@ -34,10 +34,31 @@ export const da = {
   "week.generate": "Generér ugeplan",
   "week.regeneratingWhole": "Genererer igen...",
   "week.regenerateWhole": "Genskab hele ugen",
+  "week.generateFailed": "Ugeplanen kunne ikke laves. Prøv igen.",
+  "week.noRecipes": "Der er ingen opskrifter hentet endnu, så der er intet at planlægge med.",
+  "week.noRecipesAction": "Hent opskrifter",
+  "week.today": "I dag",
+
+  "shoppingList.title": "Indkøbsliste",
+  "shoppingList.open": "Se indkøbsliste →",
+  "shoppingList.noPlan": "Lav en ugeplan først — så samler vi indkøbslisten herfra.",
+  "shoppingList.empty": "Ugens opskrifter har ingen ingrediensliste, så der er intet at samle.",
+  "shoppingList.summary": "{{remaining}} af {{total}} tilbage · {{onOffer}} på tilbud",
+  "shoppingList.clearChecked": "Nulstil afkrydsning",
+  "shoppingList.dept.fruitAndVeg": "Frugt & grønt",
+  "shoppingList.dept.breadAndBakery": "Brød & bageri",
+  "shoppingList.dept.meatAndFish": "Kød & fisk",
+  "shoppingList.dept.dairyAndEggs": "Mejeri & æg",
+  "shoppingList.dept.cooling": "Køl",
+  "shoppingList.dept.frozen": "Frost",
+  "shoppingList.dept.dryGoods": "Kolonial",
+  "shoppingList.dept.drinks": "Drikkevarer",
+  "shoppingList.dept.other": "Øvrige",
 
   "day.backToWeek": "← Tilbage til ugen",
   "day.swapLabel": "Skift til en anden opskrift",
   "day.choosePlaceholder": "Vælg en opskrift…",
+  "day.notFound": "Der er ingen ret planlagt til denne dag.",
 
   "dayCard.regenerating": "Genererer...",
   "dayCard.regenerateThisDay": "Genskab denne dag",
@@ -45,7 +66,6 @@ export const da = {
   "infant.label": "6 måneder gammel",
 
   "offers.pageTitle": "Ugens tilbud",
-  "offers.backToPlan": "← Tilbage til planen",
   "offers.formHeading": "Ugens tilbud fra REMA 1000",
   "offers.formDescription":
     "Indsæt tilbuds-JSON i referenceformatet (samme felter som REMA's egne lister bruger). Dette erstatter det aktuelt importerede tilbudssæt.",
@@ -58,6 +78,10 @@ export const da = {
   "offers.fetching": "Henter...",
   "offers.fetchNow": "Hent tilbud nu",
   "offers.fetchError": "Kunne ikke hente tilbud automatisk.",
+  "offers.snapshotManual": "Indsat manuelt {{date}}.",
+  "offers.snapshotAuto": "Hentet fra etilbudsavis.dk {{date}}.",
+  "offers.snapshotValidity": "Gælder {{from}}–{{to}}.",
+  "offers.snapshotExpired": "{{count}} af tilbuddene er udløbet og bruges ikke længere.",
 
   "recipes.suggestionsHeading": "Bedste måltider ud fra ugens tilbud",
   "recipes.suggestionsDescription":
@@ -76,7 +100,10 @@ export const da = {
     "{{total}} opskrifter hentet, men ingen havde en læsbar ingrediensliste, så tilbud kan ikke rangere dem.",
 
   "week.recipes": "Opskrifter",
-  "nav.toggleMenu": "Menu",
+  "nav.plan": "Ugeplan",
+  "nav.primary": "Hovedmenu",
+  "nav.openMenu": "Åbn menu",
+  "nav.closeMenu": "Luk menu",
 
   "recipesPage.title": "Alle opskrifter",
   "recipesPage.searchLabel": "Søg på navn eller ingrediens",
@@ -110,6 +137,8 @@ export const da = {
   "calendar.refreshNote":
     "Kalenderapps opdaterer abonnementer efter deres egen tidsplan (ofte højst nogle få gange om dagen) — ændringer her vil altid være korrekte på dette link, men din kalenderapp kan være et stykke tid om at hente dem.",
   "calendar.close": "Luk",
+  "calendar.copy": "Kopiér",
+  "calendar.copied": "Kopieret",
 
   "variant.adultsHeading": "Voksne (kaloriereduceret)",
   "variant.childHeading": "Mindre barn (grundret + kalorietæt tilføjelse)",

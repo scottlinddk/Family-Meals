@@ -4,6 +4,7 @@ import { weekPlanRepository } from "~/data/repositories/weekPlanRepository";
 import { externalRecipeRepository } from "~/data/repositories/externalRecipeRepository";
 import { offerRepository } from "~/data/repositories/offerRepository";
 import { swapDayRecipe } from "~/domain/planning/regenerateDay";
+import { weekWindow } from "~/lib/weekWindow";
 
 /** POST { dayIndex: number, recipeId: string }: swap a day to a specific recipe the user chose. */
 export async function action({ request, params }: Route.ActionArgs) {
@@ -25,7 +26,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 
   const [externalRecipes, offers] = await Promise.all([
     externalRecipeRepository.listAll(),
-    offerRepository.listCurrentOffers(),
+    offerRepository.listOffersValidDuring(family.id, ...weekWindow(params.weekStart!)),
   ]);
   const updated = swapDayRecipe(week, dayIndex, recipeId, externalRecipes, offers);
   const saved = await weekPlanRepository.saveWeekPlan(updated);

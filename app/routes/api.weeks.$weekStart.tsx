@@ -4,6 +4,7 @@ import { weekPlanRepository } from "~/data/repositories/weekPlanRepository";
 import { offerRepository } from "~/data/repositories/offerRepository";
 import { externalRecipeRepository } from "~/data/repositories/externalRecipeRepository";
 import { generateWeekPlan } from "~/domain/planning/generateWeekPlan";
+import { weekWindow } from "~/lib/weekWindow";
 
 /** GET: fetch the week plan (404 if not generated yet). */
 export async function loader({ request, params }: Route.LoaderArgs) {
@@ -23,7 +24,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   });
 }
 
-/** POST: generate (or regenerate) the whole week from the current offers. */
+/** POST: generate (or regenerate) the whole week from the offers valid during it. */
 export async function action({ request, params }: Route.ActionArgs) {
   if (request.method !== "POST") {
     return new Response("Method not allowed", { status: 405 });
@@ -31,21 +32,33 @@ export async function action({ request, params }: Route.ActionArgs) {
 
   const headers = new Headers();
   const family = await requireFamily(request, headers);
-  const [offers, externalRecipes] = await Promise.all([
-    offerRepository.listCurrentOffers(),
+  const weekStart = params.weekStart!;
+  const jsonHeaders = { ...Object.fromEntries(headers), "Content-Type": "application/json" };
+
+  // Rank against the offers that apply during the week being planned, not
+  // whatever happens to be valid the moment the button is clicked.
+  const [snapshot, offers, externalRecipes, recentRecipeIds, previousWeek] = await Promise.all([
+    offerRepository.getLatestSnapshot(family.id),
+    offerRepository.listOffersValidDuring(family.id, ...weekWindow(weekStart)),
     externalRecipeRepository.listAll(),
+    weekPlanRepository.listRecentRecipeIds(family.id, weekStart),
+    weekPlanRepository.getWeekPlan(family.id, weekStart),
   ]);
+
+  if (externalRecipes.length === 0) {
+    return new Response(JSON.stringify({ error: "no_recipes" }), { status: 409, headers: jsonHeaders });
+  }
 
   const week = generateWeekPlan({
     familyId: family.id,
-    weekStartDate: params.weekStart!,
+    weekStartDate: weekStart,
     offers,
-    offerSnapshotId: new Date().toISOString(),
+    offerSnapshotId: offers.length > 0 ? (snapshot?.id ?? null) : null,
     externalRecipes,
+    recentRecipeIds,
+    previousWeek,
   });
 
   const saved = await weekPlanRepository.saveWeekPlan(week);
-  return new Response(JSON.stringify(saved), {
-    headers: { ...Object.fromEntries(headers), "Content-Type": "application/json" },
-  });
+  return new Response(JSON.stringify(saved), { headers: jsonHeaders });
 }

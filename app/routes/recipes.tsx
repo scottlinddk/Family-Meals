@@ -1,19 +1,10 @@
-import { Link, redirect, useSearchParams } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { useMemo } from "react";
-import type { Route } from "./+types/recipes";
-import { requireUser } from "~/lib/auth";
 import { useExternalRecipes } from "~/ui/hooks/useExternalRecipes";
 import { Card, CardTitle } from "~/ui/components/ui/Card";
 import { FieldLabel, Input } from "~/ui/components/ui/Input";
 import { Button } from "~/ui/components/ui/Button";
 import { t } from "~/i18n/t";
-
-export async function loader({ request }: Route.LoaderArgs) {
-  const headers = new Headers();
-  const user = await requireUser(request, headers);
-  if (!user) return redirect("/auth/login", { headers });
-  return null;
-}
 
 export default function RecipesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -32,16 +23,14 @@ export default function RecipesPage() {
   }, [recipes.data, q]);
 
   return (
-    <main className="mx-auto max-w-2xl p-6">
-      <Link to="/" className="text-sm text-accent hover:text-accent-700">
-        {t("offers.backToPlan")}
-      </Link>
-      <h1 className="mt-3 mb-5 text-3xl">{t("recipesPage.title")}</h1>
+    <>
+      <h1 className="mb-5 text-3xl">{t("recipesPage.title")}</h1>
 
       <div className="mb-4">
         <FieldLabel htmlFor="recipe-search">{t("recipesPage.searchLabel")}</FieldLabel>
         <Input
           id="recipe-search"
+          type="search"
           value={q}
           onChange={(e) => {
             const value = e.target.value;
@@ -87,6 +76,9 @@ export default function RecipesPage() {
                     <img
                       src={recipe.imageUrl}
                       alt=""
+                      width={64}
+                      height={64}
+                      loading="lazy"
                       className="h-16 w-16 shrink-0 rounded-md object-cover"
                     />
                   )}
@@ -107,6 +99,6 @@ export default function RecipesPage() {
           </li>
         ))}
       </ul>
-    </main>
+    </>
   );
 }

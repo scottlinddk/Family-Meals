@@ -145,7 +145,8 @@ export interface WeekPlan {
   weekStartDate: string;
   days: DayPlan[];
   generatedFrom: {
-    offerSnapshotId: string;
+    /** Id of the offer import this plan was ranked against; null if there were none. */
+    offerSnapshotId: string | null;
     generatorVersion: string;
   };
   createdAt: string;

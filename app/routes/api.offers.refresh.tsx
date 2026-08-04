@@ -10,11 +10,11 @@ export async function action({ request }: Route.ActionArgs) {
   }
 
   const headers = new Headers();
-  await requireFamily(request, headers);
+  const family = await requireFamily(request, headers);
 
   try {
     const offers = await new EtilbudsavisOfferSource().fetchCurrentOffers();
-    await offerRepository.replaceCurrentOffers(offers);
+    await offerRepository.replaceCurrentOffers(family.id, offers, "etilbudsavis");
     return new Response(JSON.stringify({ ok: true, count: offers.length }), {
       headers: { ...Object.fromEntries(headers), "Content-Type": "application/json" },
     });

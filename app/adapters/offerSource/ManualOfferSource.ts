@@ -3,7 +3,7 @@ import type { OfferSource } from "~/adapters/offerSource/OfferSource";
 
 /** Minimal shape this adapter needs from the persistence layer. */
 export interface OfferReader {
-  listCurrentOffers(): Promise<Offer[]>;
+  listCurrentOffers(familyId: string): Promise<Offer[]>;
 }
 
 /**
@@ -13,9 +13,12 @@ export interface OfferReader {
  * scraping, no third-party ToS risk.
  */
 export class ManualOfferSource implements OfferSource {
-  constructor(private readonly reader: OfferReader) {}
+  constructor(
+    private readonly reader: OfferReader,
+    private readonly familyId: string,
+  ) {}
 
   async fetchCurrentOffers(): Promise<Offer[]> {
-    return this.reader.listCurrentOffers();
+    return this.reader.listCurrentOffers(this.familyId);
   }
 }

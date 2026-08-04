@@ -16,6 +16,7 @@ export function useRegenerateDay(weekStart: string) {
     },
     onSuccess: (week) => {
       queryClient.setQueryData(weekPlanQueryKey(weekStart), week);
+      queryClient.invalidateQueries({ queryKey: ["shopping-list", weekStart] });
     },
   });
 }
@@ -34,6 +35,7 @@ export function useSwapDayRecipe(weekStart: string) {
     },
     onSuccess: (week) => {
       queryClient.setQueryData(weekPlanQueryKey(weekStart), week);
+      queryClient.invalidateQueries({ queryKey: ["shopping-list", weekStart] });
     },
   });
 }

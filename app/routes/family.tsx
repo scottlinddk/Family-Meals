@@ -1,7 +1,4 @@
 import { useState } from "react";
-import { Link, redirect } from "react-router";
-import type { Route } from "./+types/family";
-import { requireUser } from "~/lib/auth";
 import {
   useFamilyMembers,
   useFamilyInvites,
@@ -17,13 +14,6 @@ import { Button } from "~/ui/components/ui/Button";
 import { Input } from "~/ui/components/ui/Input";
 import { t } from "~/i18n/t";
 
-export async function loader({ request }: Route.LoaderArgs) {
-  const headers = new Headers();
-  const user = await requireUser(request, headers);
-  if (!user) return redirect("/auth/login", { headers });
-  return null;
-}
-
 export default function FamilyPage() {
   const family = useIcsUrl();
   const members = useFamilyMembers();
@@ -38,11 +28,8 @@ export default function FamilyPage() {
   const [name, setName] = useState("");
 
   return (
-    <main className="mx-auto max-w-2xl p-6">
-      <Link to="/" className="text-sm text-accent hover:text-accent-700">
-        {t("offers.backToPlan")}
-      </Link>
-      <h1 className="mt-3 mb-5 text-3xl">{t("family.pageTitle")}</h1>
+    <>
+      <h1 className="mb-5 text-3xl">{t("family.pageTitle")}</h1>
 
       {(myFamilies.data?.length ?? 0) > 1 && (
         <Card className="mb-5">
@@ -73,7 +60,7 @@ export default function FamilyPage() {
       <Card className="mb-5">
         <CardTitle>{t("family.nameHeading")}</CardTitle>
         <form
-          className="flex gap-2"
+          className="flex flex-col gap-2 sm:flex-row"
           onSubmit={(e) => {
             e.preventDefault();
             renameFamily.mutate(name);
@@ -107,7 +94,7 @@ export default function FamilyPage() {
         <CardTitle>{t("family.inviteHeading")}</CardTitle>
         <p className="m-0 text-sm opacity-80">{t("family.inviteDescription")}</p>
         <form
-          className="flex gap-2"
+          className="flex flex-col gap-2 sm:flex-row"
           onSubmit={(e) => {
             e.preventDefault();
             createInvite.mutate(email, {
@@ -153,6 +140,6 @@ export default function FamilyPage() {
           </ul>
         )}
       </Card>
-    </main>
+    </>
   );
 }

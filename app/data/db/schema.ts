@@ -2,6 +2,7 @@ import {
   boolean,
   date,
   doublePrecision,
+  index,
   integer,
   jsonb,
   pgEnum,
@@ -46,7 +47,11 @@ export const familyMembers = pgTable(
     role: familyMemberRole("role").notNull().default("member"),
     joinedAt: timestamp("joined_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [unique("family_members_family_id_user_id_unique").on(table.familyId, table.userId)],
+  (table) => [
+    unique("family_members_family_id_user_id_unique").on(table.familyId, table.userId),
+    // Every authenticated request resolves the active family from the user id.
+    index("family_members_user_id_idx").on(table.userId),
+  ],
 );
 
 export const familyInviteStatus = pgEnum("family_invite_status", ["pending", "accepted", "revoked"]);
@@ -70,22 +75,58 @@ export const familyInvites = pgTable("family_invites", {
   acceptedAt: timestamp("accepted_at", { withTimezone: true }),
 });
 
-/** Manually entered/imported weekly offers (the "safe default" OfferSource). */
-export const offers = pgTable("offers", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  name: text("name").notNull(),
-  unitSizeFrom: doublePrecision("unit_size_from").notNull(),
-  unitSizeTo: doublePrecision("unit_size_to").notNull(),
-  unitSymbol: text("unit_symbol").notNull(),
-  price: doublePrecision("price").notNull(),
-  currencyCode: text("currency_code").notNull(),
-  unitPrice: doublePrecision("unit_price").notNull(),
-  baseUnit: text("base_unit").notNull(),
-  departmentSlug: text("department_slug").notNull(),
-  validFrom: timestamp("valid_from", { withTimezone: true }).notNull(),
-  validUntil: timestamp("valid_until", { withTimezone: true }).notNull(),
-  importedAt: timestamp("imported_at", { withTimezone: true }).notNull().defaultNow(),
-});
+export const offerSnapshotSource = pgEnum("offer_snapshot_source", ["manual", "etilbudsavis"]);
+
+/**
+ * One offer import, owned by the family that made it.
+ *
+ * Offers are family-scoped rather than global: which REMA offers apply
+ * depends on the family's store and when they imported, and a shared table
+ * meant one family's import replaced everyone else's. Snapshots are also
+ * kept rather than overwritten, so `week_plans.offer_snapshot_id` points at
+ * the exact offer set a plan was generated from and stays resolvable after
+ * the next import.
+ */
+export const offerSnapshots = pgTable(
+  "offer_snapshots",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    familyId: uuid("family_id")
+      .notNull()
+      .references(() => families.id, { onDelete: "cascade" }),
+    source: offerSnapshotSource("source").notNull(),
+    offerCount: integer("offer_count").notNull(),
+    /** Earliest `validFrom` / latest `validUntil` across the snapshot's offers. */
+    validFrom: timestamp("valid_from", { withTimezone: true }),
+    validUntil: timestamp("valid_until", { withTimezone: true }),
+    importedAt: timestamp("imported_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("offer_snapshots_family_id_imported_at_idx").on(table.familyId, table.importedAt)],
+);
+
+/** Weekly offers belonging to one import (see `offerSnapshots`). */
+export const offers = pgTable(
+  "offers",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    snapshotId: uuid("snapshot_id")
+      .notNull()
+      .references(() => offerSnapshots.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    unitSizeFrom: doublePrecision("unit_size_from").notNull(),
+    unitSizeTo: doublePrecision("unit_size_to").notNull(),
+    unitSymbol: text("unit_symbol").notNull(),
+    price: doublePrecision("price").notNull(),
+    currencyCode: text("currency_code").notNull(),
+    unitPrice: doublePrecision("unit_price").notNull(),
+    baseUnit: text("base_unit").notNull(),
+    departmentSlug: text("department_slug").notNull(),
+    validFrom: timestamp("valid_from", { withTimezone: true }).notNull(),
+    validUntil: timestamp("valid_until", { withTimezone: true }).notNull(),
+    importedAt: timestamp("imported_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("offers_snapshot_id_idx").on(table.snapshotId)],
+);
 
 /**
  * REMA 1000's own published recipes (madogdrikke.rema1000.dk/opskrifter),
@@ -107,17 +148,33 @@ export const externalRecipes = pgTable("external_recipes", {
   fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-export const weekPlans = pgTable("week_plans", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  familyId: uuid("family_id")
-    .notNull()
-    .references(() => families.id),
-  weekStartDate: date("week_start_date").notNull(),
-  offerSnapshotId: text("offer_snapshot_id").notNull(),
-  generatorVersion: text("generator_version").notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
+export const weekPlans = pgTable(
+  "week_plans",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    familyId: uuid("family_id")
+      .notNull()
+      .references(() => families.id, { onDelete: "cascade" }),
+    weekStartDate: date("week_start_date").notNull(),
+    /**
+     * The offer import this plan was generated from — null when the family
+     * had no offers at the time, so the plan is honestly marked as not
+     * offer-aware rather than claiming a snapshot that never existed.
+     */
+    offerSnapshotId: uuid("offer_snapshot_id").references(() => offerSnapshots.id, {
+      onDelete: "set null",
+    }),
+    generatorVersion: text("generator_version").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    // One plan per family per week — two fast clicks on "Generate" used to be
+    // able to create a second row that `getWeekPlan` would then pick between
+    // arbitrarily.
+    unique("week_plans_family_id_week_start_date_unique").on(table.familyId, table.weekStartDate),
+  ],
+);
 
 /**
  * One row per planned dinner. `adultVariant`/`childVariant` are stored as
@@ -125,20 +182,24 @@ export const weekPlans = pgTable("week_plans", {
  * edits are self-contained per day and don't depend on the recipe catalog
  * having stayed unchanged since generation.
  */
-export const dayPlans = pgTable("day_plans", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  weekPlanId: uuid("week_plan_id")
-    .notNull()
-    .references(() => weekPlans.id, { onDelete: "cascade" }),
-  date: date("date").notNull(),
-  mealSlot: text("meal_slot").notNull().default("dinner"),
-  baseRecipeId: text("base_recipe_id").notNull(),
-  /** Denormalized display data for baseRecipeId (title/source/url/tags/ingredients), matching RecipeSnapshot. */
-  recipeSnapshot: jsonb("recipe_snapshot").notNull(),
-  adultVariant: jsonb("adult_variant").notNull(),
-  childVariant: jsonb("child_variant").notNull(),
-  isManualOverride: boolean("is_manual_override").notNull().default(false),
-  editedAt: timestamp("edited_at", { withTimezone: true }).notNull().defaultNow(),
-  /** Bumped on every write; drives ICS SEQUENCE for this day's VEVENT. */
-  sequence: integer("sequence").notNull().default(0),
-});
+export const dayPlans = pgTable(
+  "day_plans",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    weekPlanId: uuid("week_plan_id")
+      .notNull()
+      .references(() => weekPlans.id, { onDelete: "cascade" }),
+    date: date("date").notNull(),
+    mealSlot: text("meal_slot").notNull().default("dinner"),
+    baseRecipeId: text("base_recipe_id").notNull(),
+    /** Denormalized display data for baseRecipeId (title/source/url/tags/ingredients), matching RecipeSnapshot. */
+    recipeSnapshot: jsonb("recipe_snapshot").notNull(),
+    adultVariant: jsonb("adult_variant").notNull(),
+    childVariant: jsonb("child_variant").notNull(),
+    isManualOverride: boolean("is_manual_override").notNull().default(false),
+    editedAt: timestamp("edited_at", { withTimezone: true }).notNull().defaultNow(),
+    /** Bumped on every write; drives ICS SEQUENCE for this day's VEVENT. */
+    sequence: integer("sequence").notNull().default(0),
+  },
+  (table) => [index("day_plans_week_plan_id_idx").on(table.weekPlanId)],
+);

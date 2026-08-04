@@ -36,10 +36,31 @@ export const en: Record<keyof typeof da, string> = {
   "week.generate": "Generate week plan",
   "week.regeneratingWhole": "Regenerating...",
   "week.regenerateWhole": "Regenerate whole week",
+  "week.generateFailed": "The week plan couldn't be generated. Try again.",
+  "week.noRecipes": "No recipes have been fetched yet, so there's nothing to plan with.",
+  "week.noRecipesAction": "Fetch recipes",
+  "week.today": "Today",
+
+  "shoppingList.title": "Shopping list",
+  "shoppingList.open": "Open shopping list →",
+  "shoppingList.noPlan": "Generate a week plan first — the shopping list is built from it.",
+  "shoppingList.empty": "This week's recipes carry no ingredient lists, so there's nothing to collect.",
+  "shoppingList.summary": "{{remaining}} of {{total}} left · {{onOffer}} on offer",
+  "shoppingList.clearChecked": "Clear ticks",
+  "shoppingList.dept.fruitAndVeg": "Fruit & veg",
+  "shoppingList.dept.breadAndBakery": "Bread & bakery",
+  "shoppingList.dept.meatAndFish": "Meat & fish",
+  "shoppingList.dept.dairyAndEggs": "Dairy & eggs",
+  "shoppingList.dept.cooling": "Chilled",
+  "shoppingList.dept.frozen": "Frozen",
+  "shoppingList.dept.dryGoods": "Dry goods",
+  "shoppingList.dept.drinks": "Drinks",
+  "shoppingList.dept.other": "Other",
 
   "day.backToWeek": "← Back to week",
   "day.swapLabel": "Swap to a different recipe",
   "day.choosePlaceholder": "Choose a recipe…",
+  "day.notFound": "There's no meal planned for this day.",
 
   "dayCard.regenerating": "Regenerating...",
   "dayCard.regenerateThisDay": "Regenerate this day",
@@ -47,7 +68,6 @@ export const en: Record<keyof typeof da, string> = {
   "infant.label": "6-month-old",
 
   "offers.pageTitle": "Weekly offers",
-  "offers.backToPlan": "← Back to plan",
   "offers.formHeading": "This week's REMA 1000 offers",
   "offers.formDescription":
     "Paste offer JSON in the reference schema shape (same fields REMA's own listings use). This replaces the currently-imported offer set.",
@@ -60,6 +80,10 @@ export const en: Record<keyof typeof da, string> = {
   "offers.fetching": "Fetching...",
   "offers.fetchNow": "Fetch offers now",
   "offers.fetchError": "Could not fetch offers automatically.",
+  "offers.snapshotManual": "Pasted manually on {{date}}.",
+  "offers.snapshotAuto": "Fetched from etilbudsavis.dk on {{date}}.",
+  "offers.snapshotValidity": "Valid {{from}}–{{to}}.",
+  "offers.snapshotExpired": "{{count}} of them have expired and are no longer used.",
 
   "recipes.suggestionsHeading": "Best meals from this week's offers",
   "recipes.suggestionsDescription":
@@ -78,7 +102,10 @@ export const en: Record<keyof typeof da, string> = {
     "{{total}} recipes fetched, but none had a readable ingredient list, so offer matching cannot rank them.",
 
   "week.recipes": "Recipes",
-  "nav.toggleMenu": "Menu",
+  "nav.plan": "Week plan",
+  "nav.primary": "Main menu",
+  "nav.openMenu": "Open menu",
+  "nav.closeMenu": "Close menu",
 
   "recipesPage.title": "All recipes",
   "recipesPage.searchLabel": "Search by name or ingredient",
@@ -112,6 +139,8 @@ export const en: Record<keyof typeof da, string> = {
   "calendar.refreshNote":
     "Calendar apps refresh subscriptions on their own schedule (often not more than a few times a day) — edits here will always be correct at this link, but your calendar app may take a while to pick them up.",
   "calendar.close": "Close",
+  "calendar.copy": "Copy",
+  "calendar.copied": "Copied",
 
   "variant.adultsHeading": "Adults (calorie-minimized)",
   "variant.childHeading": "Toddler (base dish + calorie-dense addition)",
