@@ -4,7 +4,7 @@ import { weekPlanRepository } from "~/data/repositories/weekPlanRepository";
 import { offerRepository } from "~/data/repositories/offerRepository";
 import { externalRecipeRepository } from "~/data/repositories/externalRecipeRepository";
 import { generateWeekPlan } from "~/domain/planning/generateWeekPlan";
-import { addDays } from "~/lib/time";
+import { weekWindow } from "~/lib/weekWindow";
 
 /** GET: fetch the week plan (404 if not generated yet). */
 export async function loader({ request, params }: Route.LoaderArgs) {
@@ -39,11 +39,7 @@ export async function action({ request, params }: Route.ActionArgs) {
   // whatever happens to be valid the moment the button is clicked.
   const [snapshot, offers, externalRecipes, recentRecipeIds, previousWeek] = await Promise.all([
     offerRepository.getLatestSnapshot(family.id),
-    offerRepository.listOffersValidDuring(
-      family.id,
-      new Date(`${weekStart}T00:00:00Z`),
-      new Date(`${addDays(weekStart, 6)}T23:59:59Z`),
-    ),
+    offerRepository.listOffersValidDuring(family.id, ...weekWindow(weekStart)),
     externalRecipeRepository.listAll(),
     weekPlanRepository.listRecentRecipeIds(family.id, weekStart),
     weekPlanRepository.getWeekPlan(family.id, weekStart),

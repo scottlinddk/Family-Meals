@@ -4,6 +4,7 @@ import { weekPlanRepository } from "~/data/repositories/weekPlanRepository";
 import { offerRepository } from "~/data/repositories/offerRepository";
 import { externalRecipeRepository } from "~/data/repositories/externalRecipeRepository";
 import { regenerateDay } from "~/domain/planning/regenerateDay";
+import { weekWindow } from "~/lib/weekWindow";
 
 /** POST { dayIndex: number }: regenerate a single day, picking a different recipe. */
 export async function action({ request, params }: Route.ActionArgs) {
@@ -23,8 +24,10 @@ export async function action({ request, params }: Route.ActionArgs) {
     });
   }
 
+  // Same offer window the whole-week generator uses, so a regenerated day
+  // isn't marked against a different set of offers than its siblings.
   const [offers, externalRecipes] = await Promise.all([
-    offerRepository.listCurrentOffers(family.id),
+    offerRepository.listOffersValidDuring(family.id, ...weekWindow(params.weekStart!)),
     externalRecipeRepository.listAll(),
   ]);
   const updated = regenerateDay(week, dayIndex, offers, externalRecipes);
