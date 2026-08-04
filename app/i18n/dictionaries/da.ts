@@ -38,6 +38,7 @@ export const da = {
   "day.backToWeek": "← Tilbage til ugen",
   "day.swapLabel": "Skift til en anden opskrift",
   "day.choosePlaceholder": "Vælg en opskrift…",
+  "day.notFound": "Der er ingen ret planlagt til denne dag.",
 
   "dayCard.regenerating": "Genererer...",
   "dayCard.regenerateThisDay": "Genskab denne dag",
@@ -45,7 +46,6 @@ export const da = {
   "infant.label": "6 måneder gammel",
 
   "offers.pageTitle": "Ugens tilbud",
-  "offers.backToPlan": "← Tilbage til planen",
   "offers.formHeading": "Ugens tilbud fra REMA 1000",
   "offers.formDescription":
     "Indsæt tilbuds-JSON i referenceformatet (samme felter som REMA's egne lister bruger). Dette erstatter det aktuelt importerede tilbudssæt.",
@@ -76,7 +76,10 @@ export const da = {
     "{{total}} opskrifter hentet, men ingen havde en læsbar ingrediensliste, så tilbud kan ikke rangere dem.",
 
   "week.recipes": "Opskrifter",
-  "nav.toggleMenu": "Menu",
+  "nav.plan": "Ugeplan",
+  "nav.primary": "Hovedmenu",
+  "nav.openMenu": "Åbn menu",
+  "nav.closeMenu": "Luk menu",
 
   "recipesPage.title": "Alle opskrifter",
   "recipesPage.searchLabel": "Søg på navn eller ingrediens",
@@ -110,6 +113,8 @@ export const da = {
   "calendar.refreshNote":
     "Kalenderapps opdaterer abonnementer efter deres egen tidsplan (ofte højst nogle få gange om dagen) — ændringer her vil altid være korrekte på dette link, men din kalenderapp kan være et stykke tid om at hente dem.",
   "calendar.close": "Luk",
+  "calendar.copy": "Kopiér",
+  "calendar.copied": "Kopieret",
 
   "variant.adultsHeading": "Voksne (kaloriereduceret)",
   "variant.childHeading": "Mindre barn (grundret + kalorietæt tilføjelse)",

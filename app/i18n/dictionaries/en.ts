@@ -40,6 +40,7 @@ export const en: Record<keyof typeof da, string> = {
   "day.backToWeek": "← Back to week",
   "day.swapLabel": "Swap to a different recipe",
   "day.choosePlaceholder": "Choose a recipe…",
+  "day.notFound": "There's no meal planned for this day.",
 
   "dayCard.regenerating": "Regenerating...",
   "dayCard.regenerateThisDay": "Regenerate this day",
@@ -47,7 +48,6 @@ export const en: Record<keyof typeof da, string> = {
   "infant.label": "6-month-old",
 
   "offers.pageTitle": "Weekly offers",
-  "offers.backToPlan": "← Back to plan",
   "offers.formHeading": "This week's REMA 1000 offers",
   "offers.formDescription":
     "Paste offer JSON in the reference schema shape (same fields REMA's own listings use). This replaces the currently-imported offer set.",
@@ -78,7 +78,10 @@ export const en: Record<keyof typeof da, string> = {
     "{{total}} recipes fetched, but none had a readable ingredient list, so offer matching cannot rank them.",
 
   "week.recipes": "Recipes",
-  "nav.toggleMenu": "Menu",
+  "nav.plan": "Week plan",
+  "nav.primary": "Main menu",
+  "nav.openMenu": "Open menu",
+  "nav.closeMenu": "Close menu",
 
   "recipesPage.title": "All recipes",
   "recipesPage.searchLabel": "Search by name or ingredient",
@@ -112,6 +115,8 @@ export const en: Record<keyof typeof da, string> = {
   "calendar.refreshNote":
     "Calendar apps refresh subscriptions on their own schedule (often not more than a few times a day) — edits here will always be correct at this link, but your calendar app may take a while to pick them up.",
   "calendar.close": "Close",
+  "calendar.copy": "Copy",
+  "calendar.copied": "Copied",
 
   "variant.adultsHeading": "Adults (calorie-minimized)",
   "variant.childHeading": "Toddler (base dish + calorie-dense addition)",
