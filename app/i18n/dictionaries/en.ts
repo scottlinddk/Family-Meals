@@ -60,6 +60,10 @@ export const en: Record<keyof typeof da, string> = {
   "offers.fetching": "Fetching...",
   "offers.fetchNow": "Fetch offers now",
   "offers.fetchError": "Could not fetch offers automatically.",
+  "offers.snapshotManual": "Pasted manually on {{date}}.",
+  "offers.snapshotAuto": "Fetched from etilbudsavis.dk on {{date}}.",
+  "offers.snapshotValidity": "Valid {{from}}–{{to}}.",
+  "offers.snapshotExpired": "{{count}} of them have expired and are no longer used.",
 
   "recipes.suggestionsHeading": "Best meals from this week's offers",
   "recipes.suggestionsDescription":

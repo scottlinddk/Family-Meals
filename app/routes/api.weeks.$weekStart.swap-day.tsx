@@ -25,7 +25,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 
   const [externalRecipes, offers] = await Promise.all([
     externalRecipeRepository.listAll(),
-    offerRepository.listCurrentOffers(),
+    offerRepository.listCurrentOffers(family.id),
   ]);
   const updated = swapDayRecipe(week, dayIndex, recipeId, externalRecipes, offers);
   const saved = await weekPlanRepository.saveWeekPlan(updated);

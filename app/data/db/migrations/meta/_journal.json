@@ -36,6 +36,13 @@
       "when": 1785777565638,
       "tag": "0004_cool_pixie",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1785826834901,
+      "tag": "0005_family_scoped_offer_snapshots",
+      "breakpoints": true
     }
   ]
 }

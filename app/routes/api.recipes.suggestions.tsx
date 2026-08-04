@@ -7,10 +7,10 @@ import { rankExternalRecipesByOffers } from "~/domain/recipes/externalRecipeMatc
 /** GET: REMA 1000's own recipes ranked by how much they overlap with this week's imported offers. */
 export async function loader({ request }: Route.LoaderArgs) {
   const headers = new Headers();
-  await requireFamily(request, headers);
+  const family = await requireFamily(request, headers);
 
   const [offers, recipes] = await Promise.all([
-    offerRepository.listCurrentOffers(),
+    offerRepository.listCurrentOffers(family.id),
     externalRecipeRepository.listAll(),
   ]);
 

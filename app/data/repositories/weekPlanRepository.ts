@@ -1,7 +1,10 @@
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq, inArray, ne } from "drizzle-orm";
 import { db } from "~/data/db/client";
 import { dayPlans, weekPlans } from "~/data/db/schema";
 import type { AdultVariant, ChildVariant, DayPlan, RecipeSnapshot, WeekPlan } from "~/domain/types";
+
+/** How many previously-planned weeks the variety rule looks back over. */
+const RECENT_WEEK_COUNT = 3;
 
 function toIsoDate(value: string | Date): string {
   return typeof value === "string" ? value : value.toISOString().slice(0, 10);
@@ -51,6 +54,38 @@ export const weekPlanRepository = {
       .from(weekPlans)
       .where(and(eq(weekPlans.familyId, familyId), eq(weekPlans.weekStartDate, weekStartDate)));
     return row ? loadWeekPlan(row) : undefined;
+  },
+
+  /**
+   * Recipe ids the family has planned in their most recent weeks, excluding
+   * `excludeWeekStartDate` (the week being regenerated). Feeds the
+   * generator's cross-week variety rule.
+   */
+  async listRecentRecipeIds(
+    familyId: string,
+    excludeWeekStartDate: string,
+    weekCount = RECENT_WEEK_COUNT,
+  ): Promise<string[]> {
+    const recentWeeks = await db
+      .select({ id: weekPlans.id })
+      .from(weekPlans)
+      .where(and(eq(weekPlans.familyId, familyId), ne(weekPlans.weekStartDate, excludeWeekStartDate)))
+      .orderBy(desc(weekPlans.weekStartDate))
+      .limit(weekCount);
+
+    if (recentWeeks.length === 0) return [];
+
+    const rows = await db
+      .select({ baseRecipeId: dayPlans.baseRecipeId })
+      .from(dayPlans)
+      .where(
+        inArray(
+          dayPlans.weekPlanId,
+          recentWeeks.map((week) => week.id),
+        ),
+      );
+
+    return [...new Set(rows.map((row) => row.baseRecipeId))];
   },
 
   /**

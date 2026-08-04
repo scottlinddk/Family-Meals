@@ -3,12 +3,22 @@ import { requireFamily } from "~/lib/auth";
 import { offerRepository } from "~/data/repositories/offerRepository";
 import { offerListSchema } from "~/adapters/offerSource/offerSchema";
 
-/** GET: list the currently-imported offers. */
+/**
+ * GET: the family's latest offer import — the snapshot's metadata alongside
+ * both the offers still valid today and everything it contained, so the page
+ * can say "12 of 40 still valid" rather than silently hiding expired rows.
+ */
 export async function loader({ request }: Route.LoaderArgs) {
   const headers = new Headers();
-  await requireFamily(request, headers);
-  const offers = await offerRepository.listCurrentOffers();
-  return new Response(JSON.stringify(offers), {
+  const family = await requireFamily(request, headers);
+
+  const snapshot = await offerRepository.getLatestSnapshot(family.id);
+  const [current, all] = await Promise.all([
+    offerRepository.listCurrentOffers(family.id),
+    snapshot ? offerRepository.listOffersInSnapshot(snapshot.id) : Promise.resolve([]),
+  ]);
+
+  return new Response(JSON.stringify({ snapshot: snapshot ?? null, offers: current, importedCount: all.length }), {
     headers: { ...Object.fromEntries(headers), "Content-Type": "application/json" },
   });
 }
@@ -20,7 +30,7 @@ export async function action({ request }: Route.ActionArgs) {
   }
 
   const headers = new Headers();
-  await requireFamily(request, headers);
+  const family = await requireFamily(request, headers);
   const body = await request.json();
   const parsed = offerListSchema.safeParse(body);
 
@@ -31,7 +41,7 @@ export async function action({ request }: Route.ActionArgs) {
     });
   }
 
-  await offerRepository.replaceCurrentOffers(parsed.data);
+  await offerRepository.replaceCurrentOffers(family.id, parsed.data, "manual");
   return new Response(JSON.stringify({ ok: true, count: parsed.data.length }), {
     headers: { ...Object.fromEntries(headers), "Content-Type": "application/json" },
   });

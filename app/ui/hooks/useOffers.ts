@@ -4,10 +4,28 @@ import type { OfferInput } from "~/adapters/offerSource/offerSchema";
 
 const OFFERS_QUERY_KEY = ["offers"] as const;
 
+export interface OfferSnapshotSummary {
+  id: string;
+  source: "manual" | "etilbudsavis";
+  offerCount: number;
+  validFrom: string | null;
+  validUntil: string | null;
+  importedAt: string;
+}
+
+export interface OffersResponse {
+  /** The family's latest import, or null if they've never imported. */
+  snapshot: OfferSnapshotSummary | null;
+  /** Offers from that import that are still valid today. */
+  offers: Offer[];
+  /** How many offers the import contained in total, valid or not. */
+  importedCount: number;
+}
+
 export function useOffers() {
   return useQuery({
     queryKey: OFFERS_QUERY_KEY,
-    queryFn: async (): Promise<Offer[]> => {
+    queryFn: async (): Promise<OffersResponse> => {
       const res = await fetch("/api/offers");
       if (!res.ok) throw new Error("Failed to load offers");
       return res.json();

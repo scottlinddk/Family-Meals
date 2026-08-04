@@ -24,7 +24,7 @@ export async function action({ request, params }: Route.ActionArgs) {
   }
 
   const [offers, externalRecipes] = await Promise.all([
-    offerRepository.listCurrentOffers(),
+    offerRepository.listCurrentOffers(family.id),
     externalRecipeRepository.listAll(),
   ]);
   const updated = regenerateDay(week, dayIndex, offers, externalRecipes);

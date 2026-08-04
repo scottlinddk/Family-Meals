@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useImportOffers, useOffers, useRefreshOffers } from "~/ui/hooks/useOffers";
+import { useImportOffers, useOffers, useRefreshOffers, type OffersResponse } from "~/ui/hooks/useOffers";
 import { Button } from "~/ui/components/ui/Button";
 import { Card } from "~/ui/components/ui/Card";
 import { Textarea } from "~/ui/components/ui/Input";
@@ -20,6 +20,40 @@ const PLACEHOLDER = `[
     "validUntil": "2026-08-08T21:59:59+0000"
   }
 ]`;
+
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("da-DK", { day: "numeric", month: "short" });
+}
+
+/**
+ * Says where the current offers came from, when, and how much of the import
+ * is still valid — an import whose offers have all expired otherwise looks
+ * identical to never having imported at all.
+ */
+function OfferSnapshotNote({ data }: { data: OffersResponse }) {
+  const { snapshot, offers, importedCount } = data;
+  if (!snapshot) return null;
+
+  const expired = importedCount - offers.length;
+
+  return (
+    <p className="m-0 mt-1 text-xs text-muted">
+      {t(snapshot.source === "manual" ? "offers.snapshotManual" : "offers.snapshotAuto", {
+        date: formatDate(snapshot.importedAt),
+      })}
+      {snapshot.validFrom && snapshot.validUntil && (
+        <>
+          {" "}
+          {t("offers.snapshotValidity", {
+            from: formatDate(snapshot.validFrom),
+            to: formatDate(snapshot.validUntil),
+          })}
+        </>
+      )}
+      {expired > 0 && <> {t("offers.snapshotExpired", { count: expired })}</>}
+    </p>
+  );
+}
 
 export function OfferJsonPasteForm() {
   const [raw, setRaw] = useState("");
@@ -74,10 +108,11 @@ export function OfferJsonPasteForm() {
 
       <div className="mt-3">
         <h3 className="text-[11px] tracking-wide text-muted uppercase">
-          {t("offers.currentlyImported", { count: offers.data?.length ?? 0 })}
+          {t("offers.currentlyImported", { count: offers.data?.offers.length ?? 0 })}
         </h3>
+        {offers.data?.snapshot && <OfferSnapshotNote data={offers.data} />}
         <ul className="mt-1.5 max-h-48 space-y-1 overflow-y-auto text-sm">
-          {offers.data?.map((offer, i) => (
+          {offers.data?.offers.map((offer, i) => (
             <li key={i}>
               {offer.name} — {offer.price} {offer.currencyCode}
             </li>

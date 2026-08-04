@@ -58,6 +58,10 @@ export const da = {
   "offers.fetching": "Henter...",
   "offers.fetchNow": "Hent tilbud nu",
   "offers.fetchError": "Kunne ikke hente tilbud automatisk.",
+  "offers.snapshotManual": "Indsat manuelt {{date}}.",
+  "offers.snapshotAuto": "Hentet fra etilbudsavis.dk {{date}}.",
+  "offers.snapshotValidity": "Gælder {{from}}–{{to}}.",
+  "offers.snapshotExpired": "{{count}} af tilbuddene er udløbet og bruges ikke længere.",
 
   "recipes.suggestionsHeading": "Bedste måltider ud fra ugens tilbud",
   "recipes.suggestionsDescription":
