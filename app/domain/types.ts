@@ -186,5 +186,10 @@ export interface ExternalRecipe {
  * pediatric-guidance constraint.
  */
 export interface InfantNote {
-  text: string;
+  /**
+   * Translation key for the note's copy. The wording itself lives in the i18n
+   * dictionaries — it is shown to Danish-speaking parents, so it must be
+   * translated like every other string in the app rather than hard-coded here.
+   */
+  textKey: string;
 }

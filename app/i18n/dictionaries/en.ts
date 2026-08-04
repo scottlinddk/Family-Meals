@@ -44,7 +44,11 @@ export const en: Record<keyof typeof da, string> = {
   "shoppingList.title": "Shopping list",
   "shoppingList.open": "Open shopping list →",
   "shoppingList.noPlan": "Generate a week plan first — the shopping list is built from it.",
-  "shoppingList.empty": "This week's recipes carry no ingredient lists, so there's nothing to collect.",
+  "shoppingList.empty":
+    "This week's recipes carry no ingredient lists, so there's nothing to collect. Try " +
+    "regenerating the week from the week plan.",
+  "shoppingList.loadFailed": "The shopping list couldn't be loaded.",
+  "shoppingList.retry": "Try again",
   "shoppingList.summary": "{{remaining}} of {{total}} left · {{onOffer}} on offer",
   "shoppingList.clearChecked": "Clear ticks",
   "shoppingList.dept.fruitAndVeg": "Fruit & veg",
@@ -66,6 +70,10 @@ export const en: Record<keyof typeof da, string> = {
   "dayCard.regenerateThisDay": "Regenerate this day",
 
   "infant.label": "6-month-old",
+  "infant.note":
+    "This app does not plan meals for your 6-month-old. Follow your health visitor's " +
+    "(sundhedsplejerske) guidance on introducing solid food. General reminders: no honey before " +
+    "12 months, no added salt or sugar before 12 months, and always supervise for choking hazards.",
 
   "offers.pageTitle": "Weekly offers",
   "offers.formHeading": "This week's REMA 1000 offers",

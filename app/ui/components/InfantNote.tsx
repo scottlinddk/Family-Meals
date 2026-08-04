@@ -6,7 +6,7 @@ export function InfantNote() {
   return (
     <aside>
       <p className="text-xs font-medium text-text/70">{t("infant.label")}</p>
-      <p className="mt-0.5 text-xs italic opacity-60">{INFANT_NOTE.text}</p>
+      <p className="mt-0.5 text-xs italic opacity-60">{t(INFANT_NOTE.textKey)}</p>
     </aside>
   );
 }

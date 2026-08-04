@@ -42,7 +42,11 @@ export const da = {
   "shoppingList.title": "Indkøbsliste",
   "shoppingList.open": "Se indkøbsliste →",
   "shoppingList.noPlan": "Lav en ugeplan først — så samler vi indkøbslisten herfra.",
-  "shoppingList.empty": "Ugens opskrifter har ingen ingrediensliste, så der er intet at samle.",
+  "shoppingList.empty":
+    "Ugens opskrifter har ingen ingrediensliste, så der er intet at samle. Prøv at genskabe ugen " +
+    "fra ugeplanen.",
+  "shoppingList.loadFailed": "Indkøbslisten kunne ikke hentes.",
+  "shoppingList.retry": "Prøv igen",
   "shoppingList.summary": "{{remaining}} af {{total}} tilbage · {{onOffer}} på tilbud",
   "shoppingList.clearChecked": "Nulstil afkrydsning",
   "shoppingList.dept.fruitAndVeg": "Frugt & grønt",
@@ -64,6 +68,11 @@ export const da = {
   "dayCard.regenerateThisDay": "Genskab denne dag",
 
   "infant.label": "6 måneder gammel",
+  "infant.note":
+    "Denne app planlægger ikke mad til jeres 6 måneder gamle barn. Følg sundhedsplejerskens " +
+    "vejledning om overgangen til fast føde. Generelle påmindelser: ingen honning før 12 måneder, " +
+    "intet tilsat salt eller sukker før 12 måneder, og hold altid opsyn på grund af risiko for " +
+    "kvælning.",
 
   "offers.pageTitle": "Ugens tilbud",
   "offers.formHeading": "Ugens tilbud fra REMA 1000",

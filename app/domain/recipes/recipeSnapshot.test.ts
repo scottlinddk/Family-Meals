@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { toRecipeSnapshot } from "~/domain/recipes/recipeSnapshot";
+import { normalizeRecipeSnapshot, toRecipeSnapshot } from "~/domain/recipes/recipeSnapshot";
 import type { ExternalRecipe, Offer } from "~/domain/types";
 
 function offer(name: string): Offer {
@@ -51,5 +51,35 @@ describe("toRecipeSnapshot", () => {
 
   it("marks nothing on offer when no offers are supplied", () => {
     expect(toRecipeSnapshot(recipe).offerIngredientLines).toEqual([]);
+  });
+});
+
+describe("normalizeRecipeSnapshot", () => {
+  it("defaults the list fields a partial stored snapshot is missing", () => {
+    // The shape migration 0003 backfilled onto pre-snapshot day plans: it has
+    // no instructionLines at all.
+    const snapshot = normalizeRecipeSnapshot({
+      title: "kylling-i-karry",
+      source: "catalog",
+      tags: [],
+      ingredientLines: [],
+    });
+
+    expect(snapshot.instructionLines).toEqual([]);
+    expect(snapshot.ingredientLines).toEqual([]);
+  });
+
+  it("survives a snapshot with nothing in it", () => {
+    const snapshot = normalizeRecipeSnapshot({});
+
+    expect(snapshot.tags).toEqual([]);
+    expect(snapshot.ingredientLines).toEqual([]);
+    expect(snapshot.instructionLines).toEqual([]);
+    expect(snapshot.title).toBe("");
+  });
+
+  it("leaves a complete snapshot untouched", () => {
+    const complete = toRecipeSnapshot(recipe);
+    expect(normalizeRecipeSnapshot(complete)).toEqual(complete);
   });
 });
