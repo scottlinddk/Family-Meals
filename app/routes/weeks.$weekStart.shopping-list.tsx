@@ -55,7 +55,25 @@ export default function ShoppingListPage({ params }: Route.ComponentProps) {
 
       <h1 className="mt-3 mb-1 text-3xl">{t("shoppingList.title")}</h1>
 
-      {list.isLoading && <p className="text-muted">{t("week.loading")}</p>}
+      {/*
+        Every query state renders something. `isLoading` alone left the page
+        blank below the heading whenever the fetch failed — and also before it
+        started, since a query that hasn't run yet is pending but not fetching
+        — which read as "the shopping list shows nothing".
+      */}
+      {list.isError && (
+        <div className="flex flex-col items-start gap-2">
+          <p className="m-0 text-sm text-red-700">{t("shoppingList.loadFailed")}</p>
+          <Button type="button" variant="secondary" size="sm" onClick={() => list.refetch()}>
+            {t("shoppingList.retry")}
+          </Button>
+        </div>
+      )}
+
+      {!list.isError && list.data === undefined && (
+        <p className="text-muted">{t("week.loading")}</p>
+      )}
+
       {list.data === null && <p className="text-muted">{t("shoppingList.noPlan")}</p>}
 
       {list.data && list.data.itemCount === 0 && (

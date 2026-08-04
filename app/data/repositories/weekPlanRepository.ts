@@ -1,7 +1,8 @@
 import { and, desc, eq, inArray, ne } from "drizzle-orm";
 import { db } from "~/data/db/client";
 import { dayPlans, weekPlans } from "~/data/db/schema";
-import type { AdultVariant, ChildVariant, DayPlan, RecipeSnapshot, WeekPlan } from "~/domain/types";
+import type { AdultVariant, ChildVariant, DayPlan, WeekPlan } from "~/domain/types";
+import { normalizeRecipeSnapshot } from "~/domain/recipes/recipeSnapshot";
 
 /** How many previously-planned weeks the variety rule looks back over. */
 const RECENT_WEEK_COUNT = 3;
@@ -24,7 +25,7 @@ async function loadWeekPlan(
         date: toIsoDate(row.date),
         mealSlot: row.mealSlot as DayPlan["mealSlot"],
         baseRecipeId: row.baseRecipeId,
-        recipeSnapshot: row.recipeSnapshot as RecipeSnapshot,
+        recipeSnapshot: normalizeRecipeSnapshot(row.recipeSnapshot),
         adultVariant: row.adultVariant as AdultVariant,
         childVariant: row.childVariant as ChildVariant,
         isManualOverride: row.isManualOverride,

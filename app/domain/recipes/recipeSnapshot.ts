@@ -31,3 +31,27 @@ export function toRecipeSnapshot(recipe: ExternalRecipe, offers: Offer[] = []): 
     ),
   };
 }
+
+/**
+ * Fills in the list fields a stored snapshot may be missing.
+ *
+ * `day_plans.recipe_snapshot` is JSONB written by more than one generation of
+ * this app — migration 0003 backfilled pre-snapshot rows with a placeholder
+ * carrying no `instructionLines` at all — so the arrays can't be trusted to
+ * exist just because the type says they do. Everything downstream iterates
+ * them (`buildShoppingList`, the ICS feed, the day page) and a missing array
+ * throws there rather than at the read, which surfaces as a page rendering
+ * nothing at all. Defaulting once, where the row is read, keeps that out of
+ * every consumer.
+ */
+export function normalizeRecipeSnapshot(stored: unknown): RecipeSnapshot {
+  const snapshot = (stored ?? {}) as Partial<RecipeSnapshot>;
+  return {
+    ...snapshot,
+    title: snapshot.title ?? "",
+    source: snapshot.source ?? "external",
+    tags: snapshot.tags ?? [],
+    ingredientLines: snapshot.ingredientLines ?? [],
+    instructionLines: snapshot.instructionLines ?? [],
+  };
+}
