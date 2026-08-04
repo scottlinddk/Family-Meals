@@ -1,7 +1,7 @@
 import type { Route } from "./+types/api.recipes.refresh";
 import { requireFamily } from "~/lib/auth";
 import { externalRecipeRepository } from "~/data/repositories/externalRecipeRepository";
-import { RemaRecipeSource } from "~/adapters/recipeSource/RemaRecipeSource";
+import { RemaRecipeSource, summarizeExtraction } from "~/adapters/recipeSource/RemaRecipeSource";
 
 /** POST: re-scrape REMA 1000's own recipes (madogdrikke.rema1000.dk/opskrifter) into the cache. */
 export async function action({ request }: Route.ActionArgs) {
@@ -15,7 +15,12 @@ export async function action({ request }: Route.ActionArgs) {
     await requireFamily(request, headers);
     const recipes = await new RemaRecipeSource().fetchRecipes();
     await externalRecipeRepository.replaceAll(recipes);
-    return new Response(JSON.stringify({ ok: true, count: recipes.length }), {
+
+    // Report extraction health, not just a row count: a scrape that stores
+    // recipes with no ingredients silently disables offer matching, and
+    // previously still reported a plain success.
+    const summary = summarizeExtraction(recipes);
+    return new Response(JSON.stringify({ ok: true, count: recipes.length, ...summary }), {
       headers: { ...Object.fromEntries(headers), "Content-Type": "application/json" },
     });
   } catch (error) {

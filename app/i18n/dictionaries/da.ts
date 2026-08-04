@@ -69,6 +69,11 @@ export const da = {
   "recipes.onOffer": "På tilbud: {{names}}",
   "recipes.viewRecipe": "Se opskrift →",
   "recipes.noMatch": "Ingen ingredienser aktuelt på tilbud.",
+  "recipes.noIngredientsScraped": "Ingen ingrediensliste fundet for denne opskrift.",
+  "recipes.refreshedSummary":
+    "{{total}} opskrifter hentet — {{withIngredients}} med ingredienser, {{withInstructions}} med fremgangsmåde.",
+  "recipes.refreshedNoIngredients":
+    "{{total}} opskrifter hentet, men ingen havde en læsbar ingrediensliste, så tilbud kan ikke rangere dem.",
 
   "week.recipes": "Opskrifter",
   "nav.toggleMenu": "Menu",
@@ -87,6 +92,13 @@ export const da = {
   "recipeDetail.viewOriginal": "Se den originale opskrift på REMA 1000 →",
   "recipeDetail.servings": "{{count}} portioner",
   "recipeDetail.totalTime": "{{minutes}} min",
+  "recipeDetail.onOfferBadge": "På tilbud",
+  "recipeDetail.onOfferCount": "{{count}} ingrediens(er) på tilbud",
+  "recipeDetail.noIngredients":
+    "Der blev ikke fundet en ingrediensliste til denne opskrift — åbn den hos REMA 1000 nedenfor.",
+
+  "day.viewRecipe": "Se hele opskriften →",
+  "day.viewOnRema": "Åbn hos REMA 1000 ↗",
 
   "calendar.subscribeButton": "Abonnér i din kalenderapp",
   "calendar.modalHeading": "Abonnér på din madplan-kalender",

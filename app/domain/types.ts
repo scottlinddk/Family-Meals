@@ -106,11 +106,23 @@ export interface RecipeSnapshot {
   /** Link to the original recipe page, for externally-sourced recipes. */
   url?: string;
   imageUrl?: string;
+  /** Short teaser/summary, so the day card reads without opening the source. */
+  description?: string;
+  /** Number of people the source recipe serves, if stated. */
+  servings?: number;
+  /** Total time to make the dish, in minutes, if stated. */
+  totalTimeMinutes?: number;
   tags: string[];
   /** Ingredients as display lines (already formatted, no separate qty/unit). */
   ingredientLines: string[];
   /** Step-by-step method, in order, if the source recipe had one. */
   instructionLines: string[];
+  /**
+   * The subset of `ingredientLines` that was on offer when this day was
+   * planned, for highlighting. Optional because day plans generated before
+   * offer matching was snapshotted don't carry it.
+   */
+  offerIngredientLines?: string[];
 }
 
 export interface DayPlan {

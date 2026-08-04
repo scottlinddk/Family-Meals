@@ -2,7 +2,7 @@ import { Link, redirect } from "react-router";
 import type { Route } from "./+types/recipes.$id";
 import { requireUser } from "~/lib/auth";
 import { useExternalRecipe } from "~/ui/hooks/useExternalRecipes";
-import { Card, CardTitle } from "~/ui/components/ui/Card";
+import { RecipeBody } from "~/ui/components/RecipeBody";
 import { t } from "~/i18n/t";
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -36,45 +36,14 @@ export default function RecipeDetailPage({ params }: Route.ComponentProps) {
             />
           )}
 
-          {recipe.data.description && <p className="mb-3 text-sm">{recipe.data.description}</p>}
-
-          {(recipe.data.servings || recipe.data.totalTimeMinutes) && (
-            <p className="mb-3 flex flex-wrap gap-x-4 text-sm text-muted">
-              {recipe.data.servings && <span>{t("recipeDetail.servings", { count: recipe.data.servings })}</span>}
-              {recipe.data.totalTimeMinutes && (
-                <span>{t("recipeDetail.totalTime", { minutes: recipe.data.totalTimeMinutes })}</span>
-              )}
-            </p>
-          )}
-
-          <a
-            href={recipe.data.url}
-            target="_blank"
-            rel="noreferrer"
-            className="mb-5 inline-block text-sm text-accent hover:text-accent-700"
-          >
-            {t("recipeDetail.viewOriginal")}
-          </a>
-
-          <Card className="mb-4">
-            <CardTitle>{t("recipeDetail.ingredientsHeading")}</CardTitle>
-            <ul className="m-0 list-disc pl-4.5 text-sm">
-              {recipe.data.ingredients.map((ingredient, i) => (
-                <li key={i}>{ingredient}</li>
-              ))}
-            </ul>
-          </Card>
-
-          {recipe.data.instructions.length > 0 && (
-            <Card className="mb-4">
-              <CardTitle>{t("recipeDetail.instructionsHeading")}</CardTitle>
-              <ol className="m-0 list-decimal pl-4.5 text-sm">
-                {recipe.data.instructions.map((step, i) => (
-                  <li key={i}>{step}</li>
-                ))}
-              </ol>
-            </Card>
-          )}
+          <RecipeBody
+            description={recipe.data.description}
+            servings={recipe.data.servings}
+            totalTimeMinutes={recipe.data.totalTimeMinutes}
+            ingredientLines={recipe.data.ingredients}
+            instructionLines={recipe.data.instructions}
+            url={recipe.data.url}
+          />
         </>
       )}
     </main>

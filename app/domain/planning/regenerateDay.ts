@@ -1,24 +1,13 @@
-import type { DayPlan, ExternalRecipe, Offer, RecipeSnapshot, WeekPlan } from "~/domain/types";
+import type { DayPlan, ExternalRecipe, Offer, WeekPlan } from "~/domain/types";
 import { deriveUncuratedAdultVariant, deriveUncuratedChildVariant } from "~/domain/recipes/variantDerivation";
 import { rankExternalRecipesByOffers } from "~/domain/recipes/externalRecipeMatch";
+import { toRecipeSnapshot } from "~/domain/recipes/recipeSnapshot";
 
-function toRecipeSnapshot(recipe: ExternalRecipe): RecipeSnapshot {
-  return {
-    title: recipe.title,
-    source: "external",
-    url: recipe.url,
-    imageUrl: recipe.imageUrl,
-    tags: [],
-    ingredientLines: recipe.ingredients,
-    instructionLines: recipe.instructions,
-  };
-}
-
-function toDayPlan(recipe: ExternalRecipe, existing: DayPlan, now: string): DayPlan {
+function toDayPlan(recipe: ExternalRecipe, existing: DayPlan, now: string, offers: Offer[]): DayPlan {
   return {
     ...existing,
     baseRecipeId: recipe.id,
-    recipeSnapshot: toRecipeSnapshot(recipe),
+    recipeSnapshot: toRecipeSnapshot(recipe, offers),
     adultVariant: deriveUncuratedAdultVariant(recipe.id),
     childVariant: deriveUncuratedChildVariant(recipe.id),
     isManualOverride: true,
@@ -52,7 +41,7 @@ export function regenerateDay(week: WeekPlan, dayIndex: number, offers: Offer[],
 
   const now = new Date().toISOString();
   const days = week.days.map((day, index) =>
-    index === dayIndex ? toDayPlan(chosen, existing, now) : day,
+    index === dayIndex ? toDayPlan(chosen, existing, now, offers) : day,
   );
 
   return { ...week, days, updatedAt: now };
@@ -64,6 +53,7 @@ export function swapDayRecipe(
   dayIndex: number,
   recipeId: string,
   externalRecipes: ExternalRecipe[],
+  offers: Offer[] = [],
 ): WeekPlan {
   const existing = week.days[dayIndex];
   if (!existing) {
@@ -77,7 +67,7 @@ export function swapDayRecipe(
 
   const now = new Date().toISOString();
   const days = week.days.map((day, index) =>
-    index === dayIndex ? toDayPlan(recipe, existing, now) : day,
+    index === dayIndex ? toDayPlan(recipe, existing, now, offers) : day,
   );
 
   return { ...week, days, updatedAt: now };

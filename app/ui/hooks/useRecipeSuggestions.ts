@@ -15,11 +15,20 @@ export function useRecipeSuggestions() {
   });
 }
 
+/** Extraction health returned by the refresh endpoint, surfaced to the user. */
+export interface RefreshRecipesResult {
+  ok: true;
+  count: number;
+  total: number;
+  withIngredients: number;
+  withInstructions: number;
+}
+
 /** Re-scrapes REMA 1000's public recipe list (madogdrikke.rema1000.dk/opskrifter). */
 export function useRefreshRecipes() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async () => {
+    mutationFn: async (): Promise<RefreshRecipesResult> => {
       const res = await fetch("/api/recipes/refresh", { method: "POST" });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));

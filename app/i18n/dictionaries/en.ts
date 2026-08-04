@@ -71,6 +71,11 @@ export const en: Record<keyof typeof da, string> = {
   "recipes.onOffer": "On offer: {{names}}",
   "recipes.viewRecipe": "View recipe →",
   "recipes.noMatch": "No ingredients currently on offer.",
+  "recipes.noIngredientsScraped": "No ingredient list found for this recipe.",
+  "recipes.refreshedSummary":
+    "{{total}} recipes fetched — {{withIngredients}} with ingredients, {{withInstructions}} with a method.",
+  "recipes.refreshedNoIngredients":
+    "{{total}} recipes fetched, but none had a readable ingredient list, so offer matching cannot rank them.",
 
   "week.recipes": "Recipes",
   "nav.toggleMenu": "Menu",
@@ -89,6 +94,13 @@ export const en: Record<keyof typeof da, string> = {
   "recipeDetail.viewOriginal": "View original recipe on REMA 1000 →",
   "recipeDetail.servings": "{{count}} servings",
   "recipeDetail.totalTime": "{{minutes}} min",
+  "recipeDetail.onOfferBadge": "On offer",
+  "recipeDetail.onOfferCount": "{{count}} ingredient(s) on offer",
+  "recipeDetail.noIngredients":
+    "No ingredient list was found for this recipe — open it on REMA 1000 below.",
+
+  "day.viewRecipe": "See the full recipe →",
+  "day.viewOnRema": "Open on REMA 1000 ↗",
 
   "calendar.subscribeButton": "Subscribe in your calendar app",
   "calendar.modalHeading": "Subscribe to your meal calendar",
