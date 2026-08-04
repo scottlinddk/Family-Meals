@@ -24,6 +24,7 @@ export default [
   route("api/recipes", "routes/api.recipes.tsx"),
   route("api/recipes/refresh", "routes/api.recipes.refresh.tsx"),
   route("api/recipes/suggestions", "routes/api.recipes.suggestions.tsx"),
+  route("api/recipes/diagnose", "routes/api.recipes.diagnose.tsx"),
   route("api/recipes/:id", "routes/api.recipes.$id.tsx"),
   route("api/family", "routes/api.family.tsx"),
   route("api/family/mine", "routes/api.family.mine.tsx"),

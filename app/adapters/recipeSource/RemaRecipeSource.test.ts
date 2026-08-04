@@ -209,6 +209,121 @@ describe("parseRecipeDetail via schema.org JSON-LD", () => {
   });
 });
 
+describe("parseRecipeDetail against component-style markup", () => {
+  /**
+   * The real failure mode in production: the ingredient list is wrapped in a
+   * container rather than being a direct sibling of its heading, which the
+   * original sibling-only walk could never find.
+   */
+  it("finds a list nested under a wrapper after the heading", () => {
+    const html = `
+      <html><body>
+        <h1>Frikadeller</h1>
+        <section>
+          <div class="sc-a1b2c3"><h2>Ingredienser</h2></div>
+          <div class="sc-d4e5f6">
+            <div><ul>
+              <li>500 g hakket svinekød</li>
+              <li>1 løg</li>
+              <li>1 æg</li>
+            </ul></div>
+          </div>
+        </section>
+      </body></html>
+    `;
+
+    expect(parseRecipeDetail(html, "https://x/opskrifter/frikadeller")?.ingredients).toEqual([
+      "500 g hakket svinekød",
+      "1 løg",
+      "1 æg",
+    ]);
+  });
+
+  it("does not borrow a later section's list when a heading has none", () => {
+    const html = `
+      <html><body>
+        <h1>Ret</h1>
+        <h2>Ingredienser</h2>
+        <p>Se listen hos REMA.</p>
+        <h2>Tilbehør</h2>
+        <ul><li>Brød</li><li>Smør</li><li>Salat</li></ul>
+      </body></html>
+    `;
+
+    expect(parseRecipeDetail(html, "https://x/opskrifter/ret")?.ingredients).toEqual([]);
+  });
+
+  it("reads ingredients from a Next.js __NEXT_DATA__ blob", () => {
+    const html = `
+      <html><body>
+        <h1>Kylling i karry</h1>
+        <script id="__NEXT_DATA__" type="application/json">${JSON.stringify({
+          props: {
+            pageProps: {
+              recipe: {
+                title: "Kylling i karry",
+                beskrivelse: "En hurtig karryret.",
+                portioner: "4 personer",
+                ingredienser: [
+                  { amount: "500", unit: "g", name: "kyllingebryst" },
+                  { amount: "1", unit: "dåse", name: "kokosmælk" },
+                ],
+                fremgangsmaade: ["Skær kyllingen i tern.", "Steg den gylden."],
+              },
+            },
+          },
+        })}</script>
+      </body></html>
+    `;
+
+    const recipe = parseRecipeDetail(html, "https://x/opskrifter/kylling-i-karry");
+    expect(recipe?.ingredients).toEqual(["500 g kyllingebryst", "1 dåse kokosmælk"]);
+    expect(recipe?.instructions).toEqual(["Skær kyllingen i tern.", "Steg den gylden."]);
+    expect(recipe?.description).toBe("En hurtig karryret.");
+    expect(recipe?.servings).toBe(4);
+  });
+
+  it("prefers the richest recipe record when the blob holds several", () => {
+    const html = `
+      <html><body>
+        <h1>Ret</h1>
+        <script type="application/json">${JSON.stringify({
+          related: [{ ingredients: ["1 ting"] }],
+          main: { ingredients: ["500 g oksekød", "1 løg", "2 gulerødder"] },
+        })}</script>
+      </body></html>
+    `;
+
+    expect(parseRecipeDetail(html, "https://x/opskrifter/ret")?.ingredients).toEqual([
+      "500 g oksekød",
+      "1 løg",
+      "2 gulerødder",
+    ]);
+  });
+
+  it("falls back to the longest quantity-led list when nothing is labelled", () => {
+    const html = `
+      <html><body>
+        <h1>Ret</h1>
+        <ul><li>Forside</li><li>Opskrifter</li><li>Kontakt</li></ul>
+        <ul>
+          <li>500 g hakket oksekød</li>
+          <li>2 spsk olivenolie</li>
+          <li>1 dåse flåede tomater</li>
+          <li>400 g pasta</li>
+        </ul>
+      </body></html>
+    `;
+
+    expect(parseRecipeDetail(html, "https://x/opskrifter/ret")?.ingredients).toEqual([
+      "500 g hakket oksekød",
+      "2 spsk olivenolie",
+      "1 dåse flåede tomater",
+      "400 g pasta",
+    ]);
+  });
+});
+
 describe("summarizeExtraction", () => {
   it("counts how many recipes actually yielded ingredients and instructions", () => {
     const base = { url: "https://x", title: "t" };

@@ -2,6 +2,7 @@ import { parse, type HTMLElement } from "node-html-parser";
 import type { ExternalRecipe } from "~/domain/types";
 import type { RecipeSource } from "~/adapters/recipeSource/RecipeSource";
 import { extractRecipeFromJsonLd, parseDurationMinutes } from "~/adapters/recipeSource/recipeJsonLd";
+import { extractRecipeFromEmbeddedState } from "~/adapters/recipeSource/embeddedState";
 
 const BASE_URL = "https://madogdrikke.rema1000.dk";
 const LISTING_PATH = "/opskrifter";
@@ -12,19 +13,25 @@ const LISTING_PATH = "/opskrifter";
  * this week's offers against REMA's own suggested meals, separate from the
  * hand-authored `RECIPE_CATALOG` used for the adult/child variant pipeline.
  *
- * Extraction runs three strategies in order of durability:
+ * Extraction runs several strategies in order of durability:
  *   1. schema.org/Recipe JSON-LD (`recipeJsonLd.ts`) — the contract recipe
  *      sites maintain for Google rich results, so it survives redesigns.
- *   2. Microdata `itemprop` attributes — the same vocabulary, inline.
- *   3. CSS class-name / heading heuristics — last resort.
+ *   2. The framework's embedded state blob (`embeddedState.ts`) — Next.js
+ *      `__NEXT_DATA__` and friends, keyed by stable domain names.
+ *   3. Microdata `itemprop` attributes — the same vocabulary, inline.
+ *   4. CSS class-name / heading heuristics, then a structural guess.
  *
- * The heuristics alone previously produced 0-ingredient recipes for the whole
- * cache (the class names guessed here never matched the live markup), which
- * silently disabled offer matching, since a recipe with no ingredients can
- * never overlap an offer. `parseRecipeDetail` therefore merges the
+ * The heuristics alone produced 0-ingredient recipes for the whole cache,
+ * which silently disabled offer matching, since a recipe with no ingredients
+ * can never overlap an offer. `parseRecipeDetail` therefore merges the
  * strategies field-by-field rather than picking one wholesale, and
  * `summarizeExtraction` lets the refresh endpoint report when a scrape comes
  * back empty instead of reporting success.
+ *
+ * The live site blocks non-browser clients from the dev sandbox, so when a
+ * strategy needs to be matched to the real markup, `/api/recipes/diagnose`
+ * (see `scrapeDiagnostics.ts`) reports the page's actual structure from
+ * production, where the fetch succeeds.
  */
 const DETAIL_FETCH_CONCURRENCY = 8;
 
@@ -55,7 +62,8 @@ export class RemaRecipeSource implements RecipeSource {
     return recipes;
   }
 
-  private async fetchRecipeLinks(): Promise<string[]> {
+  /** Public so `/api/recipes/diagnose` can inspect a real recipe page. */
+  async fetchRecipeLinks(): Promise<string[]> {
     const res = await this.fetchImpl(`${BASE_URL}${LISTING_PATH}`);
     if (!res.ok) {
       throw new Error(`RemaRecipeSource: listing fetch failed (${res.status})`);
@@ -100,18 +108,21 @@ function microdataValues(root: HTMLElement, prop: string): string[] {
 export function parseRecipeDetail(html: string, url: string): ExternalRecipe | null {
   const root = parse(html);
   const jsonLd = extractRecipeFromJsonLd(root);
+  const embedded = extractRecipeFromEmbeddedState(root);
 
   const title = jsonLd?.name ?? root.querySelector("h1")?.text.trim();
   if (!title) return null;
 
   const ingredients = firstNonEmpty(
     jsonLd?.ingredients ?? [],
+    embedded?.ingredients ?? [],
     microdataValues(root, "recipeIngredient"),
     extractIngredients(root),
   );
 
   const instructions = firstNonEmpty(
     jsonLd?.instructions ?? [],
+    embedded?.instructions ?? [],
     microdataValues(root, "recipeInstructions"),
     extractInstructions(root),
   );
@@ -123,12 +134,13 @@ export function parseRecipeDetail(html: string, url: string): ExternalRecipe | n
 
   const description =
     jsonLd?.description ??
+    embedded?.description ??
     root
       .querySelector("meta[property='og:description'], meta[name='description']")
       ?.getAttribute("content")
       ?.trim();
 
-  const servings = jsonLd?.servings ?? extractServings(root);
+  const servings = jsonLd?.servings ?? embedded?.servings ?? extractServings(root);
 
   const totalTimeMinutes =
     jsonLd?.totalTimeMinutes ??
@@ -174,24 +186,80 @@ export function summarizeExtraction(recipes: ExternalRecipe[]): ExtractionSummar
   };
 }
 
-/** Finds the first list of `<li>` text following a heading matching `headingPattern`. */
-function listAfterHeading(root: HTMLElement, headingPattern: RegExp): string[] {
-  const headings = root.querySelectorAll("h2, h3, h4");
-  for (const heading of headings) {
-    if (!headingPattern.test(heading.text)) continue;
-    let sibling = heading.nextElementSibling;
-    while (sibling && sibling.tagName !== "UL" && sibling.tagName !== "OL") {
-      sibling = sibling.nextElementSibling;
+/** Flattens the document into element order, so "what follows X" ignores nesting. */
+function elementsInDocumentOrder(root: HTMLElement): HTMLElement[] {
+  const out: HTMLElement[] = [];
+  const visit = (node: HTMLElement) => {
+    out.push(node);
+    for (const child of node.childNodes) {
+      if ((child as HTMLElement).tagName) visit(child as HTMLElement);
     }
-    if (sibling) {
-      const items = sibling
-        .querySelectorAll("li")
-        .map((el) => el.text.trim())
-        .filter(Boolean);
-      if (items.length > 0) return items;
+  };
+  visit(root);
+  return out;
+}
+
+function listItems(element: HTMLElement): string[] {
+  return element
+    .querySelectorAll("li")
+    .map((el) => el.text.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+}
+
+/**
+ * Finds the first list following a heading matching `headingPattern`, in
+ * document order.
+ *
+ * Document order matters: an earlier version only walked
+ * `heading.nextElementSibling`, which finds the list only when it is a direct
+ * sibling. Component-based sites almost always wrap it
+ * (`<h2>Ingredienser</h2><div><ul>…</ul></div>`), so that check silently
+ * returned nothing and every scraped recipe was stored with no ingredients.
+ */
+function listAfterHeading(root: HTMLElement, headingPattern: RegExp): string[] {
+  const elements = elementsInDocumentOrder(root);
+
+  for (let i = 0; i < elements.length; i++) {
+    const element = elements[i]!;
+    if (!/^H[1-6]$/.test(element.tagName ?? "")) continue;
+    if (!headingPattern.test(element.text)) continue;
+
+    // Scan forward, stopping at the next heading so a missing list doesn't
+    // swallow an unrelated list from a later section.
+    for (let j = i + 1; j < elements.length; j++) {
+      const candidate = elements[j]!;
+      if (/^H[1-6]$/.test(candidate.tagName ?? "") && candidate !== element) break;
+      if (candidate.tagName === "UL" || candidate.tagName === "OL") {
+        const items = listItems(candidate);
+        if (items.length > 0) return items;
+      }
     }
   }
+
   return [];
+}
+
+/**
+ * Last-resort structural guess: the longest list on the page whose items look
+ * like ingredient lines (short, and mostly starting with a quantity). Used
+ * only when every labelled strategy fails, so a redesign that drops the
+ * "Ingredienser" heading still yields something.
+ */
+function longestQuantityList(root: HTMLElement): string[] {
+  let best: string[] = [];
+
+  for (const list of root.querySelectorAll("ul, ol")) {
+    const items = listItems(list);
+    if (items.length < 3 || items.length <= best.length) continue;
+
+    const looksLikeIngredients =
+      items.filter((item) => item.length < 120 && /^\s*[\d½¼¾⅓⅔]/.test(item)).length >=
+      Math.ceil(items.length / 2);
+
+    if (looksLikeIngredients) best = items;
+  }
+
+  return best;
 }
 
 /**
@@ -201,16 +269,21 @@ function listAfterHeading(root: HTMLElement, headingPattern: RegExp): string[] {
  * module doc comment.
  */
 function extractIngredients(root: HTMLElement): string[] {
-  const candidateSelectors = ["[class*='ingrediens'] li", "[class*='ingredient'] li"];
+  const candidateSelectors = [
+    "[class*='ingrediens'] li",
+    "[class*='ingredient'] li",
+    "[data-testid*='ingredient'] li",
+    "[id*='ingrediens'] li",
+  ];
   for (const selector of candidateSelectors) {
     const items = root
       .querySelectorAll(selector)
-      .map((el) => el.text.trim())
+      .map((el) => el.text.replace(/\s+/g, " ").trim())
       .filter(Boolean);
     if (items.length > 0) return items;
   }
 
-  return listAfterHeading(root, /ingrediens/i);
+  return firstNonEmpty(listAfterHeading(root, /ingrediens/i), longestQuantityList(root));
 }
 
 /**
