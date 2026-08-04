@@ -37,6 +37,9 @@ export const en: Record<keyof typeof da, string> = {
   "week.regeneratingWhole": "Regenerating...",
   "week.regenerateWhole": "Regenerate whole week",
   "week.generateFailed": "The week plan couldn't be generated. Try again.",
+  "week.schemaOutOfDate":
+    "The database is missing an update the new version of the app needs, so this can't succeed " +
+    "yet. Run the database migrations (npm run db:migrate), then try again.",
   "week.noRecipes": "No recipes have been fetched yet, so there's nothing to plan with.",
   "week.noRecipesAction": "Fetch recipes",
   "week.today": "Today",

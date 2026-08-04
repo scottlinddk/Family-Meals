@@ -35,6 +35,9 @@ export const da = {
   "week.regeneratingWhole": "Genererer igen...",
   "week.regenerateWhole": "Genskab hele ugen",
   "week.generateFailed": "Ugeplanen kunne ikke laves. Prøv igen.",
+  "week.schemaOutOfDate":
+    "Databasen mangler en opdatering, som den nye version af appen har brug for, så det her kan " +
+    "ikke lykkes endnu. Kør databasemigrationerne (npm run db:migrate) og prøv så igen.",
   "week.noRecipes": "Der er ingen opskrifter hentet endnu, så der er intet at planlægge med.",
   "week.noRecipesAction": "Hent opskrifter",
   "week.today": "I dag",

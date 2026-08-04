@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { WeekPlan } from "~/domain/types";
+import { SCHEMA_OUT_OF_DATE_STATUS, SchemaOutOfDateError } from "~/lib/dbErrors";
 
 export function weekPlanQueryKey(weekStart: string) {
   return ["week-plan", weekStart] as const;
@@ -31,12 +32,14 @@ export class NoRecipesError extends Error {
   }
 }
 
+
 export function useGenerateWeekPlan(weekStart: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async () => {
       const res = await fetch(`/api/weeks/${weekStart}`, { method: "POST" });
       if (res.status === 409) throw new NoRecipesError();
+      if (res.status === SCHEMA_OUT_OF_DATE_STATUS) throw new SchemaOutOfDateError();
       if (!res.ok) throw new Error("Failed to generate week plan");
       return (await res.json()) as WeekPlan;
     },

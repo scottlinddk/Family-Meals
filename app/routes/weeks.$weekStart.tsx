@@ -1,6 +1,7 @@
 import { Link } from "react-router";
 import type { Route } from "./+types/weeks.$weekStart";
 import { useWeekPlan, useGenerateWeekPlan, NoRecipesError } from "~/ui/hooks/useWeekPlan";
+import { SchemaOutOfDateError } from "~/lib/dbErrors";
 import { WeekGrid } from "~/ui/components/WeekGrid";
 import { InfantNote } from "~/ui/components/InfantNote";
 import { Button } from "~/ui/components/ui/Button";
@@ -59,6 +60,8 @@ export default function WeekPage({ params }: Route.ComponentProps) {
                 {t("week.noRecipesAction")}
               </Link>
             </>
+          ) : generate.error instanceof SchemaOutOfDateError ? (
+            t("week.schemaOutOfDate")
           ) : (
             t("week.generateFailed")
           )}
