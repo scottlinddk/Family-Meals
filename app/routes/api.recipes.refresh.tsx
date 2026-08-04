@@ -13,14 +13,17 @@ export async function action({ request }: Route.ActionArgs) {
 
   try {
     await requireFamily(request, headers);
-    const recipes = await new RemaRecipeSource().fetchRecipes();
+    const { recipes, stats } = await new RemaRecipeSource().crawl();
     await externalRecipeRepository.replaceAll(recipes);
 
     // Report extraction health, not just a row count: a scrape that stores
     // recipes with no ingredients silently disables offer matching, and
-    // previously still reported a plain success.
+    // previously still reported a plain success. `stats` adds the crawl's own
+    // account of itself — how many pages it walked, against the total the
+    // theme listing claims, plus any page it had to skip — so a crawl that
+    // brings back 60 of 350 recipes says so.
     const summary = summarizeExtraction(recipes);
-    return new Response(JSON.stringify({ ok: true, count: recipes.length, ...summary }), {
+    return new Response(JSON.stringify({ ok: true, count: recipes.length, ...summary, themes: stats }), {
       headers: { ...Object.fromEntries(headers), "Content-Type": "application/json" },
     });
   } catch (error) {

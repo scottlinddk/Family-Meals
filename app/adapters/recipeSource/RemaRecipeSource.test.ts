@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   extractRecipeLinks,
   parseRecipeDetail,
+  RemaRecipeSource,
   summarizeExtraction,
 } from "~/adapters/recipeSource/RemaRecipeSource";
+import { buildListingHtml, type FixtureRecipe } from "~/adapters/recipeSource/__fixtures__/buildListingHtml";
 
 const LISTING_HTML = `
 <html><body>
@@ -334,5 +336,178 @@ describe("summarizeExtraction", () => {
     ]);
 
     expect(summary).toEqual({ total: 3, withIngredients: 2, withInstructions: 1 });
+  });
+});
+
+/**
+ * The crawl the cache actually depends on. The previous version read the
+ * `/opskrifter` landing page and stopped at 40 links, so the cache held a
+ * curated selection plus three collection pages — while `/opskrifter/aftensmad`
+ * states 350 recipes across its numbered pages.
+ */
+describe("RemaRecipeSource.crawl", () => {
+  const THEME_URL = "https://madogdrikke.rema1000.dk/opskrifter/aftensmad";
+  const PER_PAGE = 20;
+
+  /** A stand-in site: 350 dinner recipes over 18 numbered listing pages. */
+  function fakeSite(totalItems: number, overrides: Record<string, string> = {}) {
+    const requested: string[] = [];
+
+    const page = (n: number): FixtureRecipe[] =>
+      Array.from({ length: Math.min(PER_PAGE, totalItems - (n - 1) * PER_PAGE) }, (_, i) => ({
+        title: `Ret ${(n - 1) * PER_PAGE + i + 1}`,
+        slug: `ret-${(n - 1) * PER_PAGE + i + 1}`,
+        ingredients: [[400, "g", "hakket oksekød"]] as [number, string, string][],
+        steps: ["Steg kødet."],
+      }));
+
+    const fetchImpl = (async (input: string | URL) => {
+      const url = String(input);
+      requested.push(url);
+      if (url in overrides) {
+        return new Response(overrides[url], { status: 200 });
+      }
+      const match = url.match(/\/opskrifter\/aftensmad(?:\/(\d+))?$/);
+      if (!match) return new Response("not found", { status: 404 });
+      const requestedPage = match[1] ? Number(match[1]) : 1;
+      const lastPage = Math.ceil(totalItems / PER_PAGE);
+      // Out-of-range page numbers clamp back to page 1, as the live site does.
+      const served = requestedPage > lastPage ? 1 : requestedPage;
+      return new Response(
+        buildListingHtml({ recipes: page(served), currentPage: served, totalItems }),
+        { status: 200 },
+      );
+    }) as unknown as typeof fetch;
+
+    return { fetchImpl, requested };
+  }
+
+  it("walks every numbered page of the theme", async () => {
+    const { fetchImpl, requested } = fakeSite(350);
+    const { recipes, stats } = await new RemaRecipeSource(fetchImpl).crawl();
+
+    expect(recipes).toHaveLength(350);
+    expect(stats[0]).toMatchObject({
+      theme: "aftensmad",
+      strategy: "listing-payload",
+      reportedTotal: 350,
+      pagesFetched: 18,
+      recipes: 350,
+    });
+    expect(requested).toContain(`${THEME_URL}/18`);
+    expect(requested).not.toContain(`${THEME_URL}/19`);
+  });
+
+  it("keeps the site's own ordering regardless of which fetch finishes first", async () => {
+    const { fetchImpl } = fakeSite(60);
+    const { recipes } = await new RemaRecipeSource(fetchImpl).crawl();
+    expect(recipes.map((r) => r.id).slice(0, 3)).toEqual(["ret-1", "ret-2", "ret-3"]);
+    expect(recipes.at(-1)!.id).toBe("ret-60");
+  });
+
+  it("carries the theme tags through, so dinner recipes stay identifiable", async () => {
+    const { fetchImpl } = fakeSite(20);
+    const { recipes } = await new RemaRecipeSource(fetchImpl).crawl();
+    expect(recipes[0]!.tags).toEqual(["aftensmad"]);
+  });
+
+  /**
+   * A page the site clamps renders page 1 again. Accepting it would pad the
+   * crawl with duplicates and make a missing page look like a short theme.
+   */
+  it("rejects a page that comes back as a different page", async () => {
+    const { fetchImpl } = fakeSite(60, {
+      "https://madogdrikke.rema1000.dk/opskrifter/aftensmad/2": buildListingHtml({
+        recipes: [{ title: "Ret 1", slug: "ret-1" }],
+        currentPage: 1,
+        totalItems: 60,
+      }),
+    });
+
+    const { recipes, stats } = await new RemaRecipeSource(fetchImpl).crawl();
+
+    expect(stats[0]!.unexpectedPages).toEqual([2]);
+    expect(recipes.map((r) => r.id)).not.toContain("ret-21");
+    expect(new Set(recipes.map((r) => r.id)).size).toBe(recipes.length);
+  });
+
+  it("records pages that failed to fetch instead of reporting a clean run", async () => {
+    const failing = (async (input: string | URL) => {
+      const url = String(input);
+      if (url.endsWith("/aftensmad/2")) return new Response("boom", { status: 500 });
+      return fakeSite(60).fetchImpl(url);
+    }) as unknown as typeof fetch;
+
+    const { stats } = await new RemaRecipeSource(failing).crawl();
+    expect(stats[0]!.failedPages).toEqual([2]);
+    expect(stats[0]!.recipes).toBe(40);
+  });
+
+  it("crawls several themes and de-duplicates recipes that appear in both", async () => {
+    const fetchImpl = (async (input: string | URL) => {
+      const url = String(input);
+      if (url.endsWith("/aftensmad")) {
+        return new Response(
+          buildListingHtml({ recipes: [{ title: "Delt ret", slug: "delt-ret" }], totalItems: 1 }),
+          { status: 200 },
+        );
+      }
+      if (url.endsWith("/frokost")) {
+        return new Response(
+          buildListingHtml({
+            recipes: [
+              { title: "Delt ret", slug: "delt-ret" },
+              { title: "Frokostret", slug: "frokostret" },
+            ],
+            totalItems: 2,
+          }),
+          { status: 200 },
+        );
+      }
+      return new Response("not found", { status: 404 });
+    }) as unknown as typeof fetch;
+
+    const { recipes, stats } = await new RemaRecipeSource(fetchImpl, {
+      themes: ["aftensmad", "frokost"],
+    }).crawl();
+
+    expect(recipes.map((r) => r.id)).toEqual(["delt-ret", "frokostret"]);
+    expect(stats.map((s) => s.theme)).toEqual(["aftensmad", "frokost"]);
+  });
+
+  /**
+   * If the payload ever stops being readable, falling back to detail pages
+   * keeps the cache alive — but it fetches one page per recipe, so it says so
+   * through `strategy` rather than looking like a healthy short crawl.
+   */
+  it("falls back to detail pages when the listing exposes no payload", async () => {
+    const listing = `
+      <html><body>
+        <a href="/opskrifter/alle">Alle opskrifter</a>
+        <a href="/opskrifter/aftensmad/2">Side 2</a>
+        <a href="/opskrifter/frikadeller">Frikadeller</a>
+      </body></html>
+    `;
+    const detail = `
+      <html><body>
+        <h1>Frikadeller</h1>
+        <h2>Ingredienser</h2>
+        <ul><li>500 g hakket svinekød</li></ul>
+      </body></html>
+    `;
+
+    const fetchImpl = (async (input: string | URL) => {
+      const url = String(input);
+      if (url.endsWith("/opskrifter/aftensmad")) return new Response(listing, { status: 200 });
+      if (url.endsWith("/opskrifter/frikadeller")) return new Response(detail, { status: 200 });
+      return new Response("not found", { status: 404 });
+    }) as unknown as typeof fetch;
+
+    const { recipes, stats } = await new RemaRecipeSource(fetchImpl).crawl();
+
+    expect(stats[0]!.strategy).toBe("detail-pages");
+    expect(recipes).toEqual([
+      expect.objectContaining({ id: "frikadeller", ingredients: ["500 g hakket svinekød"], tags: ["aftensmad"] }),
+    ]);
   });
 });

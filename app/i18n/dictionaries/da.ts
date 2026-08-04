@@ -110,6 +110,9 @@ export const da = {
     "{{total}} opskrifter hentet — {{withIngredients}} med ingredienser, {{withInstructions}} med fremgangsmåde.",
   "recipes.refreshedNoIngredients":
     "{{total}} opskrifter hentet, men ingen havde en læsbar ingrediensliste, så tilbud kan ikke rangere dem.",
+  "recipes.refreshedCoverage":
+    "{{recipes}} af {{total}} opskrifter i temaet \"{{theme}}\" ({{pages}} sider hentet).",
+  "recipes.refreshedPagesSkipped": "Sider der ikke kunne hentes: {{pages}}.",
 
   "week.recipes": "Opskrifter",
   "nav.plan": "Ugeplan",

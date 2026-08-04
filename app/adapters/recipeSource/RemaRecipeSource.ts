@@ -3,58 +3,206 @@ import type { ExternalRecipe } from "~/domain/types";
 import type { RecipeSource } from "~/adapters/recipeSource/RecipeSource";
 import { extractRecipeFromJsonLd, parseDurationMinutes } from "~/adapters/recipeSource/recipeJsonLd";
 import { extractRecipeFromEmbeddedState } from "~/adapters/recipeSource/embeddedState";
+import { parseListingPage, type RemaListingRecipe } from "~/adapters/recipeSource/remaListing";
 
 const BASE_URL = "https://madogdrikke.rema1000.dk";
 const LISTING_PATH = "/opskrifter";
 
+/** The meal theme this app plans for: `/opskrifter/aftensmad`, 350 recipes. */
+export const DINNER_THEME = "aftensmad";
+
 /**
- * Automatic RecipeSource that fetches and parses REMA 1000's own public
- * recipe site (madogdrikke.rema1000.dk/opskrifter) — used to cross-check
- * this week's offers against REMA's own suggested meals, separate from the
- * hand-authored `RECIPE_CATALOG` used for the adult/child variant pipeline.
+ * Automatic RecipeSource for REMA 1000's own recipe site
+ * (madogdrikke.rema1000.dk/opskrifter).
  *
- * Extraction runs several strategies in order of durability:
- *   1. schema.org/Recipe JSON-LD (`recipeJsonLd.ts`) — the contract recipe
- *      sites maintain for Google rich results, so it survives redesigns.
- *   2. The framework's embedded state blob (`embeddedState.ts`) — Next.js
- *      `__NEXT_DATA__` and friends, keyed by stable domain names.
- *   3. Microdata `itemprop` attributes — the same vocabulary, inline.
- *   4. CSS class-name / heading heuristics, then a structural guess.
+ * ## What it crawls, and why that changed
  *
- * The heuristics alone produced 0-ingredient recipes for the whole cache,
- * which silently disabled offer matching, since a recipe with no ingredients
- * can never overlap an offer. `parseRecipeDetail` therefore merges the
- * strategies field-by-field rather than picking one wholesale, and
- * `summarizeExtraction` lets the refresh endpoint report when a scrape comes
- * back empty instead of reporting success.
+ * It used to read the `/opskrifter` landing page and follow the links it
+ * found, capped at 40. That ceiling was the whole cache: the landing page
+ * links a curated selection — and three collection pages, which is why
+ * "Alle opskrifter" and "Avisopskrifter" were stored as recipes with no
+ * ingredients — while the catalogue proper lives behind the theme listings.
+ * `/opskrifter/aftensmad` alone reports 350 recipes and `/opskrifter/alle`
+ * reports 670.
  *
- * The live site blocks non-browser clients from the dev sandbox, so when a
- * strategy needs to be matched to the real markup, `/api/recipes/diagnose`
- * (see `scrapeDiagnostics.ts`) reports the page's actual structure from
- * production, where the fetch succeeds.
+ * So it now crawls a *theme* listing and its numbered pages
+ * (`/opskrifter/aftensmad`, `/opskrifter/aftensmad/2`, …), taking each
+ * recipe from the listing's own Nuxt payload — see `remaListing.ts`, which
+ * documents the payload and the two self-reported numbers (`numberOfItems`
+ * and `current-page`) that make a complete crawl verifiable. 350 dinner
+ * recipes cost 18 requests that way, against 350 for a detail-page crawl,
+ * and every one of them arrives with ingredients, steps, servings and tags
+ * already structured.
+ *
+ * ## Fallback
+ *
+ * If a listing yields no recipes — a redesign, or a payload format change —
+ * the crawl falls back to the previous strategy: discover detail links, then
+ * extract each page through the four merged layers (schema.org/Recipe
+ * JSON-LD, embedded state, microdata `itemprop`, class-name heuristics; see
+ * `parseRecipeDetail`). That path fetches one page per recipe, so it stays
+ * capped to keep the serverless function inside its timeout, and reports
+ * itself as degraded through `CrawlStats.strategy` rather than quietly
+ * returning a short cache.
+ *
+ * Note `robots.txt` disallows `/api/*` and `/konto/*`; the numbered listing
+ * pages used here are ordinary crawlable pages.
  */
+
+const LISTING_FETCH_CONCURRENCY = 6;
 const DETAIL_FETCH_CONCURRENCY = 8;
 
+/** Bounds the crawl if a listing ever reports an implausible total. */
+const DEFAULT_MAX_PAGES = 60;
+
+/** Detail-page fallback only: how many pages one refresh may fetch. */
+const DEFAULT_DETAIL_LIMIT = 60;
+
+export interface RemaRecipeSourceOptions {
+  /** Theme listings to crawl, in order. Defaults to the dinner theme. */
+  themes?: string[];
+  maxPages?: number;
+  detailFallbackLimit?: number;
+}
+
+export interface CrawlStats {
+  theme: string;
+  strategy: "listing-payload" | "detail-pages";
+  /** The theme size the listing reports, when it states one. */
+  reportedTotal?: number;
+  pagesFetched: number;
+  recipes: number;
+  /** Pages the site answered with something other than the page asked for. */
+  unexpectedPages: number[];
+  failedPages: number[];
+}
+
 export class RemaRecipeSource implements RecipeSource {
+  private readonly themes: string[];
+  private readonly maxPages: number;
+  private readonly detailFallbackLimit: number;
+
   constructor(
     private readonly fetchImpl: typeof fetch = fetch,
-    private readonly maxRecipes = 40,
-  ) {}
+    options: RemaRecipeSourceOptions = {},
+  ) {
+    this.themes = options.themes ?? [DINNER_THEME];
+    this.maxPages = options.maxPages ?? DEFAULT_MAX_PAGES;
+    this.detailFallbackLimit = options.detailFallbackLimit ?? DEFAULT_DETAIL_LIMIT;
+  }
 
   async fetchRecipes(): Promise<ExternalRecipe[]> {
-    const links = await this.fetchRecipeLinks();
-    const queue = links.slice(0, this.maxRecipes);
-    const recipes: ExternalRecipe[] = [];
+    return (await this.crawl()).recipes;
+  }
 
-    // Fetch detail pages with bounded concurrency instead of one-by-one —
-    // sequential fetches of up to `maxRecipes` real pages risk exceeding the
-    // serverless function's execution timeout.
-    let nextIndex = 0;
+  /** `fetchRecipes` plus what the crawl saw, for the refresh endpoint to report. */
+  async crawl(): Promise<{ recipes: RemaListingRecipe[]; stats: CrawlStats[] }> {
+    const recipes = new Map<string, RemaListingRecipe>();
+    const stats: CrawlStats[] = [];
+
+    for (const theme of this.themes) {
+      const result = await this.crawlTheme(theme);
+      stats.push(result.stats);
+      // First theme to yield a recipe wins its details; later themes only add.
+      for (const recipe of result.recipes) if (!recipes.has(recipe.id)) recipes.set(recipe.id, recipe);
+    }
+
+    return { recipes: [...recipes.values()], stats };
+  }
+
+  private async crawlTheme(theme: string): Promise<{ recipes: RemaListingRecipe[]; stats: CrawlStats }> {
+    const firstUrl = `${BASE_URL}${LISTING_PATH}/${theme}`;
+    const firstHtml = await this.fetchText(firstUrl);
+    const first = firstHtml ? parseListingPage(firstHtml) : undefined;
+
+    if (!first || first.recipes.length === 0) {
+      const recipes = await this.crawlDetailPages(theme);
+      return {
+        recipes,
+        stats: {
+          theme,
+          strategy: "detail-pages",
+          reportedTotal: first?.totalItems,
+          pagesFetched: 1,
+          recipes: recipes.length,
+          unexpectedPages: [],
+          failedPages: [],
+        },
+      };
+    }
+
+    const perPage = first.recipes.length;
+    const pageCount = first.totalItems
+      ? Math.min(Math.ceil(first.totalItems / perPage), this.maxPages)
+      : 1;
+
+    const byPage = new Map<number, RemaListingRecipe[]>([[1, first.recipes]]);
+    const unexpectedPages: number[] = [];
+    const failedPages: number[] = [];
+
+    const pages = Array.from({ length: Math.max(0, pageCount - 1) }, (_, i) => i + 2);
+    let next = 0;
     const worker = async () => {
-      while (nextIndex < queue.length) {
-        const link = queue[nextIndex++]!;
-        const recipe = await this.fetchRecipeDetail(link);
-        if (recipe) recipes.push(recipe);
+      while (next < pages.length) {
+        const page = pages[next++]!;
+        const html = await this.fetchText(`${firstUrl}/${page}`);
+        if (!html) {
+          failedPages.push(page);
+          continue;
+        }
+        const parsed = parseListingPage(html);
+        // A page number the site clamps renders page 1 again; taking it would
+        // silently pad the crawl with duplicates and hide the missing page.
+        if (parsed.currentPage !== undefined && parsed.currentPage !== page) {
+          unexpectedPages.push(page);
+          continue;
+        }
+        byPage.set(page, parsed.recipes);
+      }
+    };
+    await Promise.all(
+      Array.from({ length: Math.min(LISTING_FETCH_CONCURRENCY, pages.length) }, worker),
+    );
+
+    // Reassemble in page order, so the cache mirrors the site's own ordering
+    // (newest first) regardless of which worker finished when.
+    const ordered: RemaListingRecipe[] = [];
+    const seen = new Set<string>();
+    for (let page = 1; page <= pageCount; page++) {
+      for (const recipe of byPage.get(page) ?? []) {
+        if (seen.has(recipe.id)) continue;
+        seen.add(recipe.id);
+        ordered.push(recipe);
+      }
+    }
+
+    return {
+      recipes: ordered,
+      stats: {
+        theme,
+        strategy: "listing-payload",
+        reportedTotal: first.totalItems,
+        pagesFetched: byPage.size,
+        recipes: ordered.length,
+        unexpectedPages: unexpectedPages.sort((a, b) => a - b),
+        failedPages: failedPages.sort((a, b) => a - b),
+      },
+    };
+  }
+
+  /** Pre-payload strategy, kept as the fallback: one fetch per recipe page. */
+  private async crawlDetailPages(theme: string): Promise<RemaListingRecipe[]> {
+    const links = await this.fetchRecipeLinks(theme);
+    const queue = links.slice(0, this.detailFallbackLimit);
+    const recipes: RemaListingRecipe[] = [];
+
+    let next = 0;
+    const worker = async () => {
+      while (next < queue.length) {
+        const link = queue[next++]!;
+        const html = await this.fetchText(link);
+        const recipe = html ? parseRecipeDetail(html, link) : null;
+        if (recipe) recipes.push({ ...recipe, tags: [theme] });
       }
     };
     await Promise.all(Array.from({ length: Math.min(DETAIL_FETCH_CONCURRENCY, queue.length) }, worker));
@@ -62,35 +210,89 @@ export class RemaRecipeSource implements RecipeSource {
     return recipes;
   }
 
-  /** Public so `/api/recipes/diagnose` can inspect a real recipe page. */
-  async fetchRecipeLinks(): Promise<string[]> {
-    const res = await this.fetchImpl(`${BASE_URL}${LISTING_PATH}`);
+  /**
+   * Recipe detail URLs a listing links to. Public so `/api/recipes/diagnose`
+   * can inspect a real recipe page.
+   */
+  async fetchRecipeLinks(theme?: string): Promise<string[]> {
+    const path = theme ? `${LISTING_PATH}/${theme}` : LISTING_PATH;
+    const res = await this.fetchImpl(`${BASE_URL}${path}`);
     if (!res.ok) {
       throw new Error(`RemaRecipeSource: listing fetch failed (${res.status})`);
     }
     return extractRecipeLinks(await res.text());
   }
 
-  private async fetchRecipeDetail(url: string): Promise<ExternalRecipe | null> {
+  private async fetchText(url: string): Promise<string | undefined> {
     const res = await this.fetchImpl(url);
-    if (!res.ok) return null;
-    return parseRecipeDetail(await res.text(), url);
+    if (!res.ok) return undefined;
+    return res.text();
   }
 }
 
-/** Pulls unique absolute recipe detail URLs out of the /opskrifter listing page. */
+/**
+ * Pulls unique absolute recipe detail URLs out of a listing page.
+ *
+ * Excludes the theme/collection pages that share the `/opskrifter/` prefix —
+ * `/opskrifter/alle`, `/opskrifter/aftensmad`, `/opskrifter/temaer` and the
+ * rest — which the old crawl stored as ingredient-less "recipes".
+ */
 export function extractRecipeLinks(html: string): string[] {
   const root = parse(html);
   const hrefs = new Set<string>();
   for (const a of root.querySelectorAll("a")) {
     const href = a.getAttribute("href");
     if (!href || !href.includes("/opskrifter/")) continue;
-    if (href.replace(/\/$/, "").endsWith("/opskrifter")) continue; // the index page linking to itself
-    const absolute = href.startsWith("http") ? href : `${BASE_URL}${href.startsWith("/") ? "" : "/"}${href}`;
-    hrefs.add(absolute.split("?")[0] ?? absolute);
+    const path = (href.split("?")[0] ?? href).replace(/\/$/, "");
+    const slug = path.slice(path.indexOf("/opskrifter/") + "/opskrifter/".length);
+    if (!slug || slug.includes("/")) continue; // the index page, or a numbered listing page
+    if (COLLECTION_SLUGS.has(slug)) continue;
+    hrefs.add(`${BASE_URL}/opskrifter/${slug}`);
   }
   return [...hrefs];
 }
+
+/**
+ * Listing pages that live under `/opskrifter/` alongside the recipes. Taken
+ * from `/opskrifter/temaer` plus the three collections the landing page links.
+ */
+const COLLECTION_SLUGS = new Set([
+  "alle",
+  "temaer",
+  "opskrifter",
+  "aftensmad",
+  "bagvaerk-sodt-og-snacks",
+  "drikkevarer",
+  "fest-og-hojtider",
+  "fisk-og-skaldyr",
+  "forretter",
+  "frokost",
+  "glutenfri",
+  "halloween",
+  "i-sortiment",
+  "jul",
+  "kodfri",
+  "mad-for-born",
+  "mad-pa-farten",
+  "morgenmad",
+  "mortensaften",
+  "nem-hverdagsmad",
+  "nemt-og-gront",
+  "nytar",
+  "opskrifter-med-efterarets-saesonvarer",
+  "opskrifter-med-forarets-saesonvarer",
+  "opskrifter-med-sommers-saesonvarer",
+  "opskrifter-med-vinterens-saesonvarer",
+  "paske",
+  "saesonmad",
+  "sundere-alternativer",
+  "til-madpakken",
+  "tilbehor-til-aftensmad",
+  "udenlandsk",
+  "ugens-avisopskrifter",
+  "uno-x-mobilitys-gemte-opskrifter",
+  "vildt",
+]);
 
 /** Reads the text (or `content`) of microdata elements carrying `itemprop`. */
 function microdataValues(root: HTMLElement, prop: string): string[] {
@@ -101,9 +303,11 @@ function microdataValues(root: HTMLElement, prop: string): string[] {
 }
 
 /**
- * Merges the three extraction strategies field-by-field, preferring the more
- * durable source but letting a weaker one fill a gap the stronger one left
- * empty (e.g. JSON-LD that omits `description` but has full ingredients).
+ * Merges the detail-page extraction strategies field-by-field, preferring the
+ * more durable source but letting a weaker one fill a gap the stronger one
+ * left empty (e.g. JSON-LD that omits `description` but has full ingredients).
+ *
+ * Used by the fallback crawl and by `/api/recipes/diagnose`.
  */
 export function parseRecipeDetail(html: string, url: string): ExternalRecipe | null {
   const root = parse(html);
@@ -265,8 +469,7 @@ function longestQuantityList(root: HTMLElement): string[] {
 /**
  * Recipe sites vary their markup for the ingredient list; try a few common
  * class-name patterns, then fall back to the first list following a heading
- * that says "Ingrediens(er)". Not verified against live markup — see the
- * module doc comment.
+ * that says "Ingrediens(er)".
  */
 function extractIngredients(root: HTMLElement): string[] {
   const candidateSelectors = [
