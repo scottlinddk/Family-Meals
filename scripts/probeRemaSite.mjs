@@ -1,12 +1,13 @@
 /**
- * Temporary probe: reports how madogdrikke.rema1000.dk's recipe listings are
- * structured, from an environment whose network the site actually answers.
+ * Temporary probe: works out how madogdrikke.rema1000.dk pages through a
+ * recipe listing, from an environment whose network the site answers.
  *
- * madogdrikke.rema1000.dk returns `403 This site is not available in your
- * region` to the development sandbox and to both Supabase regions, so the
- * listing markup (and therefore its pagination) has never been checked
- * against ground truth. This runs the fetches in CI and commits the captures
- * so the crawler can be written against the real pages instead of guesses.
+ * Round 1 established: Nuxt site, `__NUXT_DATA__` holds the full recipe
+ * records for the 20 cards a listing renders, `/opskrifter/aftensmad` reports
+ * `numberOfItems = 350`, and the grid is wrapped in `<div current-page="1">`.
+ * `?page=2` changed nothing, so round 2 finds the real pagination handle: it
+ * greps the built JS for the listing's fetch call, and probes candidate URL
+ * shapes, reporting which one moves the grid off page 1.
  *
  * Delete this script and its workflow once the crawler is verified.
  */
@@ -14,120 +15,102 @@ import { mkdir, writeFile } from "node:fs/promises";
 
 const BASE = "https://madogdrikke.rema1000.dk";
 const OUT_DIR = "scrape-captures";
-
-const TARGETS = [
-  ["robots", "/robots.txt"],
-  ["sitemap", "/sitemap.xml"],
-  ["opskrifter", "/opskrifter"],
-  ["alle", "/opskrifter/alle"],
-  ["aftensmad", "/opskrifter/aftensmad"],
-  ["aftensmad-page2-query", "/opskrifter/aftensmad?page=2"],
-  ["temaer", "/opskrifter/temaer"],
-  ["detail-lasagne", "/opskrifter/lasagne"],
-];
+const LISTING = "/opskrifter/aftensmad";
 
 const HEADERS = {
   "User-Agent":
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0 Safari/537.36",
   "Accept-Language": "da-DK,da;q=0.9",
-  Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
 };
 
-/** Counts and samples the distinct /opskrifter/ links a page exposes. */
-function recipeLinks(html) {
-  const found = new Set();
-  for (const match of html.matchAll(/href="([^"]*\/opskrifter\/[^"#?]*)"/g)) {
-    found.add(match[1].replace(/\/$/, ""));
-  }
-  return [...found];
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function get(url) {
+  const res = await fetch(url, { headers: HEADERS });
+  return { status: res.status, body: await res.text() };
 }
 
-/** Words and parameter names that would reveal how more pages are loaded. */
-const PAGINATION_MARKERS = [
-  "vis mere",
-  "indlæs",
-  "load more",
-  "hasNextPage",
-  "hasMore",
-  "totalCount",
-  "totalPages",
-  "pageSize",
-  "pageIndex",
-  "currentPage",
-  "?page=",
-  "&page=",
-  "skip=",
-  "take=",
-  "offset=",
-  "limit=",
-  "rel=\"next\"",
-  "infinite",
-];
-
-function markerHits(html) {
-  const lower = html.toLowerCase();
-  return PAGINATION_MARKERS.filter((m) => lower.includes(m.toLowerCase()));
-}
-
-/** API endpoints the page references, which may list recipes directly. */
-function apiCandidates(html) {
-  const hits = new Set();
-  for (const match of html.matchAll(/["'](https?:\/\/[^"']*\/(?:api|graphql)\/[^"']*)["']/g)) hits.add(match[1]);
-  for (const match of html.matchAll(/["'](\/(?:api|graphql)\/[^"']*)["']/g)) hits.add(match[1]);
-  return [...hits].slice(0, 40);
-}
-
-function jsonLdTypes(html) {
-  const types = new Set();
-  for (const match of html.matchAll(/<script[^>]*application\/ld\+json[^>]*>([\s\S]*?)<\/script>/g)) {
-    for (const t of match[1].matchAll(/"@type"\s*:\s*"([^"]+)"/g)) types.add(t[1]);
-  }
-  return [...types];
-}
-
-function stateBlobs(html) {
+/** What page of the grid a listing response actually rendered. */
+function listingShape(body) {
   return {
-    nextData: html.includes("__NEXT_DATA__"),
-    nextFlight: html.includes("self.__next_f"),
-    nuxt: html.includes("__NUXT__"),
-    remix: html.includes("__remixContext"),
-    sveltekit: html.includes("__sveltekit"),
-    apolloState: html.includes("__APOLLO_STATE__"),
-    ingredientKey: /"(recipe)?ingredien(t|s|ser|ts)?"\s*:/i.test(html),
+    currentPage: body.match(/current-page="(\d+)"/)?.[1],
+    numberOfItems: body.match(/itemprop="numberOfItems" content="(\d+)"/)?.[1],
+    firstSlugs: [...body.matchAll(/href="\/opskrifter\/([a-z0-9-]+)"/g)]
+      .map((m) => m[1])
+      .filter((s, i, all) => all.indexOf(s) === i)
+      .slice(0, 3),
   };
 }
 
-const report = [];
-
 await mkdir(OUT_DIR, { recursive: true });
+const report = { candidates: [], jsHits: [], apiProbes: [] };
 
-for (const [name, path] of TARGETS) {
-  const url = `${BASE}${path}`;
+// 1. Candidate URL shapes for "give me the next 20".
+const CANDIDATES = [
+  LISTING,
+  `${LISTING}?page=2`,
+  `${LISTING}?side=2`,
+  `${LISTING}?p=2`,
+  `${LISTING}?pageNumber=2`,
+  `${LISTING}?currentPage=2`,
+  `${LISTING}?current-page=2`,
+  `${LISTING}?offset=20`,
+  `${LISTING}?skip=20`,
+  `${LISTING}?per_page=100`,
+  `${LISTING}?page=2&sort=created_at`,
+  `${LISTING}/2`,
+  `${LISTING}/side/2`,
+  `${LISTING}/page/2`,
+];
+
+for (const path of CANDIDATES) {
   try {
-    const res = await fetch(url, { headers: HEADERS });
-    const body = await res.text();
-    await writeFile(`${OUT_DIR}/${name}.html`, body);
-
-    const links = recipeLinks(body);
-    report.push({
-      name,
-      url,
-      status: res.status,
-      contentType: res.headers.get("content-type"),
-      length: body.length,
-      title: body.match(/<title[^>]*>([\s\S]*?)<\/title>/)?.[1]?.trim().slice(0, 120),
-      recipeLinkCount: links.length,
-      recipeLinkSample: links.slice(0, 15),
-      paginationMarkers: markerHits(body),
-      apiCandidates: apiCandidates(body),
-      jsonLdTypes: jsonLdTypes(body),
-      state: stateBlobs(body),
-    });
+    const { status, body } = await get(`${BASE}${path}`);
+    report.candidates.push({ path, status, ...listingShape(body) });
   } catch (error) {
-    report.push({ name, url, error: String(error) });
+    report.candidates.push({ path, error: String(error) });
   }
-  await new Promise((r) => setTimeout(r, 400));
+  await sleep(400);
 }
 
-await writeFile(`${OUT_DIR}/report.json`, JSON.stringify(report, null, 2));
-console.log(JSON.stringify(report, null, 2));
+// 2. The built JS: find the call that loads more cards.
+const { body: listingHtml } = await get(`${BASE}${LISTING}`);
+const chunks = [...new Set([...listingHtml.matchAll(/\/static\/[A-Za-z0-9_-]+\.js/g)].map((m) => m[0]))];
+report.chunkCount = chunks.length;
+
+const NEEDLES = [
+  /recipe-tag-/,
+  /useInfiniteQuery/,
+  /per_page/,
+  /last_page/,
+  /current-page/,
+  /getNextPageParam/,
+  /https?:\/\/[a-z0-9.-]*rema1000\.dk\/[^"'`]*recipe[^"'`]*/i,
+  /["'`][^"'`]*\/recipes?[^"'`]*["'`]/,
+];
+
+for (const chunk of chunks) {
+  try {
+    const { body } = await get(`${BASE}${chunk}`);
+    const hits = [];
+    for (const needle of NEEDLES) {
+      const re = new RegExp(needle.source, "g" + (needle.flags.includes("i") ? "i" : ""));
+      for (const match of body.matchAll(re)) {
+        const start = Math.max(0, match.index - 260);
+        hits.push({ needle: needle.source, excerpt: body.slice(start, match.index + 260) });
+        if (hits.length > 12) break;
+      }
+      if (hits.length > 12) break;
+    }
+    if (hits.length > 0) {
+      report.jsHits.push({ chunk, hits });
+      await writeFile(`${OUT_DIR}/chunk-${chunk.split("/").pop()}`, body);
+    }
+  } catch (error) {
+    report.jsHits.push({ chunk, error: String(error) });
+  }
+  await sleep(150);
+}
+
+await writeFile(`${OUT_DIR}/report2.json`, JSON.stringify(report, null, 2));
+console.log(JSON.stringify({ candidates: report.candidates, chunkCount: report.chunkCount }, null, 2));
