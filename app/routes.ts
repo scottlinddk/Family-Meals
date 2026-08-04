@@ -8,6 +8,7 @@ export default [
   layout("routes/_app.tsx", [
     route("weeks/:weekStart", "routes/weeks.$weekStart.tsx"),
     route("weeks/:weekStart/day/:day", "routes/weeks.$weekStart.day.$day.tsx"),
+    route("weeks/:weekStart/shopping-list", "routes/weeks.$weekStart.shopping-list.tsx"),
     route("offers", "routes/offers.tsx"),
     route("recipes", "routes/recipes.tsx"),
     route("recipes/:id", "routes/recipes.$id.tsx"),
@@ -26,6 +27,7 @@ export default [
   route("api/weeks/:weekStart/day/:day", "routes/api.weeks.$weekStart.day.$day.tsx"),
   route("api/weeks/:weekStart/regenerate-day", "routes/api.weeks.$weekStart.regenerate-day.tsx"),
   route("api/weeks/:weekStart/swap-day", "routes/api.weeks.$weekStart.swap-day.tsx"),
+  route("api/weeks/:weekStart/shopping-list", "routes/api.weeks.$weekStart.shopping-list.tsx"),
   route("api/offers", "routes/api.offers.tsx"),
   route("api/offers/refresh", "routes/api.offers.refresh.tsx"),
   route("api/recipes", "routes/api.recipes.tsx"),

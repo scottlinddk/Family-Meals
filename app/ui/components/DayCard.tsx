@@ -5,6 +5,7 @@ import { RegenerateDayButton } from "~/ui/components/RegenerateDayButton";
 import { RecipeBody } from "~/ui/components/RecipeBody";
 import { Card, CardKicker } from "~/ui/components/ui/Card";
 import { Tag } from "~/ui/components/ui/Tag";
+import { todayIso } from "~/lib/time";
 import { t } from "~/i18n/t";
 
 /**
@@ -30,17 +31,26 @@ export function DayCard({
   const weekday = new Date(`${day.date}T00:00:00`).toLocaleDateString("da-DK", { weekday: "long" });
   const snapshot = day.recipeSnapshot;
   const offerCount = snapshot.offerIngredientLines?.length ?? 0;
+  const isToday = day.date === todayIso();
 
   return (
-    <Card as="article" className="p-4">
+    <Card as="article" className={`p-4 ${isToday ? "border-accent" : ""}`}>
       <header className="mb-1 flex items-start justify-between gap-2">
         <div className="flex items-start gap-3">
           {snapshot.imageUrl && (
-            <img src={snapshot.imageUrl} alt="" className="h-14 w-14 shrink-0 rounded-md object-cover" />
+            <img
+              src={snapshot.imageUrl}
+              alt=""
+              width={56}
+              height={56}
+              loading="lazy"
+              className="h-14 w-14 shrink-0 rounded-md object-cover"
+            />
           )}
           <div>
             <CardKicker>
               {weekday} · {day.date}
+              {isToday && <span className="ml-2 text-accent">{t("week.today")}</span>}
             </CardKicker>
             {expanded ? (
               <h3 className="mt-1 text-2xl">{snapshot.title}</h3>

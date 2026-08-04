@@ -76,6 +76,8 @@ export default function RecipesPage() {
                     <img
                       src={recipe.imageUrl}
                       alt=""
+                      width={64}
+                      height={64}
                       loading="lazy"
                       className="h-16 w-16 shrink-0 rounded-md object-cover"
                     />

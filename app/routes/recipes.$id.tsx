@@ -24,6 +24,8 @@ export default function RecipeDetailPage({ params }: Route.ComponentProps) {
             <img
               src={recipe.data.imageUrl}
               alt=""
+              width={1280}
+              height={720}
               className="mb-3 aspect-video w-full rounded-md object-cover"
             />
           )}

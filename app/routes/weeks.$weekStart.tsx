@@ -1,6 +1,6 @@
 import { Link } from "react-router";
 import type { Route } from "./+types/weeks.$weekStart";
-import { useWeekPlan, useGenerateWeekPlan } from "~/ui/hooks/useWeekPlan";
+import { useWeekPlan, useGenerateWeekPlan, NoRecipesError } from "~/ui/hooks/useWeekPlan";
 import { WeekGrid } from "~/ui/components/WeekGrid";
 import { InfantNote } from "~/ui/components/InfantNote";
 import { Button } from "~/ui/components/ui/Button";
@@ -50,18 +50,39 @@ export default function WeekPage({ params }: Route.ComponentProps) {
         </div>
       )}
 
+      {generate.isError && (
+        <p className="mt-3 text-sm text-red-700">
+          {generate.error instanceof NoRecipesError ? (
+            <>
+              {t("week.noRecipes")}{" "}
+              <Link to="/offers" className="text-accent underline hover:text-accent-700">
+                {t("week.noRecipesAction")}
+              </Link>
+            </>
+          ) : (
+            t("week.generateFailed")
+          )}
+        </p>
+      )}
+
       {weekPlan.data && (
         <>
-          <Button
-            type="button"
-            variant="secondary"
-            block
-            className="mb-4"
-            onClick={() => generate.mutate()}
-            disabled={generate.isPending}
-          >
-            {generate.isPending ? t("week.regeneratingWhole") : t("week.regenerateWhole")}
-          </Button>
+          <div className="mb-4 flex flex-col gap-2 sm:flex-row">
+            <Button
+              type="button"
+              variant="secondary"
+              block
+              onClick={() => generate.mutate()}
+              disabled={generate.isPending}
+            >
+              {generate.isPending ? t("week.regeneratingWhole") : t("week.regenerateWhole")}
+            </Button>
+            <Link to={`/weeks/${weekStart}/shopping-list`} className="sm:w-auto">
+              <Button type="button" variant="primary" block>
+                {t("shoppingList.open")}
+              </Button>
+            </Link>
+          </div>
           <WeekGrid week={weekPlan.data} />
         </>
       )}

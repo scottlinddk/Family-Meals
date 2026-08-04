@@ -40,7 +40,20 @@ export function Layout({ children }: { children: ReactNode }) {
 }
 
 export default function App() {
-  const [queryClient] = useState(() => new QueryClient());
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            // Offers, recipes and plans change on human timescales, not by the
+            // second — without this every mount refetched everything, so
+            // moving between pages re-fired the same queries constantly.
+            staleTime: 60_000,
+            retry: 1,
+          },
+        },
+      }),
+  );
 
   return (
     <QueryClientProvider client={queryClient}>
