@@ -111,6 +111,9 @@ export const en: Record<keyof typeof da, string> = {
     "{{total}} recipes fetched — {{withIngredients}} with ingredients, {{withInstructions}} with a method.",
   "recipes.refreshedNoIngredients":
     "{{total}} recipes fetched, but none had a readable ingredient list, so offer matching cannot rank them.",
+  "recipes.refreshedCoverage":
+    "{{recipes}} of {{total}} recipes in the \"{{theme}}\" theme ({{pages}} pages fetched).",
+  "recipes.refreshedPagesSkipped": "Pages that could not be fetched: {{pages}}.",
 
   "week.recipes": "Recipes",
   "nav.plan": "Week plan",

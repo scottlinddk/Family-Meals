@@ -177,6 +177,14 @@ export interface ExternalRecipe {
   servings?: number;
   /** Total time to make the dish, in minutes, if stated. */
   totalTimeMinutes?: number;
+  /**
+   * Meal-theme slugs from the source site, e.g. `["aftensmad", "frokost"]`.
+   * A recipe carries several: REMA files "Poke bowl med ørredfilet" under
+   * dinner, lunch and fish. Kept so dinner planning can tell a main course
+   * from a cake — the cache is no longer whatever one landing page happened
+   * to link.
+   */
+  tags?: string[];
 }
 
 /**

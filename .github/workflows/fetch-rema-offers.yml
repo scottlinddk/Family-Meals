@@ -1,0 +1,49 @@
+# Runs the offer fetch from a network api.etilbudsavis.dk answers.
+#
+# The API 403s this project's dev sandbox, so `EtilbudsavisOfferSource` has
+# only ever been covered by fixture tests. This exercises it against the live
+# API and commits the result as JSON, which is also how the offer set gets
+# loaded when the app's "Fetch offers now" button can't be reached.
+name: Fetch REMA offers
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: "Commit the fetched JSON to this branch"
+        type: boolean
+        default: true
+  push:
+    paths:
+      - "scripts/fetchRemaOffers.ts"
+      - ".github/workflows/fetch-rema-offers.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Fetch offers
+        run: npx vite-node --config vitest.config.ts scripts/fetchRemaOffers.ts -- scrape-output/rema-offers.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rema-offers
+          path: scrape-output/rema-offers.json
+      - name: Commit the offers
+        if: ${{ github.event_name == 'push' || inputs.commit }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A -f scrape-output
+          git diff --cached --quiet && echo "no changes" && exit 0
+          git commit -m "Fetch REMA 1000's current offers from etilbudsavis [skip ci]"
+          git push origin HEAD:${GITHUB_REF_NAME}

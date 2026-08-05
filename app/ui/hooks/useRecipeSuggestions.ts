@@ -22,6 +22,16 @@ export interface RefreshRecipesResult {
   total: number;
   withIngredients: number;
   withInstructions: number;
+  /** Per-theme crawl coverage — see `CrawlStats` in `RemaRecipeSource`. */
+  themes?: {
+    theme: string;
+    strategy: "listing-payload" | "detail-pages";
+    reportedTotal?: number;
+    pagesFetched: number;
+    recipes: number;
+    unexpectedPages: number[];
+    failedPages: number[];
+  }[];
 }
 
 /** Re-scrapes REMA 1000's public recipe list (madogdrikke.rema1000.dk/opskrifter). */

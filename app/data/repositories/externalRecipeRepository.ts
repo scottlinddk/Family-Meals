@@ -14,6 +14,7 @@ function toDomain(row: typeof externalRecipesTable.$inferSelect): ExternalRecipe
     instructions: row.instructions as string[],
     servings: row.servings ?? undefined,
     totalTimeMinutes: row.totalTimeMinutes ?? undefined,
+    tags: (row.tags as string[] | null) ?? [],
   };
 }
 
@@ -45,6 +46,7 @@ export const externalRecipeRepository = {
           instructions: r.instructions,
           servings: r.servings,
           totalTimeMinutes: r.totalTimeMinutes,
+          tags: r.tags ?? [],
         })),
       );
     });

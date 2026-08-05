@@ -62,6 +62,32 @@ and parses REMA 1000's public recipe site
 `external_recipes` table via `externalRecipeRepository`. Click "Refresh
 recipes" on `/offers` (`POST /api/recipes/refresh`) to re-scrape.
 
+It crawls a **meal theme** and its numbered listing pages —
+`/opskrifter/aftensmad`, `/opskrifter/aftensmad/2`, … — not the
+`/opskrifter` landing page. The landing page links a curated selection plus
+a few collection pages, which is why the cache sat at 40 recipes (three of
+them collection pages stored as ingredient-less "recipes") while
+`/opskrifter/aftensmad` states 350 and `/opskrifter/alle` states 670. The
+theme defaults to `aftensmad`; pass others through
+`new RemaRecipeSource(fetch, { themes: [...] })`, and `/opskrifter/temaer`
+lists what exists.
+
+Each listing page is a Nuxt page whose `__NUXT_DATA__` payload carries the
+*whole* recipe behind every card — title, image, servings, ingredient groups
+with amounts and units, preparation steps, and theme tags — so a theme costs
+one request per 20 recipes and no detail-page fetch at all
+(`remaListing.ts`, `nuxtPayload.ts`). Two numbers the page states about
+itself, `numberOfItems` and `current-page`, make a complete crawl checkable:
+`/api/recipes/refresh` reports recipes-found against the theme's own total,
+pages walked, and any page it had to skip, and the "Refresh recipes" button
+shows it. If the payload ever stops being readable the crawl falls back to
+the old per-recipe detail-page extraction (JSON-LD → embedded state →
+microdata → class-name heuristics, merged field-by-field in
+`parseRecipeDetail`), capped and flagged as `strategy: "detail-pages"`.
+
+`robots.txt` disallows `/api/*` and `/konto/*`; the numbered listing pages
+the crawl uses are ordinary crawlable pages.
+
 This cache is the single source of recipes for the whole app: the `/recipes`
 browse page (`GET /api/recipes`), a recipe's detail page (`GET
 /api/recipes/:id`), the "Best meals from this week's offers" panel
@@ -78,11 +104,36 @@ of the hand-authored substitutions/calorie-dense-addition guarantee — see
 variant derivation still exist in the codebase but are no longer wired into
 any route — they're kept in case curated-content generation comes back.
 
-Like the offer source above, madogdrikke.rema1000.dk returned 403 from this
-sandbox, so the HTML selectors are written defensively against common
-markup patterns and covered by fixture-based tests
-(`RemaRecipeSource.test.ts`) rather than live traffic — verify selectors
-against the real page in an environment with normal network access.
+Like the offer source above, madogdrikke.rema1000.dk 403s this sandbox — the
+body says `This site is not available in your region`, and it 403s both
+Supabase regions too, so it's geography, not bot protection. The parsers are
+therefore developed against captures taken from CI, where the fetch
+succeeds: `app/adapters/recipeSource/__fixtures__/aftensmad-listing.html` is
+a reduced copy of a real listing response, and the `Scrape REMA recipes`
+workflow (`.github/workflows/scrape-rema-recipes.yml`) runs the real crawl
+via `scripts/scrapeRemaRecipes.ts`, printing coverage and committing/
+uploading the scraped JSON. Run that after changing the crawler — it fails
+if a theme comes back short of its own stated total.
+
+### Matching recipes to offers
+
+`ingredientOfferScore.ts` reduces both an ingredient line and an offer name to
+product tokens and compares them with Danish compound nouns in mind. Its rules
+are now tuned against real data — the 350 scraped dinner recipes against a
+week's 91 REMA offers — rather than against invented examples, and
+`ingredientOfferScore.test.ts` pins the wrong matches that measurement found:
+"hvid-" in a wine offer matching every *hvidløg*, a jar-and-bottle offer
+matching every "1 flaske øl", *spidskommen* matching *spidskål*, and raw
+ingredients matching processed versions of themselves (butter → *smøreost*,
+chicken → *kyllingebouillon*, bacon → *baconpostej*).
+
+It is still text matching, so some imprecision remains in both directions:
+*bønnespir* matches an offer for *bønner*, and an offer for "REMA 1000
+Frilandsgris" does not reach an ingredient line saying *grisekød*. The durable
+fix is already in reach — REMA's listing payload links every recipe ingredient
+to a specific product (`digitalProduct`, with `is_campaign`/`is_advertised`
+price flags), so ingredient-to-offer could become an exact product-id join
+instead of a string comparison. Nothing in the app uses that field yet.
 
 ## Locale
 

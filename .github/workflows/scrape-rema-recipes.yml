@@ -1,0 +1,59 @@
+# Runs the recipe crawl from a network madogdrikke.rema1000.dk answers.
+#
+# The site 403s this project's dev sandbox and both Supabase regions with
+# "This site is not available in your region", so this is how the crawler gets
+# exercised against the live site: dispatch it, and it commits the scrape as
+# JSON (recipes, per-theme coverage, extraction health) for review or for
+# loading into a database.
+name: Scrape REMA recipes
+
+on:
+  workflow_dispatch:
+    inputs:
+      themes:
+        description: "Theme slugs to crawl, space-separated"
+        default: "aftensmad"
+      commit:
+        description: "Commit the scraped JSON to this branch"
+        type: boolean
+        default: true
+  # Also on a push that changes the crawl itself, so a branch touching the
+  # scraper gets checked against the live site rather than against fixtures
+  # alone — `workflow_dispatch` only works once a workflow is on the default
+  # branch, which a feature branch's first run never is.
+  push:
+    paths:
+      - "scripts/scrapeRemaRecipes.ts"
+      - ".github/workflows/scrape-rema-recipes.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Crawl
+        run: |
+          npx vite-node --config vitest.config.ts scripts/scrapeRemaRecipes.ts -- \
+            scrape-output/rema-recipes.json ${{ inputs.themes }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rema-recipes
+          path: scrape-output/rema-recipes.json
+      - name: Commit the scrape
+        if: ${{ github.event_name == 'push' || inputs.commit }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A -f scrape-output
+          git diff --cached --quiet && echo "no changes" && exit 0
+          git commit -m "Scrape ${{ inputs.themes }} recipes from REMA 1000 [skip ci]"
+          git push origin HEAD:${GITHUB_REF_NAME}

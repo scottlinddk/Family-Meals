@@ -88,3 +88,73 @@ describe("offersMatchingIngredient", () => {
     expect(matchedNames("salt og peber")).toEqual([]);
   });
 });
+
+/**
+ * Cases measured against a real offer set (91 REMA offers, week of 2026-08-04)
+ * and the 350 scraped dinner recipes. Each one was a wrong match that inflated
+ * the "best meals from this week's offers" ranking.
+ */
+describe("offersMatchingIngredient against real-world false matches", () => {
+  it("does not match garlic to a white-wine offer", () => {
+    // "Santa Carolina Vistana Chilensk rød-, hvid- eller rosévin" splits into
+    // an alternative that is just the adjective "hvid" — which used to prefix-
+    // match "hvidløg" in 184 ingredient lines.
+    expect(
+      matchedNames("1 fed hvidløg", [offer("Santa Carolina Vistana Chilensk rød-, hvid- eller rosévin, 75 cl")]),
+    ).toEqual([]);
+  });
+
+  it("does not match a bottle of beer to a jar-and-bottle offer", () => {
+    expect(matchedNames("1 flaske øl", [offer("Flaske, sylteglas, patentglas eller målekande")])).toEqual([]);
+  });
+
+  it("does not match greens to the '35% grønt' in a mince offer", () => {
+    const mince = offer("REMA 1000 Hakket dansk oksekød med 35% grønt, kyllingekød eller Frilandsgris skinkekød");
+    expect(matchedNames("1 terning grøntsagsbouillon", [mince])).toEqual([]);
+    expect(matchedNames("100 g blandet grøn salat", [mince])).toEqual([]);
+  });
+
+  it("does not match caraway to pointed cabbage, nor pickled vegetables to a pickling book", () => {
+    expect(matchedNames("1 tsk spidskommen", [offer("Spidskål")])).toEqual([]);
+    expect(matchedNames("syltede rødbeder", [offer("Frøken Jensens syltebog")])).toEqual([]);
+  });
+
+  it("does not match a raw ingredient to a processed version of it", () => {
+    // Buying the offer would not get you the ingredient.
+    expect(matchedNames("50 g smør", [offer("BUKO smøreost eller friskost")])).toEqual([]);
+    expect(matchedNames("3 dl kyllingebouillon", [offer("REMA 1000 Dansk kylling")])).toEqual([]);
+    expect(matchedNames("150 g bacon i tern", [offer("Pålækker pålæg, baconpostej eller salami-hapser")])).toEqual([]);
+    expect(matchedNames("3 cm ingefær", [offer("Frankly Ingefærshot")])).toEqual([]);
+    expect(matchedNames("2 spsk fiskesauce", [offer("REMA 1000 Panerede fisk eller grønlandske rejer")])).toEqual([]);
+  });
+
+  it("still matches the product family through a compound", () => {
+    const chicken = offer("REMA 1000 Dansk kyllingebrystfilet, -inderfilet eller hel kylling");
+    expect(matchedNames("4 stk kyllingebryst", [chicken])).toEqual([chicken.name]);
+    expect(matchedNames("1 pakke kyllinge inderfilet", [chicken])).toEqual([chicken.name]);
+    // "grise- og kalvekød" is one of the mince offer's alternatives.
+    const mince = offer("REMA 1000 Hakket dansk oksekød med 35% grønt, kyllingekød, grise- og kalvekød");
+    expect(matchedNames("500 g grisekød", [mince])).toEqual([mince.name]);
+    expect(matchedNames("1 pose salatmix", [offer("REMA 1000 Ready To Serve salat")])).toEqual([
+      "REMA 1000 Ready To Serve salat",
+    ]);
+  });
+
+  it("still matches potatoes, which is what the dropped shared-lead rule was for", () => {
+    expect(matchedNames("650 g kartofler", [offer("Gram Slot Pommes frites eller kartofler")])).toEqual([
+      "Gram Slot Pommes frites eller kartofler",
+    ]);
+  });
+});
+
+describe("offersMatchingIngredient on words that collide across departments", () => {
+  it("does not match balsamico to a hair-conditioner offer", () => {
+    expect(matchedNames("1 spsk balsamico", [offer("Elvital shampoo eller balsam")])).toEqual([]);
+  });
+
+  it("does not match prawns in brine to a vinegar offer, but still matches the vinegar itself", () => {
+    const vinegar = offer("Heidelberg Lagereddike Farvet eller klar");
+    expect(matchedNames("350 g rejer i lage", [vinegar])).toEqual([]);
+    expect(matchedNames("1 dl lagereddike", [vinegar])).toEqual([vinegar.name]);
+  });
+});

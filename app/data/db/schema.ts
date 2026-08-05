@@ -145,6 +145,8 @@ export const externalRecipes = pgTable("external_recipes", {
   instructions: jsonb("instructions").notNull().default([]),
   servings: integer("servings"),
   totalTimeMinutes: integer("total_time_minutes"),
+  /** Meal-theme slugs from the source site, e.g. `["aftensmad", "frokost"]`. */
+  tags: jsonb("tags").notNull().default([]),
   fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

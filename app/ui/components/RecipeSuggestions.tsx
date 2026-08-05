@@ -52,6 +52,28 @@ export function RecipeSuggestions() {
         </p>
       )}
 
+      {/*
+        Coverage, per theme: the listing states how many recipes the theme
+        holds, so "350 of 350" is checkable — and a crawl that stopped early
+        (a skipped page, or the detail-page fallback with its own cap) reads
+        as short rather than as a fresh full cache.
+      */}
+      {refreshRecipes.isSuccess &&
+        refreshRecipes.data?.themes?.map((theme) => (
+          <p key={theme.theme} className="mt-1 text-sm text-muted">
+            {t("recipes.refreshedCoverage", {
+              theme: theme.theme,
+              recipes: theme.recipes,
+              total: theme.reportedTotal ?? theme.recipes,
+              pages: theme.pagesFetched,
+            })}
+            {theme.failedPages.length + theme.unexpectedPages.length > 0 &&
+              ` ${t("recipes.refreshedPagesSkipped", {
+                pages: [...theme.failedPages, ...theme.unexpectedPages].sort((a, b) => a - b).join(", "),
+              })}`}
+          </p>
+        ))}
+
       {suggestions.data && suggestions.data.length === 0 && (
         <p className="mt-3 text-sm text-muted">{t("recipes.none")}</p>
       )}
