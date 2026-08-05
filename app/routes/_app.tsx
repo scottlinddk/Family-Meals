@@ -1,6 +1,6 @@
-import { Outlet, redirect } from "react-router";
+import { Outlet } from "react-router";
 import type { Route } from "./+types/_app";
-import { requireUser } from "~/lib/auth";
+import { redirectToLoginIfSignedOut } from "~/lib/auth";
 import { TopNav } from "~/ui/components/TopNav";
 
 /**
@@ -14,16 +14,7 @@ import { TopNav } from "~/ui/components/TopNav";
  * survives the detour through sign-in.
  */
 export async function loader({ request }: Route.LoaderArgs) {
-  const headers = new Headers();
-  const user = await requireUser(request, headers);
-  if (!user) {
-    const { pathname, search } = new URL(request.url);
-    const redirectTo = `${pathname}${search}`;
-    const target =
-      redirectTo === "/" ? "/auth/login" : `/auth/login?redirectTo=${encodeURIComponent(redirectTo)}`;
-    return redirect(target, { headers });
-  }
-  return null;
+  return redirectToLoginIfSignedOut(request, new Headers());
 }
 
 export default function AppLayout() {

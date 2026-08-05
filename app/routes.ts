@@ -15,6 +15,13 @@ export default [
     route("family", "routes/family.tsx"),
   ]),
 
+  // Cook mode: same auth guard, none of the chrome — the focused, one-step-
+  // at-a-time view that holds the screen awake at the stove.
+  layout("routes/_cook.tsx", [
+    route("weeks/:weekStart/day/:day/cook", "routes/weeks.$weekStart.day.$day.cook.tsx"),
+    route("recipes/:id/cook", "routes/recipes.$id.cook.tsx"),
+  ]),
+
   // Reachable signed out — the invite target renders its own sign-in prompt.
   route("invite/:token", "routes/invite.$token.tsx"),
 
@@ -35,6 +42,7 @@ export default [
   route("api/recipes/suggestions", "routes/api.recipes.suggestions.tsx"),
   route("api/recipes/diagnose", "routes/api.recipes.diagnose.tsx"),
   route("api/recipes/:id", "routes/api.recipes.$id.tsx"),
+  route("api/preferences", "routes/api.preferences.tsx"),
   route("api/family", "routes/api.family.tsx"),
   route("api/family/mine", "routes/api.family.mine.tsx"),
   route("api/family/switch", "routes/api.family.switch.tsx"),
