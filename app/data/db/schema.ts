@@ -166,6 +166,84 @@ export const externalRecipes = pgTable("external_recipes", {
   fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+/**
+ * Which shopping-list lines a family has already put in the trolley, one row
+ * per ticked line. Unticking deletes the row, so "no row" is unticked and the
+ * table only ever holds what's actually been picked up.
+ *
+ * Keyed by family and week rather than by user: two people shopping the same
+ * list — one in the fruit aisle, one at the freezers — need to see each
+ * other's ticks, which is the whole reason this moved out of `localStorage`.
+ * `checkedByUserId` is nullable because a share-link visitor (see
+ * `shoppingListShares`) has no account.
+ *
+ * The item is identified by its *label* — the ingredient line as the recipe
+ * wrote it, which is what `buildShoppingList` already merges items on. The
+ * list is derived fresh from the week plan on every request and has no stable
+ * item ids to reference, so a regenerated week simply leaves ticks whose
+ * label no longer appears; they're ignored on read rather than cleaned up.
+ */
+export const shoppingListChecks = pgTable(
+  "shopping_list_checks",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    familyId: uuid("family_id")
+      .notNull()
+      .references(() => families.id, { onDelete: "cascade" }),
+    weekStartDate: date("week_start_date").notNull(),
+    itemLabel: text("item_label").notNull(),
+    /** Null when the tick came from a share link rather than a signed-in member. */
+    checkedByUserId: uuid("checked_by_user_id"),
+    checkedAt: timestamp("checked_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    // Ticking is an idempotent upsert on this key: two members tapping the
+    // same line at the same moment must not produce two rows.
+    unique("shopping_list_checks_family_week_label_unique").on(
+      table.familyId,
+      table.weekStartDate,
+      table.itemLabel,
+    ),
+    index("shopping_list_checks_family_id_week_start_date_idx").on(
+      table.familyId,
+      table.weekStartDate,
+    ),
+  ],
+);
+
+/**
+ * A `/list/{token}` link handing one week's shopping list to someone without
+ * an account — the partner doing the shopping, a parent picking things up on
+ * the way over.
+ *
+ * Scoped to a single week, not to the family as a whole: a shopping link is
+ * for one shop, and next week's plan shouldn't leak through a link shared
+ * once. Holders can tick items off (that's the point of sending it), but the
+ * link exposes nothing else — no plan editing, no other weeks, no account.
+ * Revoking sets `revokedAt`; the row is kept so a revoked token stays
+ * permanently dead rather than becoming re-issuable.
+ */
+export const shoppingListShares = pgTable(
+  "shopping_list_shares",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    familyId: uuid("family_id")
+      .notNull()
+      .references(() => families.id, { onDelete: "cascade" }),
+    weekStartDate: date("week_start_date").notNull(),
+    token: text("token").notNull().unique(),
+    createdByUserId: uuid("created_by_user_id").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+  },
+  (table) => [
+    index("shopping_list_shares_family_id_week_start_date_idx").on(
+      table.familyId,
+      table.weekStartDate,
+    ),
+  ],
+);
+
 export const weekPlans = pgTable(
   "week_plans",
   {

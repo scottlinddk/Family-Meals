@@ -32,6 +32,14 @@ export default [
     },
   },
   {
+    // The service worker runs in neither a window nor Node — `self`, `caches`
+    // and `clients` come from the worker global scope.
+    files: ["public/sw.js"],
+    languageOptions: {
+      globals: { ...globals.serviceworker, ...globals.es2022 },
+    },
+  },
+  {
     ignores: ["build/**", ".react-router/**", "node_modules/**"],
   },
 ];

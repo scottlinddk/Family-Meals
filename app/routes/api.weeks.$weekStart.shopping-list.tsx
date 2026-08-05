@@ -1,8 +1,6 @@
 import type { Route } from "./+types/api.weeks.$weekStart.shopping-list";
 import { requireFamily } from "~/lib/auth";
-import { weekPlanRepository } from "~/data/repositories/weekPlanRepository";
-import { offerRepository } from "~/data/repositories/offerRepository";
-import { buildShoppingList } from "~/domain/planning/shoppingList";
+import { shoppingListForWeek } from "~/lib/shoppingListForWeek";
 import {
   isMissingSchemaError,
   SCHEMA_OUT_OF_DATE_BODY,
@@ -16,16 +14,12 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   const jsonHeaders = { ...Object.fromEntries(headers), "Content-Type": "application/json" };
 
   try {
-    const week = await weekPlanRepository.getWeekPlan(family.id, params.weekStart!);
-    if (!week) {
+    const list = await shoppingListForWeek(family.id, params.weekStart!);
+    if (!list) {
       return new Response(JSON.stringify({ error: "not_found" }), { status: 404, headers: jsonHeaders });
     }
 
-    // Departments and "on offer" marks come from the offers valid now, not the
-    // ones the plan was generated against — you shop with this week's prices.
-    const offers = await offerRepository.listCurrentOffers(family.id);
-
-    return new Response(JSON.stringify(buildShoppingList(week, offers)), { headers: jsonHeaders });
+    return new Response(JSON.stringify(list), { headers: jsonHeaders });
   } catch (error) {
     // Same failure as week generation: this reads the offer snapshot tables,
     // so a database behind the deployed code takes the list down with it.

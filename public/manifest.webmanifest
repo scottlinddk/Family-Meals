@@ -1,0 +1,40 @@
+{
+  "name": "Family Meals — madplan og indkøbsliste",
+  "short_name": "Family Meals",
+  "description": "Ugens familiemadplan bygget på REMA 1000's tilbud, med en delt indkøbsliste.",
+  "lang": "da",
+  "dir": "ltr",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "background_color": "#f3f2f2",
+  "theme_color": "#b68235",
+  "categories": ["food", "lifestyle", "shopping"],
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Ugeplan",
+      "short_name": "Ugeplan",
+      "description": "Denne uges aftensmad",
+      "url": "/"
+    },
+    {
+      "name": "Indkøbsliste",
+      "short_name": "Indkøb",
+      "description": "Denne uges indkøbsliste",
+      "url": "/shopping-list"
+    }
+  ]
+}

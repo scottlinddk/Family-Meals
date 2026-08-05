@@ -9,6 +9,7 @@
     "typecheck": "react-router typegen && tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest run",
+    "icons:generate": "node ./scripts/generateIcons.mjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:deploy-migrate": "node ./scripts/deployMigrate.mjs"

@@ -52,6 +52,24 @@ export const da = {
   "shoppingList.retry": "Prøv igen",
   "shoppingList.summary": "{{remaining}} af {{total}} tilbage · {{onOffer}} på tilbud",
   "shoppingList.clearChecked": "Nulstil afkrydsning",
+  "shoppingList.sharedWithFamily": "Afkrydsninger deles med resten af familien.",
+  "shoppingList.syncPending": "{{count}} afkrydsning(er) venter på forbindelse — de sendes automatisk.",
+  "shoppingList.syncFailed": "En afkrydsning blev ikke gemt, så listen kan se anderledes ud hos de andre.",
+  "shoppingList.share": "Del listen",
+  "shoppingList.sharing": "Laver link...",
+  "shoppingList.shareHeading": "Del indkøbslisten",
+  "shoppingList.shareDescription":
+    "Send linket til den, der handler — det kræver ingen konto. Alle med linket kan se listen og " +
+    "krydse varer af (det er hele pointen), men intet andet: kun denne uges liste, ikke madplanen " +
+    "eller andre uger. Du kan tilbagekalde linket når som helst.",
+  "shoppingList.createShare": "Lav delelink",
+  "shoppingList.shareVia": "Del...",
+  "shoppingList.revokeShare": "Tilbagekald link",
+  "shoppingList.revoking": "Tilbagekalder...",
+  "shoppingList.shareFailed": "Delelinket kunne ikke laves. Prøv igen.",
+  "shoppingList.shareNotFound":
+    "Dette delelink virker ikke længere — det er enten tilbagekaldt eller aldrig blevet lavet. " +
+    "Bed om et nyt.",
   "shoppingList.dept.fruitAndVeg": "Frugt & grønt",
   "shoppingList.dept.breadAndBakery": "Brød & bageri",
   "shoppingList.dept.meatAndFish": "Kød & fisk",

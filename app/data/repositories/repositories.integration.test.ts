@@ -80,6 +80,8 @@ describe.skipIf(!TEST_DATABASE_URL)("repositories against Postgres", () => {
   let offerRepository: typeof import("~/data/repositories/offerRepository")["offerRepository"];
   let weekPlanRepository: typeof import("~/data/repositories/weekPlanRepository")["weekPlanRepository"];
   let userPreferenceRepository: typeof import("~/data/repositories/userPreferenceRepository")["userPreferenceRepository"];
+  let shoppingListCheckRepository: typeof import("~/data/repositories/shoppingListCheckRepository")["shoppingListCheckRepository"];
+  let shoppingListShareRepository: typeof import("~/data/repositories/shoppingListShareRepository")["shoppingListShareRepository"];
   let db: typeof import("~/data/db/client")["db"];
   let families: typeof import("~/data/db/schema")["families"];
   let userPreferences: typeof import("~/data/db/schema")["userPreferences"];
@@ -96,6 +98,12 @@ describe.skipIf(!TEST_DATABASE_URL)("repositories against Postgres", () => {
     ({ offerRepository } = await import("~/data/repositories/offerRepository"));
     ({ weekPlanRepository } = await import("~/data/repositories/weekPlanRepository"));
     ({ userPreferenceRepository } = await import("~/data/repositories/userPreferenceRepository"));
+    ({ shoppingListCheckRepository } = await import(
+      "~/data/repositories/shoppingListCheckRepository"
+    ));
+    ({ shoppingListShareRepository } = await import(
+      "~/data/repositories/shoppingListShareRepository"
+    ));
     ({ db } = await import("~/data/db/client"));
     ({ families, userPreferences } = await import("~/data/db/schema"));
     ({ eq } = await import("drizzle-orm"));
@@ -193,5 +201,60 @@ describe.skipIf(!TEST_DATABASE_URL)("repositories against Postgres", () => {
       .from(userPreferences)
       .where(eq(userPreferences.userId, preferenceUserId));
     expect(rows).toHaveLength(1);
+  });
+
+  it("shares shopping-list ticks within a family and keeps them off other families", async () => {
+    const week = "2026-09-14";
+    const shopper = crypto.randomUUID();
+    const partner = crypto.randomUUID();
+
+    expect(await shoppingListCheckRepository.listChecked(familyA, week)).toEqual([]);
+
+    // One member ticks; the whole family's set comes back, so the other
+    // member's phone sees it on its next poll.
+    const afterFirst = await shoppingListCheckRepository.setChecked(familyA, week, "2 løg", true, shopper);
+    expect(afterFirst).toEqual(["2 løg"]);
+
+    // The same line ticked again by someone else is the same row, not a second one.
+    const afterSecond = await shoppingListCheckRepository.setChecked(familyA, week, "2 løg", true, partner);
+    expect(afterSecond).toEqual(["2 løg"]);
+
+    // Another family shopping the same ingredient in the same week is untouched.
+    expect(await shoppingListCheckRepository.listChecked(familyB, week)).toEqual([]);
+
+    await shoppingListCheckRepository.setChecked(familyA, week, "1 bakke cherrytomater", true, shopper);
+    await shoppingListCheckRepository.setChecked(familyA, week, "2 løg", false, shopper);
+    expect(await shoppingListCheckRepository.listChecked(familyA, week)).toEqual([
+      "1 bakke cherrytomater",
+    ]);
+
+    // Clearing only reaches the lines the caller could see.
+    await shoppingListCheckRepository.setChecked(familyA, week, "salt og peber", true, shopper);
+    await shoppingListCheckRepository.clear(familyA, week, ["1 bakke cherrytomater"]);
+    expect(await shoppingListCheckRepository.listChecked(familyA, week)).toEqual(["salt og peber"]);
+
+    await shoppingListCheckRepository.clear(familyA, week);
+    expect(await shoppingListCheckRepository.listChecked(familyA, week)).toEqual([]);
+  });
+
+  it("reuses a week's share link until it's revoked, and never revives a revoked token", async () => {
+    const week = "2026-09-21";
+    const creator = crypto.randomUUID();
+
+    const first = await shoppingListShareRepository.getOrCreate(familyA, week, creator);
+    const again = await shoppingListShareRepository.getOrCreate(familyA, week, creator);
+    // Pressing "share" twice must not kill the link already sent to someone.
+    expect(again.token).toBe(first.token);
+
+    expect((await shoppingListShareRepository.getActiveByToken(first.token))?.familyId).toBe(familyA);
+
+    await shoppingListShareRepository.revokeAll(familyA, week);
+    expect(await shoppingListShareRepository.getActiveByToken(first.token)).toBeUndefined();
+    expect(await shoppingListShareRepository.getActive(familyA, week)).toBeUndefined();
+
+    // A new link is a genuinely new token — the revoked one stays dead.
+    const reissued = await shoppingListShareRepository.getOrCreate(familyA, week, creator);
+    expect(reissued.token).not.toBe(first.token);
+    expect(await shoppingListShareRepository.getActiveByToken(first.token)).toBeUndefined();
   });
 });
