@@ -9,6 +9,9 @@ export default [
     route("weeks/:weekStart", "routes/weeks.$weekStart.tsx"),
     route("weeks/:weekStart/day/:day", "routes/weeks.$weekStart.day.$day.tsx"),
     route("weeks/:weekStart/shopping-list", "routes/weeks.$weekStart.shopping-list.tsx"),
+    // Fixed entry point for the installed app's shortcut — bounces to the
+    // current week's list, the way `/` bounces to the current week's plan.
+    route("shopping-list", "routes/shopping-list.tsx"),
     route("offers", "routes/offers.tsx"),
     route("recipes", "routes/recipes.tsx"),
     route("recipes/:id", "routes/recipes.$id.tsx"),
@@ -25,6 +28,11 @@ export default [
   // Reachable signed out — the invite target renders its own sign-in prompt.
   route("invite/:token", "routes/invite.$token.tsx"),
 
+  // A week's shopping list, shared out to whoever is doing the shopping.
+  // Authenticated by the opaque token in the path rather than a session, like
+  // the ICS feed below — the person in the shop may not have an account.
+  route("list/:token", "routes/list.$token.tsx"),
+
   // Live ICS subscription feed — a resource route (no HTML), authenticated
   // by the opaque token in the path rather than a Supabase Auth session.
   route("calendar/:token.ics", "routes/calendar.$token[.]ics.tsx"),
@@ -35,6 +43,11 @@ export default [
   route("api/weeks/:weekStart/regenerate-day", "routes/api.weeks.$weekStart.regenerate-day.tsx"),
   route("api/weeks/:weekStart/swap-day", "routes/api.weeks.$weekStart.swap-day.tsx"),
   route("api/weeks/:weekStart/shopping-list", "routes/api.weeks.$weekStart.shopping-list.tsx"),
+  route("api/weeks/:weekStart/shopping-list/marks", "routes/api.weeks.$weekStart.shopping-list.marks.tsx"),
+  route("api/weeks/:weekStart/shopping-list/share", "routes/api.weeks.$weekStart.shopping-list.share.tsx"),
+  // Token-authenticated twins of the two routes above, for the share link.
+  route("api/shopping-list/:token", "routes/api.shopping-list.$token.tsx"),
+  route("api/shopping-list/:token/marks", "routes/api.shopping-list.$token.marks.tsx"),
   route("api/offers", "routes/api.offers.tsx"),
   route("api/offers/refresh", "routes/api.offers.refresh.tsx"),
   route("api/recipes", "routes/api.recipes.tsx"),

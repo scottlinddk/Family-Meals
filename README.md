@@ -167,6 +167,114 @@ bar rather than swallowed — a screen that will dim anyway shouldn't be
 promised otherwise. There's no hidden-looping-video fallback for the browsers
 that lack it.
 
+## Shopping list: shared, and shareable
+
+The week's list (`/weeks/{weekStart}/shopping-list`) is still *derived* — it
+aggregates the seven days' ingredient lines, merges the ones naming the same
+product, and groups them by the REMA department of the offer covering them
+(`app/domain/planning/shoppingList.ts`). Nothing about that is stored.
+
+What is stored is what the family has settled about each line.
+`shopping_list_marks` holds one row per marked line, keyed by **family and
+week**, not by user, with a `status` saying which mark it is:
+
+- `checked` — it's in the trolley
+- `at_home` — don't buy it, there's already some in the cupboard or fridge
+
+One state rather than two flags, because they're alternatives: something
+already at home isn't going in the trolley, and ticking it off would mean
+nothing. Marking one clears the other in a single write, so the row can't end
+up claiming both. Unmarking deletes the row, so "no row" is the default (still
+to buy). On screen the two are separate controls — a tick box and a "Har vi"
+toggle — rather than one cycling button, because they mean opposite things to
+whoever reads the list next (bought it vs. don't buy it) and cycling through
+both would make the wrong one a mistap away.
+
+Family-scoped is a deliberate reversal: ticks used to live in `localStorage`,
+on the argument that two people shopping different aisles want their own
+checkboxes. In practice they want the opposite — one trolley, two people, and
+the whole question is whether the milk is already in it.
+
+At-home marks are per **week** too, not a standing pantry. "We've got flour" is
+a fact about one shopping trip, and by next week it may not be true any more; a
+pantry that remembered staples across weeks would have to track what gets used
+up to stay honest, and a stale "we have this" is worse than marking it again.
+
+The item's identity is its **label** — the ingredient line as the recipe wrote
+it, which is what the list already merges on. There are no stable item ids to
+reference, because the list is rebuilt from the plan on every request, so a
+regenerated week simply leaves marks whose label no longer appears; they're
+ignored on read (`shoppingListProgress` in
+`app/domain/planning/shoppingListMarks.ts` counts against the labels on screen)
+rather than cleaned up.
+
+### The `/list/{token}` share link
+
+"Share list" on the shopping list page issues an unguessable
+`/list/{token}` URL (`shopping_list_shares`, `app/lib/tokens.ts`) for the
+person actually doing the shopping — who often doesn't have an account, which
+is why an invite to the family wouldn't do. Same bearer-token model as the ICS
+feed: the token is the whole credential, so it decides the family *and* the
+week and nothing about which list is served comes from the caller.
+
+Holders can mark items — both marks, since the person in the aisle is as
+likely to be told "we've got some of that at home" as to put it in the
+trolley. That's the point: the marks are the shared part, and a list they could
+only read would leave everyone else's copy wrong. It's the *only* thing the
+link can write, on one week, and `marked_by_user_id` is left null because
+there's no account behind it. Clearing the whole list is deliberately not
+offered through the link. Scoped to a single week rather than
+to the family, so a link sent once doesn't leak next week's plan; pressing
+"share" again reuses the live link rather than killing the one already sitting
+in someone's messages; and revoking sets `revoked_at` so the token stays
+permanently dead rather than becoming re-issuable.
+
+### Marking on a bad connection
+
+Marks are polled every 20 seconds while the page is on screen, so two people in
+the same shop see each other's. Going through the server would otherwise have
+cost the one thing `localStorage` gave for free — working with no signal, in a
+supermarket, which is exactly where this is used. So a mark is written to a
+small local queue first (`app/ui/hooks/useShoppingListMarks.ts`), applied to
+the screen immediately, and sent when there's a connection: on the next mark,
+when the tab comes back, or when the browser reports it's online. The queue
+holds the *intent* per label rather than a history, which is the only sane
+thing to replay against a set of marks, and it wins over the server's answer on
+screen so a poll landing mid-queue can't make the line someone just tapped
+flick back. Undelivered marks say so under the count; a mark the server
+*refused* says something different, because then the screen and the family's
+list disagree.
+
+## Installable web app
+
+The app declares a web app manifest (`public/manifest.webmanifest`) and a
+service worker (`public/sw.js`), so it can be installed to a home screen and
+opened without browser chrome — including a shortcut straight to
+`/shopping-list`, a fixed URL that bounces to the current week's list the way
+`/` bounces to the current week's plan.
+
+The service worker keeps three caches, each with a different bargain: hashed
+build assets under `/assets/` are cache-first (the bytes behind a hashed URL
+can never change); documents and shopping-list data are network-first, falling
+back to the last copy so a page you've opened before — the list, above all —
+still renders in an aisle where the request times out; everything else goes to
+the network and is allowed to fail there, because a stale week plan claiming to
+be current is worse than an honest error. A page never opened before falls back
+to `public/offline.html`, which is deliberately standalone (no build assets, no
+fonts, no scripts — the situation it renders in is "nothing else could be
+fetched"). The two caches holding anything personal are emptied when someone
+signs out, so a shared laptop doesn't keep serving one family's plan to the next
+person. `VERSION` in `sw.js` is what retires old caches — bump it when the file
+changes. Registration is production-only: in dev a worker caching Vite's asset
+URLs would serve yesterday's modules over today's edits.
+
+The icons — `favicon.svg`, `favicon.ico`, the 180px apple-touch-icon, and the
+192/512px manifest icons including a maskable one — are generated from a single
+geometry definition by `scripts/generateIcons.mjs` (`npm run icons:generate`),
+which rasterizes and encodes the PNGs itself rather than adding an image
+dependency for a few circles and capsules. Edit the geometry there, not the
+files; the SVG and the pixels come from the same numbers, so they can't drift.
+
 ## View preferences
 
 `user_preferences` (one row per Supabase Auth user id, `app/data/db/schema.ts`)
@@ -227,6 +335,7 @@ how event identity stays stable across edits.
 - `npm run build` / `npm start` — production build/serve
 - `npm run typecheck` — `react-router typegen && tsc --noEmit`
 - `npm test` — Vitest unit tests (domain logic only)
+- `npm run icons:generate` — redraw the favicon and app icons into `public/`
 - `npm run db:generate` / `npm run db:migrate` — Drizzle schema migrations
 - `npm run db:deploy-migrate` — runs `db:migrate` during a Vercel *production*
   build (skipped on previews and locally), so a release can't go live against a

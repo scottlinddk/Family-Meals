@@ -53,7 +53,27 @@ export const en: Record<keyof typeof da, string> = {
   "shoppingList.loadFailed": "The shopping list couldn't be loaded.",
   "shoppingList.retry": "Try again",
   "shoppingList.summary": "{{remaining}} of {{total}} left · {{onOffer}} on offer",
-  "shoppingList.clearChecked": "Clear ticks",
+  "shoppingList.clearMarks": "Reset list",
+  "shoppingList.atHome": "Have it",
+  "shoppingList.atHomeAria": "We already have {{item}} at home",
+  "shoppingList.atHomeSummary": "{{count}} you already have at home, so don't buy them.",
+  "shoppingList.sharedWithFamily": "Marks are shared with the rest of the family.",
+  "shoppingList.syncPending": "{{count}} mark(s) waiting for a connection — they'll send themselves.",
+  "shoppingList.syncFailed": "A mark wasn't saved, so the others may be seeing a different list.",
+  "shoppingList.share": "Share list",
+  "shoppingList.sharing": "Creating link...",
+  "shoppingList.shareHeading": "Share the shopping list",
+  "shoppingList.shareDescription":
+    "Send the link to whoever's doing the shopping — no account needed. Anyone with the link can " +
+    "see the list and tick items off (that's the point), but nothing else: this week's list only, " +
+    "not the meal plan or other weeks. You can revoke it at any time.",
+  "shoppingList.createShare": "Create share link",
+  "shoppingList.shareVia": "Share...",
+  "shoppingList.revokeShare": "Revoke link",
+  "shoppingList.revoking": "Revoking...",
+  "shoppingList.shareFailed": "The share link couldn't be created. Try again.",
+  "shoppingList.shareNotFound":
+    "This share link no longer works — it's been revoked, or it never existed. Ask for a new one.",
   "shoppingList.dept.fruitAndVeg": "Fruit & veg",
   "shoppingList.dept.breadAndBakery": "Bread & bakery",
   "shoppingList.dept.meatAndFish": "Meat & fish",

@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   Links,
   Meta,
@@ -21,6 +21,23 @@ export function Layout({ children }: { children: ReactNode }) {
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>{t("app.title")}</title>
+
+        {/*
+          Installable web app. The manifest carries the name, colours, icons
+          and shortcuts a home-screen launch needs; the Apple meta tags do the
+          same job for iOS, which still doesn't read all of it. Icons are
+          generated from one definition — see scripts/generateIcons.mjs.
+        */}
+        <link rel="manifest" href="/manifest.webmanifest" />
+        <meta name="theme-color" content="#b68235" />
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="icon" href="/favicon.ico" sizes="48x48" />
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content={t("app.title")} />
+
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
@@ -39,7 +56,33 @@ export function Layout({ children }: { children: ReactNode }) {
   );
 }
 
+/**
+ * Registers the service worker that makes the installed app usable without a
+ * connection (see `public/sw.js` for what it does and doesn't cache).
+ *
+ * Production only: in dev, a worker caching Vite's asset URLs would serve
+ * yesterday's modules over today's edits, and the offline behaviour it exists
+ * to provide isn't what's being worked on there.
+ */
+function useServiceWorker() {
+  useEffect(() => {
+    if (!import.meta.env.PROD || !("serviceWorker" in navigator)) return;
+    // After load, so registering never competes with the first render for
+    // bandwidth on the connection this is all meant to help with.
+    const register = () => {
+      navigator.serviceWorker.register("/sw.js").catch((error) => {
+        console.error("Service worker registration failed:", error);
+      });
+    };
+    if (document.readyState === "complete") register();
+    else window.addEventListener("load", register, { once: true });
+    return () => window.removeEventListener("load", register);
+  }, []);
+}
+
 export default function App() {
+  useServiceWorker();
+
   const [queryClient] = useState(
     () =>
       new QueryClient({

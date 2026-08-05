@@ -14,3 +14,13 @@ export function generateCalendarToken(): string {
 export function generateInviteToken(): string {
   return nanoid(32);
 }
+
+/**
+ * Generates the unguessable token embedded in a `/list/{token}` shopping-list
+ * link. Same shape and strength as the calendar token, and the same bargain:
+ * knowing the URL is the whole credential, so the link is scoped to one
+ * week's list and revocable (see `shoppingListShareRepository`).
+ */
+export function generateShoppingListShareToken(): string {
+  return nanoid(32);
+}

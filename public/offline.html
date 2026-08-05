@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="da">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ingen forbindelse · Family Meals</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="theme-color" content="#b68235" />
+    <!--
+      Served by the service worker when a page is asked for with no connection
+      and no cached copy. Deliberately standalone: no build assets, no fonts,
+      no scripts — everything it needs to render is in this file, because the
+      situation it renders in is "nothing else could be fetched".
+    -->
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 2rem;
+        background: #f3f2f2;
+        color: #201f1d;
+        font-family: Lora, Georgia, serif;
+      }
+      main {
+        max-width: 26rem;
+        text-align: center;
+      }
+      h1 {
+        font-family: "Cormorant Garamond", "Times New Roman", serif;
+        font-size: 2rem;
+        font-weight: 600;
+        letter-spacing: -0.015em;
+        margin: 1rem 0 0.5rem;
+      }
+      p {
+        margin: 0 0 1.5rem;
+        opacity: 0.75;
+        line-height: 1.55;
+      }
+      button {
+        font: inherit;
+        font-weight: 600;
+        color: #b68235;
+        background: none;
+        border: 1px solid #b68235;
+        border-radius: 4px;
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+      }
+      button:active {
+        background: rgba(182, 130, 53, 0.18);
+      }
+      img {
+        width: 72px;
+        height: 72px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <img src="/favicon.svg" alt="" />
+      <h1>Ingen forbindelse</h1>
+      <p>
+        Denne side kunne ikke hentes, og der er ingen gemt udgave af den på telefonen. Sider du har
+        åbnet før — blandt andet indkøbslisten — virker stadig offline.
+      </p>
+      <button type="button" onclick="location.reload()">Prøv igen</button>
+    </main>
+  </body>
+</html>

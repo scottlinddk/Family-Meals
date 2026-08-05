@@ -80,6 +80,8 @@ describe.skipIf(!TEST_DATABASE_URL)("repositories against Postgres", () => {
   let offerRepository: typeof import("~/data/repositories/offerRepository")["offerRepository"];
   let weekPlanRepository: typeof import("~/data/repositories/weekPlanRepository")["weekPlanRepository"];
   let userPreferenceRepository: typeof import("~/data/repositories/userPreferenceRepository")["userPreferenceRepository"];
+  let shoppingListMarkRepository: typeof import("~/data/repositories/shoppingListMarkRepository")["shoppingListMarkRepository"];
+  let shoppingListShareRepository: typeof import("~/data/repositories/shoppingListShareRepository")["shoppingListShareRepository"];
   let db: typeof import("~/data/db/client")["db"];
   let families: typeof import("~/data/db/schema")["families"];
   let userPreferences: typeof import("~/data/db/schema")["userPreferences"];
@@ -96,6 +98,12 @@ describe.skipIf(!TEST_DATABASE_URL)("repositories against Postgres", () => {
     ({ offerRepository } = await import("~/data/repositories/offerRepository"));
     ({ weekPlanRepository } = await import("~/data/repositories/weekPlanRepository"));
     ({ userPreferenceRepository } = await import("~/data/repositories/userPreferenceRepository"));
+    ({ shoppingListMarkRepository } = await import(
+      "~/data/repositories/shoppingListMarkRepository"
+    ));
+    ({ shoppingListShareRepository } = await import(
+      "~/data/repositories/shoppingListShareRepository"
+    ));
     ({ db } = await import("~/data/db/client"));
     ({ families, userPreferences } = await import("~/data/db/schema"));
     ({ eq } = await import("drizzle-orm"));
@@ -193,5 +201,72 @@ describe.skipIf(!TEST_DATABASE_URL)("repositories against Postgres", () => {
       .from(userPreferences)
       .where(eq(userPreferences.userId, preferenceUserId));
     expect(rows).toHaveLength(1);
+  });
+
+  it("shares shopping-list marks within a family and keeps them off other families", async () => {
+    const week = "2026-09-14";
+    const shopper = crypto.randomUUID();
+    const partner = crypto.randomUUID();
+    const sorted = async (familyId: string) =>
+      (await shoppingListMarkRepository.listMarks(familyId, week)).sort((a, b) =>
+        a.label.localeCompare(b.label),
+      );
+
+    expect(await sorted(familyA)).toEqual([]);
+
+    // One member ticks; the whole family's marks come back, so the other
+    // member's phone sees it on its next poll.
+    const afterFirst = await shoppingListMarkRepository.setMark(familyA, week, "2 løg", "checked", shopper);
+    expect(afterFirst).toEqual([{ label: "2 løg", status: "checked" }]);
+
+    // The same line marked again by someone else is the same row, not a second one.
+    const afterSecond = await shoppingListMarkRepository.setMark(familyA, week, "2 løg", "checked", partner);
+    expect(afterSecond).toEqual([{ label: "2 løg", status: "checked" }]);
+
+    // Another family shopping the same ingredient in the same week is untouched.
+    expect(await sorted(familyB)).toEqual([]);
+
+    // Someone at home says there's already flour in the cupboard — the same
+    // row, moved from the trolley to at-home in one write.
+    await shoppingListMarkRepository.setMark(familyA, week, "1 kg mel", "checked", shopper);
+    await shoppingListMarkRepository.setMark(familyA, week, "1 kg mel", "at_home", partner);
+    expect(await sorted(familyA)).toEqual([
+      { label: "1 kg mel", status: "at_home" },
+      { label: "2 løg", status: "checked" },
+    ]);
+
+    // A null status is an unmark, not a third state.
+    await shoppingListMarkRepository.setMark(familyA, week, "2 løg", null, shopper);
+    expect(await sorted(familyA)).toEqual([{ label: "1 kg mel", status: "at_home" }]);
+
+    // Clearing only reaches the lines the caller could see — and takes the
+    // at-home marks with it, since "start over" means all of it.
+    await shoppingListMarkRepository.setMark(familyA, week, "salt og peber", "checked", shopper);
+    await shoppingListMarkRepository.clear(familyA, week, ["1 kg mel"]);
+    expect(await sorted(familyA)).toEqual([{ label: "salt og peber", status: "checked" }]);
+
+    await shoppingListMarkRepository.clear(familyA, week);
+    expect(await sorted(familyA)).toEqual([]);
+  });
+
+  it("reuses a week's share link until it's revoked, and never revives a revoked token", async () => {
+    const week = "2026-09-21";
+    const creator = crypto.randomUUID();
+
+    const first = await shoppingListShareRepository.getOrCreate(familyA, week, creator);
+    const again = await shoppingListShareRepository.getOrCreate(familyA, week, creator);
+    // Pressing "share" twice must not kill the link already sent to someone.
+    expect(again.token).toBe(first.token);
+
+    expect((await shoppingListShareRepository.getActiveByToken(first.token))?.familyId).toBe(familyA);
+
+    await shoppingListShareRepository.revokeAll(familyA, week);
+    expect(await shoppingListShareRepository.getActiveByToken(first.token)).toBeUndefined();
+    expect(await shoppingListShareRepository.getActive(familyA, week)).toBeUndefined();
+
+    // A new link is a genuinely new token — the revoked one stays dead.
+    const reissued = await shoppingListShareRepository.getOrCreate(familyA, week, creator);
+    expect(reissued.token).not.toBe(first.token);
+    expect(await shoppingListShareRepository.getActiveByToken(first.token)).toBeUndefined();
   });
 });
