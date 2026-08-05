@@ -52,7 +52,7 @@ export function ShareListPanel({ weekStart }: { weekStart: string }) {
   // Full width once it's open, so it wraps onto its own line under the
   // heading rather than squeezing in beside it.
   return (
-    <div className="flex w-full flex-col gap-2 rounded-md border border-divider p-3">
+    <div className="flex w-full flex-col gap-2 rounded-md border border-divider bg-surface p-4 shadow-sm">
       <p className="m-0 text-sm font-semibold">{t("shoppingList.shareHeading")}</p>
       <p className="m-0 text-xs text-muted">{t("shoppingList.shareDescription")}</p>
 
@@ -119,7 +119,7 @@ function ShareLink({ url }: { url: string }) {
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="rounded-md border border-divider bg-bg p-2 font-mono text-xs break-all">{url}</div>
+      <div className="rounded-sm border border-divider bg-neutral-100 p-2.5 font-mono text-xs break-all">{url}</div>
       <div className="flex flex-wrap gap-2">
         <Button
           type="button"

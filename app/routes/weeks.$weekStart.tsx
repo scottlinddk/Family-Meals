@@ -4,7 +4,9 @@ import { useWeekPlan, useGenerateWeekPlan, NoRecipesError } from "~/ui/hooks/use
 import { SchemaOutOfDateError } from "~/lib/dbErrors";
 import { WeekGrid } from "~/ui/components/WeekGrid";
 import { InfantNote } from "~/ui/components/InfantNote";
-import { Button } from "~/ui/components/ui/Button";
+import { Button, IconLink, LinkButton } from "~/ui/components/ui/Button";
+import { CardKicker } from "~/ui/components/ui/Card";
+import { ChevronLeftIcon, ChevronRightIcon } from "~/ui/components/Icon";
 import { addDays } from "~/lib/time";
 import { t } from "~/i18n/t";
 
@@ -18,25 +20,20 @@ export default function WeekPage({ params }: Route.ComponentProps) {
 
   return (
     <>
-      <div className="mb-4 flex items-center justify-center gap-2">
-        <Link
-          to={`/weeks/${prevWeek}`}
-          className="flex h-11 w-11 items-center justify-center text-muted hover:text-accent"
-          aria-label={t("week.prev")}
-        >
-          ←
-        </Link>
-        <h1 className="min-w-40 text-center text-2xl">{t("week.heading", { date: weekStart })}</h1>
-        <Link
-          to={`/weeks/${nextWeek}`}
-          className="flex h-11 w-11 items-center justify-center text-muted hover:text-accent"
-          aria-label={t("week.next")}
-        >
-          →
-        </Link>
+      <div className="mb-5 flex items-center justify-center gap-3">
+        <IconLink to={`/weeks/${prevWeek}`} aria-label={t("week.prev")}>
+          <ChevronLeftIcon size={18} />
+        </IconLink>
+        <div className="min-w-44 text-center">
+          <CardKicker>{t("week.kicker")}</CardKicker>
+          <h1 className="mt-1 text-xl">{t("week.heading", { date: weekStart })}</h1>
+        </div>
+        <IconLink to={`/weeks/${nextWeek}`} aria-label={t("week.next")}>
+          <ChevronRightIcon size={18} />
+        </IconLink>
       </div>
 
-      <div className="mb-4">
+      <div className="mb-5">
         <InfantNote />
       </div>
 
@@ -44,7 +41,7 @@ export default function WeekPage({ params }: Route.ComponentProps) {
 
       {!weekPlan.isLoading && !weekPlan.data && (
         <div className="rounded-lg border border-dashed border-divider p-8 text-center">
-          <p className="mb-4 opacity-80">{t("week.empty")}</p>
+          <p className="mb-4 text-muted">{t("week.empty")}</p>
           <Button type="button" variant="primary" onClick={() => generate.mutate()} disabled={generate.isPending}>
             {generate.isPending ? t("week.generating") : t("week.generate")}
           </Button>
@@ -56,7 +53,7 @@ export default function WeekPage({ params }: Route.ComponentProps) {
           {generate.error instanceof NoRecipesError ? (
             <>
               {t("week.noRecipes")}{" "}
-              <Link to="/offers" className="text-accent underline hover:text-accent-700">
+              <Link to="/offers" className="font-semibold text-accent underline hover:text-accent-700">
                 {t("week.noRecipesAction")}
               </Link>
             </>
@@ -70,7 +67,7 @@ export default function WeekPage({ params }: Route.ComponentProps) {
 
       {weekPlan.data && (
         <>
-          <div className="mb-4 flex flex-col gap-2 sm:flex-row">
+          <div className="mb-5 flex flex-col gap-2 sm:flex-row">
             <Button
               type="button"
               variant="secondary"
@@ -80,11 +77,9 @@ export default function WeekPage({ params }: Route.ComponentProps) {
             >
               {generate.isPending ? t("week.regeneratingWhole") : t("week.regenerateWhole")}
             </Button>
-            <Link to={`/weeks/${weekStart}/shopping-list`} className="sm:w-auto">
-              <Button type="button" variant="primary" block>
-                {t("shoppingList.open")}
-              </Button>
-            </Link>
+            <LinkButton to={`/weeks/${weekStart}/shopping-list`} variant="primary" block className="sm:w-auto">
+              {t("shoppingList.open")}
+            </LinkButton>
           </div>
           <WeekGrid week={weekPlan.data} />
         </>

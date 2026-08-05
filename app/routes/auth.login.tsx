@@ -31,7 +31,7 @@ export default function LoginPage() {
     <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-5 p-8">
       <div>
         <p className="text-sm text-muted">{t("app.title")}</p>
-        <h1 className="mt-1 text-4xl">{t("auth.login.heading")}</h1>
+        <h1 className="mt-1 text-3xl">{t("auth.login.heading")}</h1>
       </div>
       <Form method="post" className="flex flex-col gap-3">
         <input type="hidden" name="redirectTo" value={redirectTo} />
@@ -42,7 +42,7 @@ export default function LoginPage() {
         </Button>
       </Form>
       {actionData?.error && <p className="text-sm text-red-700">{actionData.error}</p>}
-      <p className="text-sm opacity-80">
+      <p className="text-sm text-muted">
         {t("auth.login.noAccount")}{" "}
         <Link
           to={`/auth/signup${redirectTo !== "/" ? `?redirectTo=${encodeURIComponent(redirectTo)}` : ""}`}

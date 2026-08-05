@@ -74,9 +74,9 @@ export function OfferJsonPasteForm() {
   }
 
   return (
-    <Card as="section" className="p-4">
-      <h2 className="text-xl">{t("offers.autoFetchHeading")}</h2>
-      <p className="-mt-1 text-sm opacity-80">{t("offers.autoFetchDescription")}</p>
+    <Card as="section">
+      <h2 className="text-lg">{t("offers.autoFetchHeading")}</h2>
+      <p className="-mt-1 text-sm text-muted">{t("offers.autoFetchDescription")}</p>
       <Button
         type="button"
         variant="secondary"
@@ -92,8 +92,8 @@ export function OfferJsonPasteForm() {
         </p>
       )}
 
-      <h2 className="mt-4 text-xl">{t("offers.formHeading")}</h2>
-      <p className="-mt-1 text-sm opacity-80">{t("offers.formDescription")}</p>
+      <h2 className="mt-4 text-lg">{t("offers.formHeading")}</h2>
+      <p className="-mt-1 text-sm text-muted">{t("offers.formDescription")}</p>
       <Textarea value={raw} onChange={(e) => setRaw(e.target.value)} placeholder={PLACEHOLDER} rows={10} />
       {error && <p className="text-sm text-red-700">{error}</p>}
       <Button
@@ -107,14 +107,20 @@ export function OfferJsonPasteForm() {
       </Button>
 
       <div className="mt-3">
-        <h3 className="text-[11px] tracking-wide text-muted uppercase">
+        <h3 className="text-[11px] font-semibold tracking-[0.08em] text-muted uppercase">
           {t("offers.currentlyImported", { count: offers.data?.offers.length ?? 0 })}
         </h3>
         {offers.data?.snapshot && <OfferSnapshotNote data={offers.data} />}
-        <ul className="mt-1.5 max-h-48 space-y-1 overflow-y-auto text-sm">
+        <ul className="m-0 mt-1.5 flex max-h-56 list-none flex-col overflow-y-auto p-0">
           {offers.data?.offers.map((offer, i) => (
-            <li key={i}>
-              {offer.name} — {offer.price} {offer.currencyCode}
+            <li
+              key={i}
+              className="flex items-center justify-between gap-3 border-b border-divider py-2.5 text-sm last:border-b-0"
+            >
+              <span className="min-w-0">{offer.name}</span>
+              <span className="shrink-0 text-[13px] font-bold text-accent-700">
+                {offer.price} {offer.currencyCode}
+              </span>
             </li>
           ))}
         </ul>

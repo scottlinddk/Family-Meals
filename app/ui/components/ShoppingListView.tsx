@@ -85,8 +85,8 @@ export function ShoppingListView({
 
       <div className="flex flex-col gap-4">
         {list.sections.map((section) => (
-          <Card key={section.departmentSlug ?? "other"} as="section" className="p-4">
-            <h2 className="text-[11px] tracking-wide text-muted uppercase">
+          <Card key={section.departmentSlug ?? "other"} as="section">
+            <h2 className="text-[11px] font-semibold tracking-[0.08em] text-muted uppercase">
               {departmentLabel(section.departmentSlug)}
             </h2>
             <ul className="m-0 flex list-none flex-col p-0">
@@ -160,10 +160,10 @@ function ShoppingListRow({ item, marks }: { item: ShoppingListItem; marks: Shopp
         aria-pressed={atHome}
         aria-label={t("shoppingList.atHomeAria", { item: item.label })}
         onClick={() => marks.toggleMark(item.label, "at_home")}
-        className={`my-1 min-h-11 shrink-0 self-start rounded-md border px-2.5 text-xs transition-colors ${
+        className={`my-1 min-h-11 shrink-0 self-start rounded-full border px-3.5 text-xs font-semibold transition-colors ${
           atHome
-            ? "border-accent bg-accent/12 text-accent-700"
-            : "border-transparent text-muted hover:border-divider hover:bg-text/7"
+            ? "border-accent bg-accent text-white"
+            : "border-divider text-muted hover:bg-neutral-100"
         }`}
       >
         {t("shoppingList.atHome")}

@@ -39,7 +39,7 @@ export default function InvitePage({ loaderData, params }: Route.ComponentProps)
       <main className="mx-auto flex max-w-sm flex-col justify-center gap-5 p-8 text-center min-h-[70vh]">
         <div>
           <p className="text-sm text-muted">{t("app.title")}</p>
-          <h1 className="mt-1 text-3xl">{t("invite.heading", { family: familyName ?? t("invite.aFamily") })}</h1>
+          <h1 className="mt-1 text-2xl">{t("invite.heading", { family: familyName ?? t("invite.aFamily") })}</h1>
         </div>
 
         {!isUsable && (
@@ -56,7 +56,7 @@ export default function InvitePage({ loaderData, params }: Route.ComponentProps)
 
         {isUsable && !signedIn && (
           <div className="flex flex-col gap-2">
-            <p className="text-sm opacity-80">{t("invite.signInPrompt")}</p>
+            <p className="text-sm text-muted">{t("invite.signInPrompt")}</p>
             <Link
               to={`/auth/signup?redirectTo=${encodeURIComponent(redirectTo)}`}
               className="text-accent hover:text-accent-700"

@@ -3,6 +3,8 @@ import { useRecipeSuggestions, useRefreshRecipes } from "~/ui/hooks/useRecipeSug
 import { Button } from "~/ui/components/ui/Button";
 import { Card, CardTitle } from "~/ui/components/ui/Card";
 import { Tag } from "~/ui/components/ui/Tag";
+import { ThumbPhoto } from "~/ui/components/ui/Photo";
+import { ChevronRightIcon } from "~/ui/components/Icon";
 import { t } from "~/i18n/t";
 
 /** REMA 1000's own recipes, cross-checked against this week's offers and ranked best-match-first. */
@@ -11,9 +13,9 @@ export function RecipeSuggestions() {
   const refreshRecipes = useRefreshRecipes();
 
   return (
-    <div className="mt-4">
-      <h3 className="text-lg">{t("recipes.suggestionsHeading")}</h3>
-      <p className="-mt-1 text-sm opacity-80">{t("recipes.suggestionsDescription")}</p>
+    <div className="mt-6">
+      <h2 className="text-lg">{t("recipes.suggestionsHeading")}</h2>
+      <p className="mt-1 mb-3 text-sm text-muted">{t("recipes.suggestionsDescription")}</p>
 
       <Button
         type="button"
@@ -79,13 +81,11 @@ export function RecipeSuggestions() {
       )}
 
       {suggestions.data && suggestions.data.length > 0 && (
-        <ul className="mt-3 flex flex-col gap-2">
+        <ul className="m-0 mt-3 flex list-none flex-col gap-3 p-0">
           {suggestions.data.map(({ recipe, matchedIngredients, matchedOfferNames }) => (
             <Card as="li" key={recipe.id}>
               <div className="flex items-center gap-3">
-                {recipe.imageUrl && (
-                  <img src={recipe.imageUrl} alt="" className="h-14 w-14 shrink-0 rounded-md object-cover" />
-                )}
+                {recipe.imageUrl && <ThumbPhoto src={recipe.imageUrl} size={56} />}
                 <div>
                   <CardTitle>{recipe.title}</CardTitle>
                   {(recipe.servings || recipe.totalTimeMinutes) && (
@@ -130,9 +130,13 @@ export function RecipeSuggestions() {
                 </p>
               )}
 
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-                <Link to={`/recipes/${recipe.id}`} className="text-accent hover:text-accent-700">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] font-semibold">
+                <Link
+                  to={`/recipes/${recipe.id}`}
+                  className="inline-flex items-center gap-1 text-accent hover:text-accent-700"
+                >
                   {t("recipes.viewRecipe")}
+                  <ChevronRightIcon size={14} />
                 </Link>
                 <a
                   href={recipe.url}

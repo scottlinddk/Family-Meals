@@ -2,8 +2,10 @@ import { Link, useSearchParams } from "react-router";
 import { useMemo } from "react";
 import { useExternalRecipes } from "~/ui/hooks/useExternalRecipes";
 import { Card, CardTitle } from "~/ui/components/ui/Card";
-import { FieldLabel, Input } from "~/ui/components/ui/Input";
+import { SearchInput } from "~/ui/components/ui/Input";
+import { ThumbPhoto } from "~/ui/components/ui/Photo";
 import { Button } from "~/ui/components/ui/Button";
+import { ChevronRightIcon } from "~/ui/components/Icon";
 import { t } from "~/i18n/t";
 
 export default function RecipesPage() {
@@ -24,13 +26,13 @@ export default function RecipesPage() {
 
   return (
     <>
-      <h1 className="mb-5 text-3xl">{t("recipesPage.title")}</h1>
+      <h1 className="mb-4 text-2xl">{t("recipesPage.title")}</h1>
 
       <div className="mb-4">
-        <FieldLabel htmlFor="recipe-search">{t("recipesPage.searchLabel")}</FieldLabel>
-        <Input
+        <SearchInput
           id="recipe-search"
           type="search"
+          aria-label={t("recipesPage.searchLabel")}
           value={q}
           onChange={(e) => {
             const value = e.target.value;
@@ -51,7 +53,7 @@ export default function RecipesPage() {
       {recipes.isLoading && <p className="text-sm text-muted">{t("week.loading")}</p>}
 
       {recipes.data && (
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-4 flex items-center justify-between gap-3">
           <p className="m-0 text-sm text-muted">{t("recipesPage.resultCount", { count: results.length })}</p>
           {q && (
             <Button type="button" variant="ghost" size="sm" onClick={() => setSearchParams({})}>
@@ -66,26 +68,17 @@ export default function RecipesPage() {
         <p className="text-sm text-muted">{t("recipesPage.none")}</p>
       )}
 
-      <ul className="m-0 flex list-none flex-col gap-2 p-0">
+      <ul className="m-0 flex list-none flex-col gap-3 p-0">
         {results.map((recipe) => (
           <li key={recipe.id}>
             <Link to={`/recipes/${recipe.id}`} className="block">
-              <Card>
+              <Card interactive>
                 <div className="flex items-center gap-3">
-                  {recipe.imageUrl && (
-                    <img
-                      src={recipe.imageUrl}
-                      alt=""
-                      width={64}
-                      height={64}
-                      loading="lazy"
-                      className="h-16 w-16 shrink-0 rounded-md object-cover"
-                    />
-                  )}
-                  <div>
+                  {recipe.imageUrl && <ThumbPhoto src={recipe.imageUrl} size={64} />}
+                  <div className="min-w-0 flex-1">
                     <CardTitle>{recipe.title}</CardTitle>
                     {(recipe.servings || recipe.totalTimeMinutes) && (
-                      <p className="m-0 flex gap-x-3 text-xs text-muted">
+                      <p className="m-0 mt-1 flex gap-x-3 text-xs text-muted">
                         {recipe.servings && <span>{t("recipeDetail.servings", { count: recipe.servings })}</span>}
                         {recipe.totalTimeMinutes && (
                           <span>{t("recipeDetail.totalTime", { minutes: recipe.totalTimeMinutes })}</span>
@@ -93,6 +86,7 @@ export default function RecipesPage() {
                       </p>
                     )}
                   </div>
+                  <ChevronRightIcon size={18} className="shrink-0 text-muted-2" />
                 </div>
               </Card>
             </Link>

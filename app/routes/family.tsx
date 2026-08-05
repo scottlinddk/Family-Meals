@@ -29,7 +29,7 @@ export default function FamilyPage() {
 
   return (
     <>
-      <h1 className="mb-5 text-3xl">{t("family.pageTitle")}</h1>
+      <h1 className="mb-4 text-2xl">{t("family.pageTitle")}</h1>
 
       {(myFamilies.data?.length ?? 0) > 1 && (
         <Card className="mb-5">
@@ -92,7 +92,7 @@ export default function FamilyPage() {
 
       <Card>
         <CardTitle>{t("family.inviteHeading")}</CardTitle>
-        <p className="m-0 text-sm opacity-80">{t("family.inviteDescription")}</p>
+        <p className="m-0 text-sm text-muted">{t("family.inviteDescription")}</p>
         <form
           className="flex flex-col gap-2 sm:flex-row"
           onSubmit={(e) => {
@@ -118,7 +118,7 @@ export default function FamilyPage() {
         </form>
         {createInvite.isError && <p className="text-sm text-red-700">{createInvite.error.message}</p>}
         {inviteLink && (
-          <div className="rounded-md border border-divider bg-bg p-2 font-mono text-xs break-all">{inviteLink}</div>
+          <div className="rounded-sm border border-divider bg-neutral-100 p-2.5 font-mono text-xs break-all">{inviteLink}</div>
         )}
 
         {!!invites.data?.length && (

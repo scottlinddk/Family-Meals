@@ -1,70 +1,53 @@
 import { useEffect, useState } from "react";
 import { useIcsUrl } from "~/ui/hooks/useIcsUrl";
-import { Button } from "~/ui/components/ui/Button";
+import { Button, IconButton } from "~/ui/components/ui/Button";
+import { BottomSheet } from "~/ui/components/ui/BottomSheet";
+import { CalendarIcon } from "~/ui/components/Icon";
 import { t } from "~/i18n/t";
 
 /**
- * "Subscribe in your calendar app" callout, opened from the top nav (inline on
- * desktop, from inside the mobile menu panel below `sm` — hence `block`, which
- * makes the trigger fill the panel row).
+ * "Subscribe in your calendar app" — opened from the calendar icon in the
+ * header band, where it sits as one round control rather than a labelled
+ * button, because the band belongs to the app and not to any page.
  */
-export function SubscribeCalloutModal({ block = false }: { block?: boolean }) {
+export function SubscribeCalloutModal() {
   const [open, setOpen] = useState(false);
   const { webcalUrl, httpsUrl } = useIcsUrl();
 
-  useEffect(() => {
-    if (!open) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
-    };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [open]);
-
   return (
-    <div className={block ? "w-full" : undefined}>
-      <Button type="button" variant="secondary" size="sm" block={block} onClick={() => setOpen(true)}>
-        {t("calendar.subscribeButton")}
-      </Button>
+    <>
+      <IconButton
+        type="button"
+        aria-label={t("calendar.subscribeButton")}
+        title={t("calendar.subscribeButton")}
+        onClick={() => setOpen(true)}
+      >
+        <CalendarIcon />
+      </IconButton>
 
-      {open && (
-        <div
-          className="fixed inset-0 z-40 grid place-items-center overflow-y-auto bg-neutral-900/50 p-4"
-          onClick={() => setOpen(false)}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="subscribe-modal-heading"
-            className="flex w-full max-w-md flex-col gap-3 rounded-lg border border-divider bg-surface p-4 shadow-lg"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <h2 id="subscribe-modal-heading" className="text-xl">
-              {t("calendar.modalHeading")}
-            </h2>
-            <p className="text-sm opacity-85">{t("calendar.modalDescription")}</p>
+      <BottomSheet open={open} onClose={() => setOpen(false)} labelledBy="subscribe-modal-heading">
+        <h2 id="subscribe-modal-heading" className="text-lg font-bold">
+          {t("calendar.modalHeading")}
+        </h2>
+        <p className="m-0 text-[13px] text-muted">{t("calendar.modalDescription")}</p>
 
-            <CopyableUrl url={webcalUrl} />
+        <CopyableUrl url={webcalUrl} />
 
-            <ul className="m-0 list-disc pl-4.5 text-sm">
-              <li>{t("calendar.apple")}</li>
-              <li>{t("calendar.google")}</li>
-              <li>{t("calendar.outlook")}</li>
-            </ul>
+        <ul className="m-0 list-disc pl-4.5 text-[13px]">
+          <li>{t("calendar.apple")}</li>
+          <li>{t("calendar.google")}</li>
+          <li>{t("calendar.outlook")}</li>
+        </ul>
 
-            <CopyableUrl url={httpsUrl} />
+        <CopyableUrl url={httpsUrl} />
 
-            <p className="m-0 text-xs text-muted">{t("calendar.refreshNote")}</p>
+        <p className="m-0 text-xs text-muted">{t("calendar.refreshNote")}</p>
 
-            <div className="mt-1 flex justify-end">
-              <Button type="button" variant="secondary" onClick={() => setOpen(false)}>
-                {t("calendar.close")}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+        <Button type="button" variant="secondary" block onClick={() => setOpen(false)}>
+          {t("calendar.close")}
+        </Button>
+      </BottomSheet>
+    </>
   );
 }
 
@@ -85,7 +68,7 @@ function CopyableUrl({ url }: { url: string | undefined }) {
 
   return (
     <div className="flex items-start gap-2">
-      <div className="min-w-0 flex-1 rounded-md border border-divider bg-bg p-2 font-mono text-xs break-all">
+      <div className="min-w-0 flex-1 rounded-sm border border-divider bg-neutral-100 p-2.5 font-mono text-xs break-all">
         {url}
       </div>
       <Button

@@ -1,4 +1,5 @@
-import { Card, CardTitle } from "~/ui/components/ui/Card";
+import { Card } from "~/ui/components/ui/Card";
+import { Accordion } from "~/ui/components/ui/Accordion";
 import { Tag } from "~/ui/components/ui/Tag";
 import { t } from "~/i18n/t";
 
@@ -18,6 +19,9 @@ export interface RecipeBodyProps {
  * The full recipe — summary, timings, ingredients and method — rendered in
  * the app so a meal can be cooked from the plan itself. The link to the
  * source page is kept alongside it rather than replaced by it.
+ *
+ * Ingredients and method are accordion rows: both open on arrival, and either
+ * one can be folded away by whoever only needs the other in front of them.
  */
 export function RecipeBody({
   ingredientLines,
@@ -41,33 +45,36 @@ export function RecipeBody({
         </p>
       )}
 
-      {ingredientLines.length > 0 && (
-        <Card className="mb-3">
-          <CardTitle>{t("recipeDetail.ingredientsHeading")}</CardTitle>
-          {onOffer.size > 0 && (
-            <p className="m-0 text-xs text-muted">
-              {t("recipeDetail.onOfferCount", { count: onOffer.size })}
-            </p>
+      {(ingredientLines.length > 0 || instructionLines.length > 0) && (
+        <Card className="mb-3 gap-0 py-0">
+          {ingredientLines.length > 0 && (
+            <Accordion
+              title={t("recipeDetail.ingredientsHeading")}
+              meta={onOffer.size > 0 ? t("recipeDetail.onOfferCount", { count: onOffer.size }) : undefined}
+            >
+              <ul className="m-0 flex list-none flex-col p-0 text-sm">
+                {ingredientLines.map((line, i) => (
+                  <li
+                    key={i}
+                    className="flex flex-wrap items-center justify-between gap-2 border-b border-divider py-2.5 last:border-b-0 last:pb-0"
+                  >
+                    <span className={onOffer.has(line) ? "font-medium" : undefined}>{line}</span>
+                    {onOffer.has(line) && <Tag variant="accent">{t("recipeDetail.onOfferBadge")}</Tag>}
+                  </li>
+                ))}
+              </ul>
+            </Accordion>
           )}
-          <ul className="m-0 flex list-none flex-col gap-1 p-0 text-sm">
-            {ingredientLines.map((line, i) => (
-              <li key={i} className="flex flex-wrap items-center gap-2">
-                <span className={onOffer.has(line) ? "font-medium" : undefined}>{line}</span>
-                {onOffer.has(line) && <Tag variant="accent">{t("recipeDetail.onOfferBadge")}</Tag>}
-              </li>
-            ))}
-          </ul>
-        </Card>
-      )}
 
-      {instructionLines.length > 0 && (
-        <Card className="mb-3">
-          <CardTitle>{t("recipeDetail.instructionsHeading")}</CardTitle>
-          <ol className="m-0 flex list-decimal flex-col gap-1.5 pl-4.5 text-sm">
-            {instructionLines.map((step, i) => (
-              <li key={i}>{step}</li>
-            ))}
-          </ol>
+          {instructionLines.length > 0 && (
+            <Accordion title={t("recipeDetail.instructionsHeading")}>
+              <ol className="m-0 flex list-decimal flex-col gap-2 pl-4.5 text-sm">
+                {instructionLines.map((step, i) => (
+                  <li key={i}>{step}</li>
+                ))}
+              </ol>
+            </Accordion>
+          )}
         </Card>
       )}
 
@@ -84,7 +91,7 @@ export function RecipeBody({
           href={url}
           target="_blank"
           rel="noreferrer"
-          className="text-sm text-accent hover:text-accent-700"
+          className="text-[13px] font-semibold text-accent hover:text-accent-700"
         >
           {t("recipeDetail.viewOriginal")}
         </a>

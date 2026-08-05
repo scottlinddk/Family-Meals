@@ -4,15 +4,20 @@ import { Link, type LinkProps } from "react-router";
 type ButtonVariant = "primary" | "secondary" | "ghost";
 type ButtonSize = "sm" | "md";
 
+/**
+ * Green is the app's one accent, so only the primary action wears it filled.
+ * Everything else is white behind a hairline, and hover only darkens — no
+ * colour changes, nothing lifting off the page.
+ */
 const variantClasses: Record<ButtonVariant, string> = {
-  primary: "border-accent text-accent hover:bg-accent/12 active:bg-accent/22",
-  secondary: "border-divider hover:bg-text/7 active:bg-text/14",
-  ghost: "border-transparent text-accent px-1 hover:bg-accent/10 active:bg-accent/18",
+  primary: "border-transparent bg-accent text-white hover:bg-accent-700 active:bg-accent-800",
+  secondary: "border-divider bg-surface text-text hover:bg-neutral-100 active:bg-neutral-200",
+  ghost: "border-transparent text-accent hover:bg-accent-100 active:bg-accent-200",
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
-  sm: "px-2.5 py-1.5 text-xs",
-  md: "px-4 py-2 text-sm",
+  sm: "px-4 py-2 text-[13px]",
+  md: "px-6 py-3 text-sm",
 };
 
 interface ButtonStyleProps {
@@ -28,7 +33,8 @@ function buttonClasses({
   block = false,
   className = "",
 }: ButtonStyleProps): string {
-  return `inline-flex items-center justify-center gap-1.5 rounded-md border font-heading font-semibold leading-tight transition-colors disabled:cursor-not-allowed disabled:opacity-45 ${variantClasses[variant]} ${sizeClasses[size]} ${block ? "w-full" : ""} ${className}`;
+  // Always a full pill — the design system has no rounded-rectangle buttons.
+  return `inline-flex items-center justify-center gap-2 rounded-full border font-semibold leading-tight transition-colors disabled:cursor-not-allowed disabled:opacity-45 ${variantClasses[variant]} ${sizeClasses[size]} ${block ? "w-full" : ""} ${className}`;
 }
 
 export function Button({
@@ -55,4 +61,21 @@ export function LinkButton({
   ...props
 }: LinkProps & ButtonStyleProps) {
   return <Link className={buttonClasses({ variant, size, block, className })} {...props} />;
+}
+
+const iconButtonClasses =
+  "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-divider bg-surface text-text transition-colors hover:bg-neutral-100 disabled:pointer-events-none disabled:opacity-40";
+
+/**
+ * A round, icon-only control — the header's subscribe button, the week's
+ * previous/next arrows. Same white-behind-a-hairline treatment as a secondary
+ * button, sized to stay a comfortable tap target.
+ */
+export function IconButton({ className = "", ...props }: ButtonHTMLAttributes<HTMLButtonElement>) {
+  return <button className={`${iconButtonClasses} ${className}`} {...props} />;
+}
+
+/** The same circle, when the control is a link rather than a button. */
+export function IconLink({ className = "", ...props }: LinkProps) {
+  return <Link className={`${iconButtonClasses} ${className}`} {...props} />;
 }

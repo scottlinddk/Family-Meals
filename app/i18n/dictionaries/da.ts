@@ -22,11 +22,10 @@ export const da = {
   "auth.signup.hasAccount": "Har du allerede en konto?",
   "auth.signup.link": "Log ind",
 
-  "week.prev": "← Forrige",
-  "week.next": "Næste →",
+  "week.prev": "Forrige uge",
+  "week.next": "Næste uge",
+  "week.kicker": "Ugeplan",
   "week.heading": "Uge fra {{date}}",
-  "week.manageOffers": "Administrér tilbud",
-  "week.family": "Familie",
   "week.signOut": "Log ud",
   "week.loading": "Indlæser…",
   "week.empty": "Der er endnu ikke lavet en plan for denne uge.",
@@ -43,7 +42,7 @@ export const da = {
   "week.today": "I dag",
 
   "shoppingList.title": "Indkøbsliste",
-  "shoppingList.open": "Se indkøbsliste →",
+  "shoppingList.open": "Se indkøbsliste",
   "shoppingList.noPlan": "Lav en ugeplan først — så samler vi indkøbslisten herfra.",
   "shoppingList.empty":
     "Ugens opskrifter har ingen ingrediensliste, så der er intet at samle. Prøv at genskabe ugen " +
@@ -83,7 +82,7 @@ export const da = {
   "shoppingList.dept.drinks": "Drikkevarer",
   "shoppingList.dept.other": "Øvrige",
 
-  "day.backToWeek": "← Tilbage til ugen",
+  "day.backToWeek": "Tilbage til ugen",
   "day.swapLabel": "Skift til en anden opskrift",
   "day.choosePlaceholder": "Vælg en opskrift…",
   "day.notFound": "Der er ingen ret planlagt til denne dag.",
@@ -124,7 +123,7 @@ export const da = {
   "recipes.refreshError": "Kunne ikke opdatere opskrifter automatisk.",
   "recipes.none": "Ingen opskrifter hentet endnu — klik på \"Opdatér opskrifter\".",
   "recipes.onOffer": "På tilbud: {{names}}",
-  "recipes.viewRecipe": "Se opskrift →",
+  "recipes.viewRecipe": "Se opskrift",
   "recipes.noMatch": "Ingen ingredienser aktuelt på tilbud.",
   "recipes.noIngredientsScraped": "Ingen ingrediensliste fundet for denne opskrift.",
   "recipes.refreshedSummary":
@@ -135,11 +134,12 @@ export const da = {
     "{{recipes}} af {{total}} opskrifter i temaet \"{{theme}}\" ({{pages}} sider hentet).",
   "recipes.refreshedPagesSkipped": "Sider der ikke kunne hentes: {{pages}}.",
 
-  "week.recipes": "Opskrifter",
-  "nav.plan": "Ugeplan",
+  // Bottom-nav labels: short enough to sit under an icon on the narrowest phone.
+  "nav.plan": "Uge",
+  "nav.recipes": "Opskrifter",
+  "nav.offers": "Tilbud",
+  "nav.family": "Familie",
   "nav.primary": "Hovedmenu",
-  "nav.openMenu": "Åbn menu",
-  "nav.closeMenu": "Luk menu",
 
   "recipesPage.title": "Alle opskrifter",
   "recipesPage.searchLabel": "Søg på navn eller ingrediens",
@@ -148,7 +148,7 @@ export const da = {
   "recipesPage.resultCount": "{{count}} opskrift(er)",
   "recipesPage.none": "Ingen opskrifter matcher disse filtre.",
 
-  "recipeDetail.backToRecipes": "← Tilbage til opskrifter",
+  "recipeDetail.backToRecipes": "Tilbage til opskrifter",
   "recipeDetail.notFound": "Denne opskrift findes ikke.",
   "recipeDetail.ingredientsHeading": "Ingredienser",
   "recipeDetail.instructionsHeading": "Fremgangsmåde",
@@ -160,7 +160,7 @@ export const da = {
   "recipeDetail.noIngredients":
     "Der blev ikke fundet en ingrediensliste til denne opskrift — åbn den hos REMA 1000 nedenfor.",
 
-  "day.viewRecipe": "Se hele opskriften →",
+  "day.viewRecipe": "Se hele opskriften",
   "day.viewOnRema": "Åbn hos REMA 1000 ↗",
 
   "cook.open": "Køkkentilstand",

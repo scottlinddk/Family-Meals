@@ -1,10 +1,10 @@
-import { Link } from "react-router";
 import type { Route } from "./+types/weeks.$weekStart.shopping-list";
 import { useShoppingList } from "~/ui/hooks/useShoppingList";
 import { useShoppingListMarks } from "~/ui/hooks/useShoppingListMarks";
 import { ShoppingListView } from "~/ui/components/ShoppingListView";
 import { ShareListPanel } from "~/ui/components/ShareListPanel";
 import { Button } from "~/ui/components/ui/Button";
+import { BackLink } from "~/ui/components/ui/BackLink";
 import { t } from "~/i18n/t";
 import { SchemaOutOfDateError } from "~/lib/dbErrors";
 
@@ -15,12 +15,10 @@ export default function ShoppingListPage({ params }: Route.ComponentProps) {
 
   return (
     <>
-      <Link to={`/weeks/${weekStart}`} className="text-sm text-accent hover:text-accent-700">
-        {t("day.backToWeek")}
-      </Link>
+      <BackLink to={`/weeks/${weekStart}`}>{t("day.backToWeek")}</BackLink>
 
-      <div className="mt-3 mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="m-0 text-3xl">{t("shoppingList.title")}</h1>
+      <div className="mt-2 mb-5 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="m-0 text-2xl">{t("shoppingList.title")}</h1>
         {list.data && list.data.itemCount > 0 && <ShareListPanel weekStart={weekStart} />}
       </div>
 
