@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router";
 import type { AdultVariant, ChildVariant } from "~/domain/types";
-import { buildCookSteps } from "~/domain/recipes/cookSteps";
+import { buildCookSteps, type CookStep } from "~/domain/recipes/cookSteps";
+import { COOK_VIEW_MODES, DEFAULT_USER_PREFERENCES, type CookViewMode } from "~/domain/preferences";
 import { useKeepScreenAwake, type KeepScreenAwake } from "~/ui/hooks/useKeepScreenAwake";
+import { useSetCookViewMode, useUserPreferences } from "~/ui/hooks/useUserPreferences";
 import { AdultVariantPanel, ChildVariantPanel } from "~/ui/components/VariantPanel";
 import { Button } from "~/ui/components/ui/Button";
 import { Tag } from "~/ui/components/ui/Tag";
@@ -26,19 +28,26 @@ export interface CookModeProps {
 
 const INGREDIENTS_PANEL_ID = "cook-ingredients";
 
+const VIEW_MODE_LABEL_KEYS: Record<CookViewMode, TranslationKey> = {
+  steps: "cook.viewSteps",
+  all: "cook.viewAll",
+};
+
 function clampStep(index: number, stepCount: number): number {
   return Math.min(Math.max(index, 0), Math.max(stepCount - 1, 0));
 }
 
 /**
- * Cook mode: the recipe reduced to one step at a time, at arm's length, with
- * the screen held awake.
+ * Cook mode: the recipe with the app taken away from around it, at arm's
+ * length, with the screen held awake.
  *
- * It deliberately drops the app's chrome — nav, week context, edit controls —
+ * It deliberately drops the chrome — nav, week context, edit controls —
  * because everything on screen while cooking competes with the pan. What's
- * left is the current step in large type, the ingredients one tap away, and
- * full-width Previous/Next targets usable with a knuckle. Arrow keys work too,
- * for a laptop on the counter.
+ * left comes in two layouts, remembered per user: `steps` walks through one
+ * step at a time with full-width Previous/Next targets usable with a knuckle
+ * (arrow keys too, for a laptop on the counter), and `all` puts the whole
+ * recipe on one scrollable page for reading it through or cooking from a
+ * glance without touching the phone.
  */
 export function CookMode({
   title,
@@ -60,6 +69,12 @@ export function CookMode({
     hasVariants,
   });
 
+  const preferences = useUserPreferences();
+  const setViewMode = useSetCookViewMode();
+  // The defaults stand in until the saved preference arrives, so cook mode
+  // opens on the first paint rather than waiting on a round trip.
+  const viewMode = (preferences.data ?? DEFAULT_USER_PREFERENCES).cookViewMode;
+
   const [stepIndex, setStepIndex] = useState(0);
   const [ingredientsOpen, setIngredientsOpen] = useState(false);
   const [ticked, setTicked] = useState<ReadonlySet<number>>(new Set());
@@ -75,14 +90,16 @@ export function CookMode({
   const currentIndex = clampStep(stepIndex, stepCount);
   const step = steps[currentIndex];
   const isLast = currentIndex === stepCount - 1;
-  const onOffer = new Set(offerIngredientLines);
+
   const goPrevious = () => setStepIndex((i) => clampStep(i - 1, stepCount));
   const goNext = () => setStepIndex((i) => clampStep(i + 1, stepCount));
 
   // Arrow keys move between steps, for a laptop propped on the counter. The
   // listener is on the document rather than a focusable element, so it keeps
   // working after a tap lands somewhere harmless.
+  const steppingThrough = viewMode === "steps";
   useEffect(() => {
+    if (!steppingThrough) return;
     const onKeyDown = (event: KeyboardEvent) => {
       // Never steal a key from a control the cook is actually using.
       if (event.target instanceof HTMLElement && event.target.closest("input, button, a, select")) {
@@ -93,7 +110,7 @@ export function CookMode({
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [stepCount]);
+  }, [steppingThrough, stepCount]);
 
   const toggleTicked = (index: number) =>
     setTicked((current) => {
@@ -102,34 +119,25 @@ export function CookMode({
       return next;
     });
 
-  const ingredientList = (
-    <ul className="m-0 flex list-none flex-col p-0">
-      {ingredientLines.map((line, i) => {
-        const isTicked = ticked.has(i);
-        return (
-          <li key={i} className="border-b border-divider last:border-0">
-            <label className="flex min-h-12 cursor-pointer items-start gap-3 py-2">
-              <input
-                type="checkbox"
-                checked={isTicked}
-                onChange={() => toggleTicked(i)}
-                className="mt-1 h-6 w-6 shrink-0 accent-accent"
-              />
-              <span className={`flex-1 text-lg ${isTicked ? "text-muted line-through" : ""}`}>
-                {line}
-                {onOffer.has(line) && (
-                  <>
-                    {" "}
-                    <Tag variant="accent">{t("recipeDetail.onOfferBadge")}</Tag>
-                  </>
-                )}
-              </span>
-            </label>
-          </li>
-        );
-      })}
-    </ul>
+  const ingredients = (
+    <IngredientList
+      lines={ingredientLines}
+      offerLines={offerIngredientLines}
+      ticked={ticked}
+      onToggle={toggleTicked}
+    />
   );
+
+  const sourceLink = url ? (
+    <a
+      href={url}
+      target="_blank"
+      rel="noreferrer"
+      className="mt-3 inline-block text-sm text-accent hover:text-accent-700"
+    >
+      {t("recipeDetail.viewOriginal")}
+    </a>
+  ) : null;
 
   return (
     <div className="flex min-h-dvh flex-col bg-bg">
@@ -150,7 +158,7 @@ export function CookMode({
           <KeepAwakeToggle screen={screen} />
         </div>
 
-        {steps.length > 1 && (
+        {steppingThrough && stepCount > 1 && (
           <div className="h-0.5 w-full bg-divider">
             <div
               className="h-full bg-accent transition-[width]"
@@ -161,92 +169,53 @@ export function CookMode({
       </header>
 
       <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-6">
-        <KeepAwakeStatus screen={screen} />
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+          <ViewModeToggle
+            viewMode={viewMode}
+            onChange={(mode) => setViewMode.mutate(mode)}
+            failed={setViewMode.isError}
+          />
+          <KeepAwakeStatus screen={screen} />
+        </div>
 
-        {!step && (
+        {stepCount === 0 && (
           <>
             <p className="text-lg text-muted">{t("cook.nothingToCook")}</p>
-            {url && (
-              <a
-                href={url}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-3 inline-block text-sm text-accent hover:text-accent-700"
-              >
-                {t("recipeDetail.viewOriginal")}
-              </a>
-            )}
+            {sourceLink}
           </>
         )}
 
-        {step?.kind === "ingredients" && (
-          <>
-            <h2 className="mb-1 text-3xl">{t("recipeDetail.ingredientsHeading")}</h2>
-            <RecipeMeta servings={servings} totalTimeMinutes={totalTimeMinutes} />
-            {ingredientList}
-            <p className="mt-4 text-sm text-muted">{t("cook.noMethod")}</p>
-            {url && (
-              <a
-                href={url}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-1 inline-block text-sm text-accent hover:text-accent-700"
-              >
-                {t("recipeDetail.viewOriginal")}
-              </a>
-            )}
-          </>
-        )}
-
-        {step?.kind === "instruction" && (
-          <>
-            <p className="m-0 text-xs tracking-[0.1em] text-accent uppercase">
-              {t("cook.stepCounter", { current: step.number, total: instructionStepCount(steps) })}
-            </p>
-            <p className="mt-2 mb-6 text-2xl leading-relaxed sm:text-3xl">{step.text}</p>
-
-            {ingredientLines.length > 0 && (
-              <section className="border-t border-divider pt-3">
-                <button
-                  type="button"
-                  onClick={() => setIngredientsOpen((open) => !open)}
-                  aria-expanded={ingredientsOpen}
-                  aria-controls={INGREDIENTS_PANEL_ID}
-                  className="flex min-h-11 w-full items-center justify-between gap-2 rounded-md px-1 text-left text-sm hover:bg-text/7"
-                >
-                  <span className="font-heading font-semibold">
-                    {t("recipeDetail.ingredientsHeading")}
-                    <span className="ml-2 text-muted">
-                      {t("cook.tickedCount", {
-                        ticked: ticked.size,
-                        total: ingredientLines.length,
-                      })}
-                    </span>
-                  </span>
-                  <span aria-hidden="true">{ingredientsOpen ? "▲" : "▼"}</span>
-                </button>
-                <div id={INGREDIENTS_PANEL_ID} hidden={!ingredientsOpen}>
-                  <RecipeMeta servings={servings} totalTimeMinutes={totalTimeMinutes} />
-                  {ingredientList}
-                </div>
-              </section>
-            )}
-          </>
-        )}
-
-        {step?.kind === "serving" && adultVariant && childVariant && (
-          <>
-            <h2 className="mb-1 text-3xl">{t("cook.servingHeading")}</h2>
-            <p className="mt-0 mb-4 text-base text-muted">{t("cook.servingIntro")}</p>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <AdultVariantPanel variant={adultVariant} />
-              <ChildVariantPanel variant={childVariant} />
-            </div>
-          </>
-        )}
+        {stepCount > 0 &&
+          (steppingThrough ? (
+            <StepPane
+              step={step}
+              instructionCount={countInstructions(steps)}
+              ingredients={ingredients}
+              ingredientCount={ingredientLines.length}
+              tickedCount={ticked.size}
+              ingredientsOpen={ingredientsOpen}
+              onToggleIngredients={() => setIngredientsOpen((open) => !open)}
+              servings={servings}
+              totalTimeMinutes={totalTimeMinutes}
+              sourceLink={sourceLink}
+              adultVariant={adultVariant}
+              childVariant={childVariant}
+            />
+          ) : (
+            <AllStepsPane
+              steps={steps}
+              ingredients={ingredients}
+              ingredientCount={ingredientLines.length}
+              servings={servings}
+              totalTimeMinutes={totalTimeMinutes}
+              sourceLink={sourceLink}
+              adultVariant={adultVariant}
+              childVariant={childVariant}
+            />
+          ))}
       </main>
 
-      {steps.length > 0 && (
+      {steppingThrough && stepCount > 0 && (
         <footer className="sticky bottom-0 border-t border-divider bg-bg/95 px-3 py-3 backdrop-blur">
           <div className="mx-auto flex w-full max-w-2xl items-center gap-3">
             <Button
@@ -304,7 +273,214 @@ export function CookModeFallback({ exitTo, loading }: { exitTo: string; loading:
   );
 }
 
-function instructionStepCount(steps: ReturnType<typeof buildCookSteps>): number {
+interface PaneCommonProps {
+  ingredients: ReactNode;
+  ingredientCount: number;
+  servings?: number;
+  totalTimeMinutes?: number;
+  sourceLink: ReactNode;
+  adultVariant?: AdultVariant;
+  childVariant?: ChildVariant;
+}
+
+/** One step, filling the screen, with the ingredients a tap away beneath it. */
+function StepPane({
+  step,
+  instructionCount,
+  ingredients,
+  ingredientCount,
+  tickedCount,
+  ingredientsOpen,
+  onToggleIngredients,
+  servings,
+  totalTimeMinutes,
+  sourceLink,
+  adultVariant,
+  childVariant,
+}: PaneCommonProps & {
+  step: CookStep | undefined;
+  instructionCount: number;
+  tickedCount: number;
+  ingredientsOpen: boolean;
+  onToggleIngredients: () => void;
+}) {
+  if (!step) return null;
+
+  return (
+    <>
+      {step.kind === "ingredients" && (
+        <>
+          <h2 className="mb-1 text-3xl">{t("recipeDetail.ingredientsHeading")}</h2>
+          <RecipeMeta servings={servings} totalTimeMinutes={totalTimeMinutes} />
+          {ingredients}
+          <p className="mt-4 text-sm text-muted">{t("cook.noMethod")}</p>
+          {sourceLink}
+        </>
+      )}
+
+      {step.kind === "instruction" && (
+        <>
+          <p className="m-0 text-xs tracking-[0.1em] text-accent uppercase">
+            {t("cook.stepCounter", { current: step.number, total: instructionCount })}
+          </p>
+          <p className="mt-2 mb-6 text-2xl leading-relaxed sm:text-3xl">{step.text}</p>
+
+          {ingredientCount > 0 && (
+            <section className="border-t border-divider pt-3">
+              <button
+                type="button"
+                onClick={onToggleIngredients}
+                aria-expanded={ingredientsOpen}
+                aria-controls={INGREDIENTS_PANEL_ID}
+                className="flex min-h-11 w-full items-center justify-between gap-2 rounded-md px-1 text-left text-sm hover:bg-text/7"
+              >
+                <span className="font-heading font-semibold">
+                  {t("recipeDetail.ingredientsHeading")}
+                  <span className="ml-2 text-muted">
+                    {t("cook.tickedCount", { ticked: tickedCount, total: ingredientCount })}
+                  </span>
+                </span>
+                <span aria-hidden="true">{ingredientsOpen ? "▲" : "▼"}</span>
+              </button>
+              <div id={INGREDIENTS_PANEL_ID} hidden={!ingredientsOpen}>
+                <RecipeMeta servings={servings} totalTimeMinutes={totalTimeMinutes} />
+                {ingredients}
+              </div>
+            </section>
+          )}
+        </>
+      )}
+
+      {step.kind === "serving" && adultVariant && childVariant && (
+        <ServingSection adultVariant={adultVariant} childVariant={childVariant} />
+      )}
+    </>
+  );
+}
+
+/**
+ * The whole recipe on one page: ingredients, then every step numbered, then
+ * serving. Still cook-scaled rather than the reading-sized recipe page —
+ * this is the layout for someone who'd rather scroll once than tap eight
+ * times, not a way back to the browsing view.
+ */
+function AllStepsPane({
+  steps,
+  ingredients,
+  ingredientCount,
+  servings,
+  totalTimeMinutes,
+  sourceLink,
+  adultVariant,
+  childVariant,
+}: PaneCommonProps & { steps: CookStep[] }) {
+  const instructions = steps.filter((step) => step.kind === "instruction");
+  const hasServing = steps.some((step) => step.kind === "serving");
+
+  return (
+    <>
+      <RecipeMeta servings={servings} totalTimeMinutes={totalTimeMinutes} />
+
+      {ingredientCount > 0 && (
+        <section className="mb-6">
+          <h2 className="mb-1 text-2xl">{t("recipeDetail.ingredientsHeading")}</h2>
+          {ingredients}
+        </section>
+      )}
+
+      {instructions.length > 0 ? (
+        <section className="mb-6">
+          <h2 className="mb-2 text-2xl">{t("recipeDetail.instructionsHeading")}</h2>
+          <ol className="m-0 flex list-none flex-col gap-4 p-0">
+            {instructions.map((step) => (
+              <li key={step.number} className="flex gap-3">
+                <span
+                  aria-hidden="true"
+                  className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-sm bg-accent-100 font-heading text-sm font-semibold text-accent-800"
+                >
+                  {step.number}
+                </span>
+                <p className="m-0 text-lg leading-relaxed sm:text-xl">{step.text}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
+      ) : (
+        <p className="mb-3 text-sm text-muted">{t("cook.noMethod")}</p>
+      )}
+
+      {hasServing && adultVariant && childVariant && (
+        <ServingSection adultVariant={adultVariant} childVariant={childVariant} />
+      )}
+
+      {sourceLink}
+    </>
+  );
+}
+
+function ServingSection({
+  adultVariant,
+  childVariant,
+}: {
+  adultVariant: AdultVariant;
+  childVariant: ChildVariant;
+}) {
+  return (
+    <section>
+      <h2 className="mb-1 text-2xl">{t("cook.servingHeading")}</h2>
+      <p className="mt-0 mb-4 text-base text-muted">{t("cook.servingIntro")}</p>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <AdultVariantPanel variant={adultVariant} />
+        <ChildVariantPanel variant={childVariant} />
+      </div>
+    </section>
+  );
+}
+
+function IngredientList({
+  lines,
+  offerLines,
+  ticked,
+  onToggle,
+}: {
+  lines: string[];
+  offerLines: string[];
+  ticked: ReadonlySet<number>;
+  onToggle: (index: number) => void;
+}) {
+  const onOffer = new Set(offerLines);
+
+  return (
+    <ul className="m-0 flex list-none flex-col p-0">
+      {lines.map((line, i) => {
+        const isTicked = ticked.has(i);
+        return (
+          <li key={i} className="border-b border-divider last:border-0">
+            <label className="flex min-h-12 cursor-pointer items-start gap-3 py-2">
+              <input
+                type="checkbox"
+                checked={isTicked}
+                onChange={() => onToggle(i)}
+                className="mt-1 h-6 w-6 shrink-0 accent-accent"
+              />
+              <span className={`flex-1 text-lg ${isTicked ? "text-muted line-through" : ""}`}>
+                {line}
+                {onOffer.has(line) && (
+                  <>
+                    {" "}
+                    <Tag variant="accent">{t("recipeDetail.onOfferBadge")}</Tag>
+                  </>
+                )}
+              </span>
+            </label>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+function countInstructions(steps: CookStep[]): number {
   return steps.filter((step) => step.kind === "instruction").length;
 }
 
@@ -321,6 +497,45 @@ function RecipeMeta({
       {servings && <span>{t("recipeDetail.servings", { count: servings })}</span>}
       {totalTimeMinutes && <span>{t("recipeDetail.totalTime", { minutes: totalTimeMinutes })}</span>}
     </p>
+  );
+}
+
+/**
+ * Switches between the two layouts. A segmented control rather than a menu:
+ * both options stay visible and one tap wide, and which one is on is legible
+ * across a kitchen. The choice is saved per user (see `useSetCookViewMode`),
+ * so it holds for the next recipe and the next device — and says so when the
+ * save didn't land, since a preference that silently isn't kept is worse
+ * than one that never claimed to be.
+ */
+function ViewModeToggle({
+  viewMode,
+  onChange,
+  failed,
+}: {
+  viewMode: CookViewMode;
+  onChange: (mode: CookViewMode) => void;
+  failed: boolean;
+}) {
+  return (
+    <div>
+      <div role="group" aria-label={t("cook.viewLabel")} className="flex gap-1">
+        {COOK_VIEW_MODES.map((mode) => (
+          <Button
+            key={mode}
+            type="button"
+            size="sm"
+            variant={mode === viewMode ? "primary" : "secondary"}
+            aria-pressed={mode === viewMode}
+            onClick={() => mode !== viewMode && onChange(mode)}
+            className="min-h-9"
+          >
+            {t(VIEW_MODE_LABEL_KEYS[mode])}
+          </Button>
+        ))}
+      </div>
+      {failed && <p className="mt-1 mb-0 text-xs text-muted">{t("cook.viewSaveFailed")}</p>}
+    </div>
   );
 }
 
@@ -368,7 +583,7 @@ function KeepAwakeStatus({ screen }: { screen: KeepScreenAwake }) {
   // The line keeps its space while the answer is still unknown, so the first
   // step doesn't jump down the screen a moment after the page appears.
   return (
-    <p aria-live="polite" className="mt-0 mb-4 min-h-4 text-xs text-muted">
+    <p aria-live="polite" className="m-0 min-h-4 flex-1 text-xs text-muted sm:text-right">
       {key && t(key)}
     </p>
   );

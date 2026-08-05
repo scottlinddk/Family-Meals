@@ -150,6 +150,11 @@ method at all, closing on a serving step that carries the adult/child
 variants — the day-plan version only, since that's where the variants exist
 and the plate is when they matter.
 
+Two layouts, switched from the segmented control at the top and remembered
+per user: `steps` (above) and `all`, which puts ingredients, every numbered
+step and the serving notes on one scrollable page — for reading a recipe
+through before starting, or cooking from a glance without touching the phone.
+
 Keeping the screen on is the Screen Wake Lock API
 (`app/ui/hooks/useKeepScreenAwake.ts`), enabled on entry — opening cook mode
 *is* the request — with a toggle in the bar to take it back. Two facts about
@@ -161,6 +166,28 @@ others (battery saver). Both are said out loud in the status line under the
 bar rather than swallowed — a screen that will dim anyway shouldn't be
 promised otherwise. There's no hidden-looping-video fallback for the browsers
 that lack it.
+
+## View preferences
+
+`user_preferences` (one row per Supabase Auth user id, `app/data/db/schema.ts`)
+stores how someone likes the app laid out — currently just `cook_view_mode`.
+Keyed by *user*, not family, on purpose: two people cooking the same plan can
+want different layouts, and the choice should follow the person to their other
+devices. Rows are written by upsert on first change, so "no row" is the normal
+state and means the defaults in `app/domain/preferences.ts`.
+
+`GET/PATCH /api/preferences` serves it, and `useUserPreferences` /
+`useSetCookViewMode` (`app/ui/hooks/useUserPreferences.ts`) read and write it,
+applying the change to the query cache before the request goes out — flipping
+a layout is direct manipulation of what's on screen and shouldn't wait on a
+round trip. A failed save rolls the cache back and the toggle says the
+preference didn't stick.
+
+`GET` answers with the defaults if the database is missing the table (see
+`dbErrors.ts` — code deploys ahead of `npm run db:migrate` here), since an
+unsaved preference and an unreachable one are the same thing to the page
+asking, and cook mode has to open either way. `PATCH` does report it, because
+there the difference is the whole point.
 
 ## Locale
 

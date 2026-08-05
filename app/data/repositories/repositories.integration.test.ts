@@ -79,12 +79,15 @@ function weekPlanFixture(
 describe.skipIf(!TEST_DATABASE_URL)("repositories against Postgres", () => {
   let offerRepository: typeof import("~/data/repositories/offerRepository")["offerRepository"];
   let weekPlanRepository: typeof import("~/data/repositories/weekPlanRepository")["weekPlanRepository"];
+  let userPreferenceRepository: typeof import("~/data/repositories/userPreferenceRepository")["userPreferenceRepository"];
   let db: typeof import("~/data/db/client")["db"];
   let families: typeof import("~/data/db/schema")["families"];
+  let userPreferences: typeof import("~/data/db/schema")["userPreferences"];
   let eq: typeof import("drizzle-orm")["eq"];
 
   let familyA = "";
   let familyB = "";
+  const preferenceUserId = crypto.randomUUID();
 
   beforeAll(async () => {
     // Imported dynamically so the db client picks up the test URL — it reads
@@ -92,8 +95,9 @@ describe.skipIf(!TEST_DATABASE_URL)("repositories against Postgres", () => {
     process.env.DATABASE_URL = TEST_DATABASE_URL;
     ({ offerRepository } = await import("~/data/repositories/offerRepository"));
     ({ weekPlanRepository } = await import("~/data/repositories/weekPlanRepository"));
+    ({ userPreferenceRepository } = await import("~/data/repositories/userPreferenceRepository"));
     ({ db } = await import("~/data/db/client"));
-    ({ families } = await import("~/data/db/schema"));
+    ({ families, userPreferences } = await import("~/data/db/schema"));
     ({ eq } = await import("drizzle-orm"));
 
     const rows = await db
@@ -111,6 +115,7 @@ describe.skipIf(!TEST_DATABASE_URL)("repositories against Postgres", () => {
     for (const id of [familyA, familyB]) {
       if (id) await db.delete(families).where(eq(families.id, id));
     }
+    await db.delete(userPreferences).where(eq(userPreferences.userId, preferenceUserId));
   });
 
   it("scopes an offer import to the importing family and hides expired offers", async () => {
@@ -171,5 +176,22 @@ describe.skipIf(!TEST_DATABASE_URL)("repositories against Postgres", () => {
   it("stores a null offer snapshot id for a plan generated without offers", async () => {
     const saved = await weekPlanRepository.saveWeekPlan(weekPlanFixture(familyA, "2026-09-07", null, "r"));
     expect(saved.generatedFrom.offerSnapshotId).toBeNull();
+  });
+
+  it("defaults a user's preferences, then upserts the same row on every change", async () => {
+    // No row yet — a user who has never changed anything still gets an answer.
+    expect(await userPreferenceRepository.get(preferenceUserId)).toEqual({ cookViewMode: "steps" });
+
+    await userPreferenceRepository.setCookViewMode(preferenceUserId, "all");
+    expect(await userPreferenceRepository.get(preferenceUserId)).toEqual({ cookViewMode: "all" });
+
+    await userPreferenceRepository.setCookViewMode(preferenceUserId, "steps");
+    expect(await userPreferenceRepository.get(preferenceUserId)).toEqual({ cookViewMode: "steps" });
+
+    const rows = await db
+      .select()
+      .from(userPreferences)
+      .where(eq(userPreferences.userId, preferenceUserId));
+    expect(rows).toHaveLength(1);
   });
 });

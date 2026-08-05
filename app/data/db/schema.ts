@@ -28,6 +28,22 @@ export const families = pgTable("families", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const cookViewMode = pgEnum("cook_view_mode", ["steps", "all"]);
+
+/**
+ * Per-user view preferences, keyed by Supabase Auth user id rather than by
+ * family: two people cooking the same plan can want different layouts, and
+ * the choice should follow the person to their other devices. One row per
+ * user (the id is the primary key), written by upsert, and absent until
+ * someone changes something away from the defaults.
+ */
+export const userPreferences = pgTable("user_preferences", {
+  userId: uuid("user_id").primaryKey(),
+  /** How cook mode lays a recipe out — see `app/domain/preferences.ts`. */
+  cookViewMode: cookViewMode("cook_view_mode").notNull().default("steps"),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const familyMemberRole = pgEnum("family_member_role", ["owner", "member"]);
 
 /**
