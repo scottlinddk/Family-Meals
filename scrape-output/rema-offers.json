@@ -1,5 +1,5 @@
 {
-  "fetchedAt": "2026-08-05T05:45:10.593Z",
+  "fetchedAt": "2026-08-05T07:26:11.111Z",
   "offers": [
     {
       "name": "REMA 1000 Hakket dansk oksekød med 35% grønt, kyllingekød, grise- og kalvekød eller Frilandsgris skinkekød",
@@ -249,6 +249,19 @@
       "validUntil": "2026-08-08T21:59:59+0000"
     },
     {
+      "name": "Them ost Mellemlagret 45+",
+      "unitSizeFrom": 0.5,
+      "unitSizeTo": 0.5,
+      "unitSymbol": "kg",
+      "price": 35,
+      "currencyCode": "DKK",
+      "unitPrice": 70,
+      "baseUnit": "kilogram",
+      "departmentSlug": "groceries_discount",
+      "validFrom": "2026-08-01T22:00:00+0000",
+      "validUntil": "2026-08-08T21:59:59+0000"
+    },
+    {
       "name": "REMA 1000 Panerede fisk eller grønlandske rejer",
       "unitSizeFrom": 200,
       "unitSizeTo": 500,
@@ -262,13 +275,13 @@
       "validUntil": "2026-08-08T21:59:59+0000"
     },
     {
-      "name": "Them ost Mellemlagret 45+",
-      "unitSizeFrom": 0.5,
-      "unitSizeTo": 0.5,
-      "unitSymbol": "kg",
-      "price": 35,
+      "name": "Friland Hakket dansk oksekød 8-12%",
+      "unitSizeFrom": 400,
+      "unitSizeTo": 400,
+      "unitSymbol": "g",
+      "price": 49,
       "currencyCode": "DKK",
-      "unitPrice": 70,
+      "unitPrice": 122.5,
       "baseUnit": "kilogram",
       "departmentSlug": "groceries_discount",
       "validFrom": "2026-08-01T22:00:00+0000",
@@ -283,19 +296,6 @@
       "currencyCode": "DKK",
       "unitPrice": 25,
       "baseUnit": "pcs",
-      "departmentSlug": "groceries_discount",
-      "validFrom": "2026-08-01T22:00:00+0000",
-      "validUntil": "2026-08-08T21:59:59+0000"
-    },
-    {
-      "name": "Friland Hakket dansk oksekød 8-12%",
-      "unitSizeFrom": 400,
-      "unitSizeTo": 400,
-      "unitSymbol": "g",
-      "price": 49,
-      "currencyCode": "DKK",
-      "unitPrice": 122.5,
-      "baseUnit": "kilogram",
       "departmentSlug": "groceries_discount",
       "validFrom": "2026-08-01T22:00:00+0000",
       "validUntil": "2026-08-08T21:59:59+0000"
@@ -470,6 +470,19 @@
       "validUntil": "2026-08-08T21:59:59+0000"
     },
     {
+      "name": "Nupo One Meal bar eller drink",
+      "unitSizeFrom": 1,
+      "unitSizeTo": 1,
+      "unitSymbol": "pcs",
+      "price": 17,
+      "currencyCode": "DKK",
+      "unitPrice": 17,
+      "baseUnit": "pcs",
+      "departmentSlug": "groceries_discount",
+      "validFrom": "2026-08-01T22:00:00+0000",
+      "validUntil": "2026-08-08T21:59:59+0000"
+    },
+    {
       "name": "Knorr sauce",
       "unitSizeFrom": 66,
       "unitSizeTo": 108,
@@ -491,19 +504,6 @@
       "currencyCode": "DKK",
       "unitPrice": 20,
       "baseUnit": "kilogram",
-      "departmentSlug": "groceries_discount",
-      "validFrom": "2026-08-01T22:00:00+0000",
-      "validUntil": "2026-08-08T21:59:59+0000"
-    },
-    {
-      "name": "Nupo One Meal bar eller drink",
-      "unitSizeFrom": 1,
-      "unitSizeTo": 1,
-      "unitSymbol": "pcs",
-      "price": 17,
-      "currencyCode": "DKK",
-      "unitPrice": 17,
-      "baseUnit": "pcs",
       "departmentSlug": "groceries_discount",
       "validFrom": "2026-08-01T22:00:00+0000",
       "validUntil": "2026-08-08T21:59:59+0000"
@@ -743,19 +743,6 @@
       "validUntil": "2026-08-08T21:59:59+0000"
     },
     {
-      "name": "Røde druer",
-      "unitSizeFrom": 500,
-      "unitSizeTo": 500,
-      "unitSymbol": "g",
-      "price": 15,
-      "currencyCode": "DKK",
-      "unitPrice": 30,
-      "baseUnit": "kilogram",
-      "departmentSlug": "groceries_discount",
-      "validFrom": "2026-08-01T22:00:00+0000",
-      "validUntil": "2026-08-08T21:59:59+0000"
-    },
-    {
       "name": "Blåbær",
       "unitSizeFrom": 125,
       "unitSizeTo": 125,
@@ -763,6 +750,19 @@
       "price": 15,
       "currencyCode": "DKK",
       "unitPrice": 120,
+      "baseUnit": "kilogram",
+      "departmentSlug": "groceries_discount",
+      "validFrom": "2026-08-01T22:00:00+0000",
+      "validUntil": "2026-08-08T21:59:59+0000"
+    },
+    {
+      "name": "Røde druer",
+      "unitSizeFrom": 500,
+      "unitSizeTo": 500,
+      "unitSymbol": "g",
+      "price": 15,
+      "currencyCode": "DKK",
+      "unitPrice": 30,
       "baseUnit": "kilogram",
       "departmentSlug": "groceries_discount",
       "validFrom": "2026-08-01T22:00:00+0000",
@@ -1081,19 +1081,6 @@
       "validUntil": "2026-08-08T21:59:59+0000"
     },
     {
-      "name": "Tragt i silikone, tragtesæt, skærebræt, patentflaske eller 2-pak flaske",
-      "unitSizeFrom": 1,
-      "unitSizeTo": 1,
-      "unitSymbol": "pcs",
-      "price": 15,
-      "currencyCode": "DKK",
-      "unitPrice": 15,
-      "baseUnit": "pcs",
-      "departmentSlug": "groceries_discount",
-      "validFrom": "2026-08-01T22:00:00+0000",
-      "validUntil": "2026-08-08T21:59:59+0000"
-    },
-    {
       "name": "Munkebo Laksepaté med dild",
       "unitSizeFrom": 110,
       "unitSizeTo": 110,
@@ -1102,6 +1089,19 @@
       "currencyCode": "DKK",
       "unitPrice": 109.0909090909091,
       "baseUnit": "kilogram",
+      "departmentSlug": "groceries_discount",
+      "validFrom": "2026-08-01T22:00:00+0000",
+      "validUntil": "2026-08-08T21:59:59+0000"
+    },
+    {
+      "name": "Tragt i silikone, tragtesæt, skærebræt, patentflaske eller 2-pak flaske",
+      "unitSizeFrom": 1,
+      "unitSizeTo": 1,
+      "unitSymbol": "pcs",
+      "price": 15,
+      "currencyCode": "DKK",
+      "unitPrice": 15,
+      "baseUnit": "pcs",
       "departmentSlug": "groceries_discount",
       "validFrom": "2026-08-01T22:00:00+0000",
       "validUntil": "2026-08-08T21:59:59+0000"
