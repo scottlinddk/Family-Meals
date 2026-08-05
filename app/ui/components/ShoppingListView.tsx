@@ -1,6 +1,7 @@
 import { useMemo } from "react";
-import type { ShoppingList } from "~/domain/planning/shoppingList";
-import type { ShoppingChecks } from "~/ui/hooks/useShoppingChecks";
+import type { ShoppingList, ShoppingListItem } from "~/domain/planning/shoppingList";
+import { shoppingListProgress } from "~/domain/planning/shoppingListMarks";
+import type { ShoppingListMarks } from "~/ui/hooks/useShoppingListMarks";
 import { Card } from "~/ui/components/ui/Card";
 import { Button } from "~/ui/components/ui/Button";
 import { Tag } from "~/ui/components/ui/Tag";
@@ -33,24 +34,26 @@ function weekdayOf(isoDate: string): string {
 }
 
 /**
- * The list itself: departments, lines, tick boxes and the running count.
+ * The list itself: departments, lines, marks and the running count.
  *
  * Shared by the two places the same list is shopped from — the signed-in
  * week page and the `/list/{token}` share link — because they are the same
- * list, ticked into the same rows. Everything that differs between them
+ * list, marked into the same rows. Everything that differs between them
  * (chrome, sharing controls, who you are) lives in the pages; this component
- * only needs the list and something that knows what's ticked.
+ * only needs the list and something that knows how each line is marked.
  */
-export function ShoppingListView({ list, checks }: { list: ShoppingList; checks: ShoppingChecks }) {
-  const { checked, toggle } = checks;
-
-  // Counted against the list's own labels so stale ticks from a regenerated
-  // week (labels that no longer appear) don't shrink the remaining count.
-  const visibleLabels = useMemo(
+export function ShoppingListView({
+  list,
+  marks,
+}: {
+  list: ShoppingList;
+  marks: ShoppingListMarks;
+}) {
+  const labels = useMemo(
     () => list.sections.flatMap((section) => section.items).map((item) => item.label),
     [list],
   );
-  const remaining = visibleLabels.filter((label) => !checked.has(label)).length;
+  const progress = shoppingListProgress(labels, marks.marks);
 
   return (
     <>
@@ -58,19 +61,26 @@ export function ShoppingListView({ list, checks }: { list: ShoppingList; checks:
         <div className="flex items-center justify-between gap-3">
           <p className="m-0 text-sm text-muted">
             {t("shoppingList.summary", {
-              remaining,
+              remaining: progress.remaining,
               total: list.itemCount,
               onOffer: list.onOfferCount,
             })}
           </p>
-          {checks.clearSupported && checked.size > 0 && (
-            <Button type="button" variant="ghost" size="sm" onClick={() => checks.clear(visibleLabels)}>
-              {t("shoppingList.clearChecked")}
+          {marks.clearSupported && marks.marks.size > 0 && (
+            <Button type="button" variant="ghost" size="sm" onClick={() => marks.clear(labels)}>
+              {t("shoppingList.clearMarks")}
             </Button>
           )}
         </div>
 
-        <SyncStatus checks={checks} />
+        {/* Only worth a line when there is one — most weeks nothing is. */}
+        {progress.atHome > 0 && (
+          <p className="m-0 text-xs text-muted">
+            {t("shoppingList.atHomeSummary", { count: progress.atHome })}
+          </p>
+        )}
+
+        <SyncStatus marks={marks} />
       </div>
 
       <div className="flex flex-col gap-4">
@@ -80,36 +90,9 @@ export function ShoppingListView({ list, checks }: { list: ShoppingList; checks:
               {departmentLabel(section.departmentSlug)}
             </h2>
             <ul className="m-0 flex list-none flex-col p-0">
-              {section.items.map((item) => {
-                const isChecked = checked.has(item.label);
-                return (
-                  <li key={item.label} className="border-b border-divider last:border-0">
-                    <label className="flex min-h-11 cursor-pointer items-start gap-3 py-2">
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={() => toggle(item.label)}
-                        className="mt-1 h-5 w-5 shrink-0 accent-accent"
-                      />
-                      <span className="min-w-0 flex-1">
-                        <span className={`block text-sm ${isChecked ? "text-muted line-through" : ""}`}>
-                          {item.label}
-                          {item.offerNames.length > 0 && (
-                            <>
-                              {" "}
-                              <Tag variant="accent">{t("recipeDetail.onOfferBadge")}</Tag>
-                            </>
-                          )}
-                        </span>
-                        <span className="block text-xs text-muted">
-                          {item.dates.map(weekdayOf).join(", ")}
-                          {item.variants.length > 1 && ` · ${item.variants.slice(1).join(", ")}`}
-                        </span>
-                      </span>
-                    </label>
-                  </li>
-                );
-              })}
+              {section.items.map((item) => (
+                <ShoppingListRow key={item.label} item={item} marks={marks} />
+              ))}
             </ul>
           </Card>
         ))}
@@ -119,21 +102,92 @@ export function ShoppingListView({ list, checks }: { list: ShoppingList; checks:
 }
 
 /**
- * One line under the count saying how the ticks are travelling.
+ * One line, in one of three states: still to buy, in the trolley, or already
+ * at home.
+ *
+ * The tick box and the "we've got some" toggle are separate controls rather
+ * than one cycling button, because the two mean opposite things to whoever
+ * reads the list next — bought it vs. don't buy it — and a control that
+ * cycles through both would make the wrong one a mistap away. Marking one
+ * clears the other: they can't both be true.
+ *
+ * The toggle sits outside the `<label>`, not inside it: a button nested in a
+ * label would also toggle the checkbox it belongs to.
+ */
+function ShoppingListRow({ item, marks }: { item: ShoppingListItem; marks: ShoppingListMarks }) {
+  const status = marks.marks.get(item.label);
+  const inTrolley = status === "checked";
+  const atHome = status === "at_home";
+
+  return (
+    <li className="flex items-start gap-2 border-b border-divider last:border-0">
+      <label className="flex min-h-11 flex-1 cursor-pointer items-start gap-3 py-2">
+        <input
+          type="checkbox"
+          checked={inTrolley}
+          onChange={() => marks.toggleMark(item.label, "checked")}
+          className="mt-1 h-5 w-5 shrink-0 accent-accent"
+        />
+        <span className="min-w-0 flex-1">
+          <span
+            className={`block text-sm ${inTrolley ? "text-muted line-through" : ""} ${
+              // Not struck through: nothing was bought, and it should stay
+              // easy to read when someone checks whether it's really there.
+              atHome ? "text-muted italic" : ""
+            }`}
+          >
+            {item.label}
+            {/* No "at home" badge here: the toggle on the right is already
+                pressed and filled, and saying it twice on one line is noise.
+                What separates the two marks at a glance is which control is
+                lit — the tick box or the toggle. */}
+            {item.offerNames.length > 0 && !atHome && (
+              <>
+                {" "}
+                <Tag variant="accent">{t("recipeDetail.onOfferBadge")}</Tag>
+              </>
+            )}
+          </span>
+          <span className="block text-xs text-muted">
+            {item.dates.map(weekdayOf).join(", ")}
+            {item.variants.length > 1 && ` · ${item.variants.slice(1).join(", ")}`}
+          </span>
+        </span>
+      </label>
+
+      <button
+        type="button"
+        aria-pressed={atHome}
+        aria-label={t("shoppingList.atHomeAria", { item: item.label })}
+        onClick={() => marks.toggleMark(item.label, "at_home")}
+        className={`my-1 min-h-11 shrink-0 self-start rounded-md border px-2.5 text-xs transition-colors ${
+          atHome
+            ? "border-accent bg-accent/12 text-accent-700"
+            : "border-transparent text-muted hover:border-divider hover:bg-text/7"
+        }`}
+      >
+        {t("shoppingList.atHome")}
+      </button>
+    </li>
+  );
+}
+
+/**
+ * One line under the count saying how the marks are travelling.
  *
  * Silent when everything has landed, which is nearly always. It speaks up for
- * the two states that change what the person should believe: ticks still
+ * the two states that change what the person should believe: marks still
  * waiting for a connection (they're safe, they just aren't shared yet) and a
- * tick the server refused (the screen and the family's list disagree).
+ * mark the server refused (the screen and the family's list disagree).
  */
-function SyncStatus({ checks }: { checks: ShoppingChecks }) {
-  if (checks.saveFailed) {
+function SyncStatus({ marks }: { marks: ShoppingListMarks }) {
+  if (marks.saveFailed) {
     return <p className="m-0 text-xs text-red-700">{t("shoppingList.syncFailed")}</p>;
   }
-  if (checks.pendingCount > 0) {
+  if (marks.pendingCount > 0) {
     return (
       <p className="m-0 text-xs text-muted">
-        {t("shoppingList.syncPending", { count: checks.pendingCount })}
+        {t("shoppingList.syncPending", { count: marks.pendingCount })}
       </p>
     );
   }

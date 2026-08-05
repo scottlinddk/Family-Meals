@@ -1,6 +1,6 @@
 import type { Route } from "./+types/list.$token";
 import { useSharedShoppingList } from "~/ui/hooks/useShoppingList";
-import { useShoppingChecks } from "~/ui/hooks/useShoppingChecks";
+import { useShoppingListMarks } from "~/ui/hooks/useShoppingListMarks";
 import { ShoppingListView } from "~/ui/components/ShoppingListView";
 import { SchemaOutOfDateError } from "~/lib/dbErrors";
 import { t } from "~/i18n/t";
@@ -10,14 +10,15 @@ import { t } from "~/i18n/t";
  *
  * No sign-in, no nav, no rest of the app: the person holding this link is
  * standing in a shop, and the only thing they need is the list and the
- * ability to tick things off it as they go — which writes to the same rows
- * the family sees at home. Everything else the app can do stays behind the
+ * ability to mark it as they go — ticked into the trolley, or "we've got some
+ * of that at home" after the phone call — which writes to the same rows the
+ * family sees at home. Everything else the app can do stays behind the
  * account.
  */
 export default function SharedShoppingListPage({ params }: Route.ComponentProps) {
   const token = params.token!;
   const shared = useSharedShoppingList(token);
-  const checks = useShoppingChecks({ kind: "share", token });
+  const marks = useShoppingListMarks({ kind: "share", token });
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6">
@@ -58,7 +59,7 @@ export default function SharedShoppingListPage({ params }: Route.ComponentProps)
       )}
 
       {shared.data?.list && shared.data.list.itemCount > 0 && (
-        <ShoppingListView list={shared.data.list} checks={checks} />
+        <ShoppingListView list={shared.data.list} marks={marks} />
       )}
     </main>
   );

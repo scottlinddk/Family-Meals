@@ -76,8 +76,8 @@ self.addEventListener("message", (event) => {
 
 function isShoppingListData(url) {
   return (
-    /^\/api\/weeks\/[^/]+\/shopping-list(\/checks)?$/.test(url.pathname) ||
-    /^\/api\/shopping-list\/[^/]+(\/checks)?$/.test(url.pathname)
+    /^\/api\/weeks\/[^/]+\/shopping-list(\/marks)?$/.test(url.pathname) ||
+    /^\/api\/shopping-list\/[^/]+(\/marks)?$/.test(url.pathname)
   );
 }
 

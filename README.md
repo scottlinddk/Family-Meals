@@ -174,19 +174,39 @@ aggregates the seven days' ingredient lines, merges the ones naming the same
 product, and groups them by the REMA department of the offer covering them
 (`app/domain/planning/shoppingList.ts`). Nothing about that is stored.
 
-What is stored is which lines have been picked up. `shopping_list_checks` holds
-one row per ticked line, keyed by **family and week**, not by user. That's a
-deliberate reversal: ticks used to live in `localStorage`, on the argument that
-two people shopping different aisles want their own checkboxes. In practice
-they want the opposite — one trolley, two people, and the whole question is
-whether the milk is already in it. Unticking deletes the row, so "no row" means
-unticked and the table only holds what's actually been picked up.
+What is stored is what the family has settled about each line.
+`shopping_list_marks` holds one row per marked line, keyed by **family and
+week**, not by user, with a `status` saying which mark it is:
+
+- `checked` — it's in the trolley
+- `at_home` — don't buy it, there's already some in the cupboard or fridge
+
+One state rather than two flags, because they're alternatives: something
+already at home isn't going in the trolley, and ticking it off would mean
+nothing. Marking one clears the other in a single write, so the row can't end
+up claiming both. Unmarking deletes the row, so "no row" is the default (still
+to buy). On screen the two are separate controls — a tick box and a "Har vi"
+toggle — rather than one cycling button, because they mean opposite things to
+whoever reads the list next (bought it vs. don't buy it) and cycling through
+both would make the wrong one a mistap away.
+
+Family-scoped is a deliberate reversal: ticks used to live in `localStorage`,
+on the argument that two people shopping different aisles want their own
+checkboxes. In practice they want the opposite — one trolley, two people, and
+the whole question is whether the milk is already in it.
+
+At-home marks are per **week** too, not a standing pantry. "We've got flour" is
+a fact about one shopping trip, and by next week it may not be true any more; a
+pantry that remembered staples across weeks would have to track what gets used
+up to stay honest, and a stale "we have this" is worse than marking it again.
 
 The item's identity is its **label** — the ingredient line as the recipe wrote
 it, which is what the list already merges on. There are no stable item ids to
 reference, because the list is rebuilt from the plan on every request, so a
-regenerated week simply leaves ticks whose label no longer appears; they're
-ignored on read rather than cleaned up.
+regenerated week simply leaves marks whose label no longer appears; they're
+ignored on read (`shoppingListProgress` in
+`app/domain/planning/shoppingListMarks.ts` counts against the labels on screen)
+rather than cleaned up.
 
 ### The `/list/{token}` share link
 
@@ -197,30 +217,33 @@ is why an invite to the family wouldn't do. Same bearer-token model as the ICS
 feed: the token is the whole credential, so it decides the family *and* the
 week and nothing about which list is served comes from the caller.
 
-Holders can tick items off. That's the point — the ticks are the shared part,
-and a list they could only read would leave everyone else's copy wrong — but
-it's the *only* thing the link can write, on one week, and `checked_by_user_id`
-is left null because there's no account behind it. Clearing the whole list is
-deliberately not offered through the link. Scoped to a single week rather than
+Holders can mark items — both marks, since the person in the aisle is as
+likely to be told "we've got some of that at home" as to put it in the
+trolley. That's the point: the marks are the shared part, and a list they could
+only read would leave everyone else's copy wrong. It's the *only* thing the
+link can write, on one week, and `marked_by_user_id` is left null because
+there's no account behind it. Clearing the whole list is deliberately not
+offered through the link. Scoped to a single week rather than
 to the family, so a link sent once doesn't leak next week's plan; pressing
 "share" again reuses the live link rather than killing the one already sitting
 in someone's messages; and revoking sets `revoked_at` so the token stays
 permanently dead rather than becoming re-issuable.
 
-### Ticking on a bad connection
+### Marking on a bad connection
 
-Ticks are polled every 20 seconds while the page is on screen, so two people in
+Marks are polled every 20 seconds while the page is on screen, so two people in
 the same shop see each other's. Going through the server would otherwise have
 cost the one thing `localStorage` gave for free — working with no signal, in a
-supermarket, which is exactly where this is used. So a tick is written to a
-small local queue first (`app/ui/hooks/useShoppingChecks.ts`), applied to the
-screen immediately, and sent when there's a connection: on the next tick, when
-the tab comes back, or when the browser reports it's online. The queue holds
-the *intent* per label rather than a history, which is the only sane thing to
-replay against a set, and it wins over the server's answer on screen so a poll
-landing mid-queue can't make the box someone just tapped flick back.
-Undelivered ticks say so under the count; a tick the server *refused* says
-something different, because then the screen and the family's list disagree.
+supermarket, which is exactly where this is used. So a mark is written to a
+small local queue first (`app/ui/hooks/useShoppingListMarks.ts`), applied to
+the screen immediately, and sent when there's a connection: on the next mark,
+when the tab comes back, or when the browser reports it's online. The queue
+holds the *intent* per label rather than a history, which is the only sane
+thing to replay against a set of marks, and it wins over the server's answer on
+screen so a poll landing mid-queue can't make the line someone just tapped
+flick back. Undelivered marks say so under the count; a mark the server
+*refused* says something different, because then the screen and the family's
+list disagree.
 
 ## Installable web app
 

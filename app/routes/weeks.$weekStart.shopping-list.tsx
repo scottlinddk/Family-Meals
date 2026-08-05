@@ -1,7 +1,7 @@
 import { Link } from "react-router";
 import type { Route } from "./+types/weeks.$weekStart.shopping-list";
 import { useShoppingList } from "~/ui/hooks/useShoppingList";
-import { useShoppingChecks } from "~/ui/hooks/useShoppingChecks";
+import { useShoppingListMarks } from "~/ui/hooks/useShoppingListMarks";
 import { ShoppingListView } from "~/ui/components/ShoppingListView";
 import { ShareListPanel } from "~/ui/components/ShareListPanel";
 import { Button } from "~/ui/components/ui/Button";
@@ -11,7 +11,7 @@ import { SchemaOutOfDateError } from "~/lib/dbErrors";
 export default function ShoppingListPage({ params }: Route.ComponentProps) {
   const weekStart = params.weekStart!;
   const list = useShoppingList(weekStart);
-  const checks = useShoppingChecks({ kind: "week", weekStart });
+  const marks = useShoppingListMarks({ kind: "week", weekStart });
 
   return (
     <>
@@ -56,7 +56,7 @@ export default function ShoppingListPage({ params }: Route.ComponentProps) {
         <p className="text-muted">{t("shoppingList.empty")}</p>
       )}
 
-      {list.data && list.data.itemCount > 0 && <ShoppingListView list={list.data} checks={checks} />}
+      {list.data && list.data.itemCount > 0 && <ShoppingListView list={list.data} marks={marks} />}
     </>
   );
 }

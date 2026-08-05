@@ -167,24 +167,41 @@ export const externalRecipes = pgTable("external_recipes", {
 });
 
 /**
- * Which shopping-list lines a family has already put in the trolley, one row
- * per ticked line. Unticking deletes the row, so "no row" is unticked and the
- * table only ever holds what's actually been picked up.
+ * What a family has settled about a shopping-list line:
+ *
+ *   * `checked` — it's in the trolley
+ *   * `at_home` — don't buy it, there's already some in the cupboard or fridge
+ *
+ * One state, not two flags, because they're alternatives: something already at
+ * home isn't going in the trolley, and ticking it off would mean nothing.
+ * Unmarking deletes the row, so "no row" is the default (still to buy) and the
+ * table only holds lines someone has actually decided something about.
+ */
+export const shoppingListItemStatus = pgEnum("shopping_list_item_status", ["checked", "at_home"]);
+
+/**
+ * One row per marked shopping-list line.
  *
  * Keyed by family and week rather than by user: two people shopping the same
  * list — one in the fruit aisle, one at the freezers — need to see each
  * other's ticks, which is the whole reason this moved out of `localStorage`.
- * `checkedByUserId` is nullable because a share-link visitor (see
+ * `markedByUserId` is nullable because a share-link visitor (see
  * `shoppingListShares`) has no account.
+ *
+ * Per *week*, including the at-home marks: "we've got flour" is a fact about
+ * one shopping trip, and by next week it may not be true any more. A standing
+ * pantry that remembers staples across weeks would have to track what gets
+ * used up to stay honest, and a stale "we have this" is worse than marking it
+ * again — so this stays a decision about the trip in front of you.
  *
  * The item is identified by its *label* — the ingredient line as the recipe
  * wrote it, which is what `buildShoppingList` already merges items on. The
  * list is derived fresh from the week plan on every request and has no stable
- * item ids to reference, so a regenerated week simply leaves ticks whose
+ * item ids to reference, so a regenerated week simply leaves marks whose
  * label no longer appears; they're ignored on read rather than cleaned up.
  */
-export const shoppingListChecks = pgTable(
-  "shopping_list_checks",
+export const shoppingListMarks = pgTable(
+  "shopping_list_marks",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     familyId: uuid("family_id")
@@ -192,19 +209,20 @@ export const shoppingListChecks = pgTable(
       .references(() => families.id, { onDelete: "cascade" }),
     weekStartDate: date("week_start_date").notNull(),
     itemLabel: text("item_label").notNull(),
-    /** Null when the tick came from a share link rather than a signed-in member. */
-    checkedByUserId: uuid("checked_by_user_id"),
-    checkedAt: timestamp("checked_at", { withTimezone: true }).notNull().defaultNow(),
+    status: shoppingListItemStatus("status").notNull().default("checked"),
+    /** Null when the mark came from a share link rather than a signed-in member. */
+    markedByUserId: uuid("marked_by_user_id"),
+    markedAt: timestamp("marked_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
-    // Ticking is an idempotent upsert on this key: two members tapping the
+    // Marking is an idempotent upsert on this key: two members tapping the
     // same line at the same moment must not produce two rows.
-    unique("shopping_list_checks_family_week_label_unique").on(
+    unique("shopping_list_marks_family_week_label_unique").on(
       table.familyId,
       table.weekStartDate,
       table.itemLabel,
     ),
-    index("shopping_list_checks_family_id_week_start_date_idx").on(
+    index("shopping_list_marks_family_id_week_start_date_idx").on(
       table.familyId,
       table.weekStartDate,
     ),

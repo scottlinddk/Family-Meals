@@ -1,51 +1,52 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import {
+  applyPendingMarks,
+  type PendingMarks,
+  type ShoppingListItemStatus,
+  type ShoppingListMark,
+} from "~/domain/planning/shoppingListMarks";
 import { SCHEMA_OUT_OF_DATE_STATUS, SchemaOutOfDateError } from "~/lib/dbErrors";
 
 /**
- * Whose ticks these are: a signed-in member looking at their family's week,
+ * Whose marks these are: a signed-in member looking at their family's week,
  * or whoever holds the `/list/{token}` share link. Both end up writing the
  * same family-scoped rows — the scope only decides which URL says so.
  */
-export type ChecksScope =
+export type MarksScope =
   | { kind: "week"; weekStart: string }
   | { kind: "share"; token: string };
 
-function scopeKey(scope: ChecksScope): string {
+function scopeKey(scope: MarksScope): string {
   return scope.kind === "week" ? `week:${scope.weekStart}` : `share:${scope.token}`;
 }
 
-function endpoint(scope: ChecksScope): string {
+function endpoint(scope: MarksScope): string {
   return scope.kind === "week"
-    ? `/api/weeks/${scope.weekStart}/shopping-list/checks`
-    : `/api/shopping-list/${scope.token}/checks`;
-}
-
-export function shoppingChecksQueryKey(scope: ChecksScope) {
-  return ["shopping-checks", scopeKey(scope)] as const;
+    ? `/api/weeks/${scope.weekStart}/shopping-list/marks`
+    : `/api/shopping-list/${scope.token}/marks`;
 }
 
 /* -------------------------------------------------------------------------
  * The pending queue
  *
- * Ticking things off happens in a shop, which is exactly where the signal
- * isn't. Before these ticks were shared they lived in `localStorage` and so
+ * Marking things off happens in a shop, which is exactly where the signal
+ * isn't. Before these marks were shared they lived in `localStorage` and so
  * never needed a network at all; making them shared must not quietly hand
- * that back. So a tick is written to a small local queue first, applied to
+ * that back. So a mark is written to a small local queue first, applied to
  * the screen immediately, and sent when there's a connection — on the next
- * tick, when the tab comes back, or when the browser says it's online again.
+ * mark, when the tab comes back, or when the browser says it's online again.
  *
- * The queue is per scope and holds the *intent* per label (`true` = ticked),
- * not a history: tapping the same line four times leaves one entry, which is
- * the only sane thing to replay against a set.
+ * The queue is per scope and holds the *intent* per label, not a history:
+ * tapping the same line four times leaves one entry, which is the only sane
+ * thing to replay against a set of marks.
  * ---------------------------------------------------------------------- */
 
-type PendingOps = Readonly<Record<string, boolean>>;
-
-const NO_PENDING: PendingOps = {};
+const NO_PENDING: PendingMarks = {};
+const NO_MARKS: readonly ShoppingListMark[] = [];
 
 function pendingStorageKey(key: string): string {
-  return `family-meals:pending-checks:${key}`;
+  return `family-meals:pending-marks:${key}`;
 }
 
 const listeners = new Set<() => void>();
@@ -55,7 +56,7 @@ const listeners = new Set<() => void>();
  * identity changes, so the parsed object is cached against the raw string it
  * came from and only rebuilt when that actually differs.
  */
-const snapshots = new Map<string, { raw: string | null; value: PendingOps }>();
+const snapshots = new Map<string, { raw: string | null; value: PendingMarks }>();
 
 function readRaw(key: string): string | null {
   try {
@@ -65,14 +66,14 @@ function readRaw(key: string): string | null {
   }
 }
 
-function readPending(key: string): PendingOps {
+function readPending(key: string): PendingMarks {
   const raw = readRaw(key);
   const cached = snapshots.get(key);
   if (cached && cached.raw === raw) return cached.value;
 
-  let value: PendingOps;
+  let value: PendingMarks;
   try {
-    value = raw ? (JSON.parse(raw) as PendingOps) : NO_PENDING;
+    value = raw ? (JSON.parse(raw) as PendingMarks) : NO_PENDING;
   } catch {
     value = NO_PENDING;
   }
@@ -80,29 +81,28 @@ function readPending(key: string): PendingOps {
   return value;
 }
 
-function writePending(key: string, next: PendingOps): void {
-  const raw = JSON.stringify(next);
+function writePending(key: string, next: PendingMarks): void {
   try {
     if (Object.keys(next).length === 0) window.localStorage.removeItem(pendingStorageKey(key));
-    else window.localStorage.setItem(pendingStorageKey(key), raw);
+    else window.localStorage.setItem(pendingStorageKey(key), JSON.stringify(next));
   } catch {
-    // Private browsing or a full quota. The tick still applies for this visit
+    // Private browsing or a full quota. The mark still applies for this visit
     // — it just won't survive the page being closed before it's sent.
   }
   snapshots.set(key, { raw: readRaw(key), value: next });
   for (const listener of listeners) listener();
 }
 
-function queueOp(key: string, label: string, checked: boolean): void {
-  writePending(key, { ...readPending(key), [label]: checked });
+function queueMark(key: string, label: string, status: ShoppingListItemStatus | null): void {
+  writePending(key, { ...readPending(key), [label]: status });
 }
 
 /**
- * Drops a sent op — but only if it still says what was sent. A tap that
+ * Drops a sent mark — but only if it still says what was sent. A tap that
  * happened while the request was in flight has already overwritten the entry
  * with a newer intent, and that one still needs sending.
  */
-function dropSentOp(key: string, label: string, sent: boolean): void {
+function dropSentMark(key: string, label: string, sent: ShoppingListItemStatus | null): void {
   const pending = readPending(key);
   if (!(label in pending) || pending[label] !== sent) return;
   const rest = { ...pending };
@@ -112,7 +112,7 @@ function dropSentOp(key: string, label: string, sent: boolean): void {
 
 function subscribeToPending(listener: () => void): () => void {
   listeners.add(listener);
-  // Another tab in the same shop ticking the same list should show up here.
+  // Another tab in the same shop marking the same list should show up here.
   window.addEventListener("storage", listener);
   return () => {
     listeners.delete(listener);
@@ -120,47 +120,29 @@ function subscribeToPending(listener: () => void): () => void {
   };
 }
 
-/**
- * What's ticked right now: the server's set with anything still queued
- * applied over it.
- *
- * The queue wins, always. A tick that hasn't been sent is still the most
- * recent thing the person did, and a poll landing mid-queue must not make the
- * box they just tapped flick back — that's the failure the shared version had
- * to avoid to be worth having.
- */
-export function applyPendingOps(
-  serverLabels: readonly string[],
-  pending: PendingOps,
-): ReadonlySet<string> {
-  const set = new Set(serverLabels);
-  for (const [label, isChecked] of Object.entries(pending)) {
-    if (isChecked) set.add(label);
-    else set.delete(label);
-  }
-  return set;
-}
-
 /** One flush at a time per scope, so a retry can't race the send it retries. */
 const flushing = new Set<string>();
 
-async function readCheckedLabels(res: Response): Promise<string[]> {
-  const body = (await res.json()) as { checkedLabels?: unknown };
-  return Array.isArray(body.checkedLabels) ? (body.checkedLabels as string[]) : [];
+async function readMarks(res: Response): Promise<ShoppingListMark[]> {
+  const body = (await res.json()) as { marks?: unknown };
+  return Array.isArray(body.marks) ? (body.marks as ShoppingListMark[]) : [];
 }
 
 /* ---------------------------------------------------------------------- */
 
-export interface ShoppingChecks {
-  /** Ticked labels as they should appear right now: the server's set with anything still queued applied on top. */
-  checked: ReadonlySet<string>;
-  toggle: (label: string) => void;
-  /** Unticks everything (signed-in members only — see `clearSupported`). */
+export interface ShoppingListMarks {
+  /** How each line stands right now: the server's marks with anything still queued applied on top. */
+  marks: ReadonlyMap<string, ShoppingListItemStatus>;
+  /** Sets a line's mark, or clears it with `null`. */
+  setMark: (label: string, status: ShoppingListItemStatus | null) => void;
+  /** Taps the mark on or off again, which is what every control on the row does. */
+  toggleMark: (label: string, status: ShoppingListItemStatus) => void;
+  /** Unmarks everything (signed-in members only — see `clearSupported`). */
   clear: (labels?: string[]) => void;
   clearSupported: boolean;
-  /** How many ticks haven't reached the server yet. */
+  /** How many marks haven't reached the server yet. */
   pendingCount: number;
-  /** True once a tick was refused outright (not merely undelivered). */
+  /** True once a mark was refused outright (not merely undelivered). */
   saveFailed: boolean;
   isLoading: boolean;
   isError: boolean;
@@ -168,36 +150,37 @@ export interface ShoppingChecks {
 }
 
 /**
- * The family's ticked-off shopping-list lines for one week.
+ * The family's marks on one week's shopping list — what's in the trolley, and
+ * what there's already some of at home.
  *
  * Shared state, on purpose and in reverse of where this started: two people
  * shopping the same list — one in the fruit aisle, one at the freezers — need
  * to see what the other has already put in the trolley, and the person
  * actually in the shop is often the one holding a share link rather than an
- * account. The server's set is therefore the truth, polled while the page is
- * on screen so the other shopper's ticks appear without anyone refreshing.
+ * account. The server's marks are therefore the truth, polled while the page
+ * is on screen so the other shopper's appear without anyone refreshing.
  *
  * What stays local is only *delivery*: see the pending queue above.
  */
-export function useShoppingChecks(scope: ChecksScope): ShoppingChecks {
+export function useShoppingListMarks(scope: MarksScope): ShoppingListMarks {
   const key = scopeKey(scope);
   const url = endpoint(scope);
   const queryClient = useQueryClient();
   // Stable identity, so the flush below (and the listeners that call it) only
   // get rebuilt when the scope actually changes.
-  const queryKey = useMemo(() => ["shopping-checks", key] as const, [key]);
+  const queryKey = useMemo(() => ["shopping-list-marks", key] as const, [key]);
   const [saveFailed, setSaveFailed] = useState(false);
 
   const server = useQuery({
     queryKey,
-    queryFn: async (): Promise<string[]> => {
+    queryFn: async (): Promise<ShoppingListMark[]> => {
       const res = await fetch(url);
       if (res.status === SCHEMA_OUT_OF_DATE_STATUS) throw new SchemaOutOfDateError();
-      if (!res.ok) throw new Error("Failed to load shopping list checks");
-      return readCheckedLabels(res);
+      if (!res.ok) throw new Error("Failed to load shopping list marks");
+      return readMarks(res);
     },
     // The one query in this app that genuinely is live: someone else is
-    // ticking the same list from the other end of the shop.
+    // marking the same list from the other end of the shop.
     staleTime: 0,
     refetchInterval: 20_000,
     refetchIntervalInBackground: false,
@@ -218,36 +201,36 @@ export function useShoppingChecks(scope: ChecksScope): ShoppingChecks {
         const entries = Object.entries(readPending(key));
         const next = entries[0];
         if (!next) return;
-        const [label, checked] = next;
+        const [label, status] = next;
 
         let res: Response;
         try {
           res = await fetch(url, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ label, checked }),
+            body: JSON.stringify({ label, status }),
           });
         } catch {
           // No connection. Keep the queue exactly as it is and try again on
-          // the next tick, focus, or `online` event.
+          // the next mark, focus, or `online` event.
           return;
         }
 
         if (!res.ok) {
           // A refusal (revoked link, signed out, schema behind the code) will
-          // be refused again, so the op is dropped rather than jamming the
+          // be refused again, so the mark is dropped rather than jamming the
           // queue behind it — and said out loud, since the screen is showing
-          // a tick the family's list doesn't have.
-          dropSentOp(key, label, checked);
+          // a mark the family's list doesn't have.
+          dropSentMark(key, label, status);
           setSaveFailed(true);
           continue;
         }
 
-        const checkedLabels = await readCheckedLabels(res);
-        dropSentOp(key, label, checked);
+        const marks = await readMarks(res);
+        dropSentMark(key, label, status);
         // The response carries the family's whole set, so a phone that has
-        // been offline catches up on everyone else's ticks here too.
-        queryClient.setQueryData(queryKey, checkedLabels);
+        // been offline catches up on everyone else's marks here too.
+        queryClient.setQueryData(queryKey, marks);
         setSaveFailed(false);
       }
     } finally {
@@ -272,25 +255,32 @@ export function useShoppingChecks(scope: ChecksScope): ShoppingChecks {
     };
   }, [flush, key]);
 
-  const checked = useMemo(
-    () => applyPendingOps(server.data ?? [], pending),
+  const marks = useMemo(
+    () => applyPendingMarks(server.data ?? NO_MARKS, pending),
     [server.data, pending],
   );
 
-  const toggle = useCallback(
-    (label: string) => {
+  const setMark = useCallback(
+    (label: string, status: ShoppingListItemStatus | null) => {
       setSaveFailed(false);
-      queueOp(key, label, !checked.has(label));
+      queueMark(key, label, status);
       void flush();
     },
-    [key, checked, flush],
+    [key, flush],
+  );
+
+  const toggleMark = useCallback(
+    (label: string, status: ShoppingListItemStatus) => {
+      setMark(label, marks.get(label) === status ? null : status);
+    },
+    [marks, setMark],
   );
 
   /**
    * Resetting is the one action that isn't queued for later. It's done at the
    * kitchen table before a shop, not in an aisle on a dead connection, and
-   * replaying "untick everything" against a list two other people have been
-   * ticking since is a good way to undo their work. So it goes straight to
+   * replaying "unmark everything" against a list two other people have been
+   * marking since is a good way to undo their work. So it goes straight to
    * the server and reports if it didn't land.
    */
   const clear = useCallback(
@@ -303,9 +293,9 @@ export function useShoppingChecks(scope: ChecksScope): ShoppingChecks {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ labels }),
         });
-        if (!res.ok) throw new Error("Failed to clear shopping list checks");
+        if (!res.ok) throw new Error("Failed to clear shopping list marks");
         writePending(key, NO_PENDING);
-        queryClient.setQueryData(queryKey, await readCheckedLabels(res));
+        queryClient.setQueryData(queryKey, await readMarks(res));
       } catch {
         setSaveFailed(true);
       }
@@ -314,8 +304,9 @@ export function useShoppingChecks(scope: ChecksScope): ShoppingChecks {
   );
 
   return {
-    checked,
-    toggle,
+    marks,
+    setMark,
+    toggleMark,
     clear,
     clearSupported: scope.kind === "week",
     pendingCount: Object.keys(pending).length,
