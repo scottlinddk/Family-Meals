@@ -1,5 +1,5 @@
 {
-  "fetchedAt": "2026-08-04T19:41:11.039Z",
+  "fetchedAt": "2026-08-05T05:45:10.593Z",
   "offers": [
     {
       "name": "REMA 1000 Hakket dansk oksekød med 35% grønt, kyllingekød, grise- og kalvekød eller Frilandsgris skinkekød",
@@ -600,6 +600,19 @@
       "validUntil": "2026-08-08T21:59:59+0000"
     },
     {
+      "name": "Hawaii blomst",
+      "unitSizeFrom": 1,
+      "unitSizeTo": 1,
+      "unitSymbol": "pcs",
+      "price": 30,
+      "currencyCode": "DKK",
+      "unitPrice": 30,
+      "baseUnit": "pcs",
+      "departmentSlug": "groceries_discount",
+      "validFrom": "2026-08-01T22:00:00+0000",
+      "validUntil": "2026-08-08T21:59:59+0000"
+    },
+    {
       "name": "REMA 1000 Tex Mex Tortillas",
       "unitSizeFrom": 370,
       "unitSizeTo": 370,
@@ -613,14 +626,14 @@
       "validUntil": "2026-08-08T21:59:59+0000"
     },
     {
-      "name": "Hawaii blomst",
-      "unitSizeFrom": 1,
-      "unitSizeTo": 1,
-      "unitSymbol": "pcs",
-      "price": 30,
+      "name": "REMA 1000 Ready To Serve salat eller Møllegaard spicy coleslaw",
+      "unitSizeFrom": 235,
+      "unitSizeTo": 335,
+      "unitSymbol": "g",
+      "price": 15,
       "currencyCode": "DKK",
-      "unitPrice": 30,
-      "baseUnit": "pcs",
+      "unitPrice": 44.776119402985074,
+      "baseUnit": "kilogram",
       "departmentSlug": "groceries_discount",
       "validFrom": "2026-08-01T22:00:00+0000",
       "validUntil": "2026-08-08T21:59:59+0000"
@@ -652,13 +665,13 @@
       "validUntil": "2026-08-08T21:59:59+0000"
     },
     {
-      "name": "REMA 1000 Ready To Serve salat eller Møllegaard spicy coleslaw",
-      "unitSizeFrom": 235,
-      "unitSizeTo": 335,
+      "name": "REMA 1000 Protein chips",
+      "unitSizeFrom": 50,
+      "unitSizeTo": 50,
       "unitSymbol": "g",
-      "price": 15,
+      "price": 8,
       "currencyCode": "DKK",
-      "unitPrice": 44.776119402985074,
+      "unitPrice": 160,
       "baseUnit": "kilogram",
       "departmentSlug": "groceries_discount",
       "validFrom": "2026-08-01T22:00:00+0000",
@@ -678,19 +691,6 @@
       "validUntil": "2026-08-08T21:59:59+0000"
     },
     {
-      "name": "REMA 1000 Protein chips",
-      "unitSizeFrom": 50,
-      "unitSizeTo": 50,
-      "unitSymbol": "g",
-      "price": 8,
-      "currencyCode": "DKK",
-      "unitPrice": 160,
-      "baseUnit": "kilogram",
-      "departmentSlug": "groceries_discount",
-      "validFrom": "2026-08-01T22:00:00+0000",
-      "validUntil": "2026-08-08T21:59:59+0000"
-    },
-    {
       "name": "REMA 1000 Fuldkornspasta",
       "unitSizeFrom": 500,
       "unitSizeTo": 500,
@@ -698,6 +698,19 @@
       "price": 8,
       "currencyCode": "DKK",
       "unitPrice": 16,
+      "baseUnit": "kilogram",
+      "departmentSlug": "groceries_discount",
+      "validFrom": "2026-08-01T22:00:00+0000",
+      "validUntil": "2026-08-08T21:59:59+0000"
+    },
+    {
+      "name": "Dansukker Syltesukker",
+      "unitSizeFrom": 1,
+      "unitSizeTo": 1,
+      "unitSymbol": "kg",
+      "price": 20,
+      "currencyCode": "DKK",
+      "unitPrice": 20,
       "baseUnit": "kilogram",
       "departmentSlug": "groceries_discount",
       "validFrom": "2026-08-01T22:00:00+0000",
@@ -712,6 +725,19 @@
       "currencyCode": "DKK",
       "unitPrice": 5,
       "baseUnit": "pcs",
+      "departmentSlug": "groceries_discount",
+      "validFrom": "2026-08-01T22:00:00+0000",
+      "validUntil": "2026-08-08T21:59:59+0000"
+    },
+    {
+      "name": "Kirsebær",
+      "unitSizeFrom": 300,
+      "unitSizeTo": 300,
+      "unitSymbol": "g",
+      "price": 20,
+      "currencyCode": "DKK",
+      "unitPrice": 66.66666666666667,
+      "baseUnit": "kilogram",
       "departmentSlug": "groceries_discount",
       "validFrom": "2026-08-01T22:00:00+0000",
       "validUntil": "2026-08-08T21:59:59+0000"
@@ -756,19 +782,6 @@
       "validUntil": "2026-08-08T21:59:59+0000"
     },
     {
-      "name": "Kirsebær",
-      "unitSizeFrom": 300,
-      "unitSizeTo": 300,
-      "unitSymbol": "g",
-      "price": 20,
-      "currencyCode": "DKK",
-      "unitPrice": 66.66666666666667,
-      "baseUnit": "kilogram",
-      "departmentSlug": "groceries_discount",
-      "validFrom": "2026-08-01T22:00:00+0000",
-      "validUntil": "2026-08-08T21:59:59+0000"
-    },
-    {
       "name": "Elvital shampoo eller balsam",
       "unitSizeFrom": 300,
       "unitSizeTo": 500,
@@ -777,19 +790,6 @@
       "currencyCode": "DKK",
       "unitPrice": 56,
       "baseUnit": "liter",
-      "departmentSlug": "groceries_discount",
-      "validFrom": "2026-08-01T22:00:00+0000",
-      "validUntil": "2026-08-08T21:59:59+0000"
-    },
-    {
-      "name": "Dansukker Syltesukker",
-      "unitSizeFrom": 1,
-      "unitSizeTo": 1,
-      "unitSymbol": "kg",
-      "price": 20,
-      "currencyCode": "DKK",
-      "unitPrice": 20,
-      "baseUnit": "kilogram",
       "departmentSlug": "groceries_discount",
       "validFrom": "2026-08-01T22:00:00+0000",
       "validUntil": "2026-08-08T21:59:59+0000"
@@ -834,6 +834,19 @@
       "validUntil": "2026-08-08T21:59:59+0000"
     },
     {
+      "name": "Grenade bar",
+      "unitSizeFrom": 60,
+      "unitSizeTo": 60,
+      "unitSymbol": "g",
+      "price": 15,
+      "currencyCode": "DKK",
+      "unitPrice": 250,
+      "baseUnit": "kilogram",
+      "departmentSlug": "groceries_discount",
+      "validFrom": "2026-08-01T22:00:00+0000",
+      "validUntil": "2026-08-08T21:59:59+0000"
+    },
+    {
       "name": "Snackgulerødder",
       "unitSizeFrom": 250,
       "unitSizeTo": 250,
@@ -860,14 +873,27 @@
       "validUntil": "2026-08-08T21:59:59+0000"
     },
     {
-      "name": "Grenade bar",
-      "unitSizeFrom": 60,
-      "unitSizeTo": 60,
+      "name": "Kitchen Joy Færdigret",
+      "unitSizeFrom": 400,
+      "unitSizeTo": 400,
       "unitSymbol": "g",
-      "price": 15,
+      "price": 25,
       "currencyCode": "DKK",
-      "unitPrice": 250,
+      "unitPrice": 62.5,
       "baseUnit": "kilogram",
+      "departmentSlug": "groceries_discount",
+      "validFrom": "2026-08-01T22:00:00+0000",
+      "validUntil": "2026-08-08T21:59:59+0000"
+    },
+    {
+      "name": "Santa Carolina Vistana Chilensk rød-, hvid- eller rosévin, 75 cl",
+      "unitSizeFrom": 75,
+      "unitSizeTo": 75,
+      "unitSymbol": "cl",
+      "price": 25,
+      "currencyCode": "DKK",
+      "unitPrice": 33.333333333333336,
+      "baseUnit": "liter",
       "departmentSlug": "groceries_discount",
       "validFrom": "2026-08-01T22:00:00+0000",
       "validUntil": "2026-08-08T21:59:59+0000"
@@ -886,19 +912,6 @@
       "validUntil": "2026-08-08T21:59:59+0000"
     },
     {
-      "name": "Kitchen Joy Færdigret",
-      "unitSizeFrom": 400,
-      "unitSizeTo": 400,
-      "unitSymbol": "g",
-      "price": 25,
-      "currencyCode": "DKK",
-      "unitPrice": 62.5,
-      "baseUnit": "kilogram",
-      "departmentSlug": "groceries_discount",
-      "validFrom": "2026-08-01T22:00:00+0000",
-      "validUntil": "2026-08-08T21:59:59+0000"
-    },
-    {
       "name": "Flaske, sylteglas, patentglas, målekande eller tragt med filter i stål",
       "unitSizeFrom": 1,
       "unitSizeTo": 1,
@@ -907,19 +920,6 @@
       "currencyCode": "DKK",
       "unitPrice": 25,
       "baseUnit": "pcs",
-      "departmentSlug": "groceries_discount",
-      "validFrom": "2026-08-01T22:00:00+0000",
-      "validUntil": "2026-08-08T21:59:59+0000"
-    },
-    {
-      "name": "Santa Carolina Vistana Chilensk rød-, hvid- eller rosévin, 75 cl",
-      "unitSizeFrom": 75,
-      "unitSizeTo": 75,
-      "unitSymbol": "cl",
-      "price": 25,
-      "currencyCode": "DKK",
-      "unitPrice": 33.333333333333336,
-      "baseUnit": "liter",
       "departmentSlug": "groceries_discount",
       "validFrom": "2026-08-01T22:00:00+0000",
       "validUntil": "2026-08-08T21:59:59+0000"
@@ -1042,19 +1042,6 @@
       "validUntil": "2026-08-08T21:59:59+0000"
     },
     {
-      "name": "Nemt & Grønt Fransk vinaigrette",
-      "unitSizeFrom": 35,
-      "unitSizeTo": 35,
-      "unitSymbol": "g",
-      "price": 5,
-      "currencyCode": "DKK",
-      "unitPrice": 142.85714285714283,
-      "baseUnit": "kilogram",
-      "departmentSlug": "groceries_discount",
-      "validFrom": "2026-08-01T22:00:00+0000",
-      "validUntil": "2026-08-08T21:59:59+0000"
-    },
-    {
       "name": "Syltestativ, patentglas, målekande, 2-pak sigte, dørslag eller køkkenvægt",
       "unitSizeFrom": 1,
       "unitSizeTo": 1,
@@ -1063,6 +1050,19 @@
       "currencyCode": "DKK",
       "unitPrice": 40,
       "baseUnit": "pcs",
+      "departmentSlug": "groceries_discount",
+      "validFrom": "2026-08-01T22:00:00+0000",
+      "validUntil": "2026-08-08T21:59:59+0000"
+    },
+    {
+      "name": "Nemt & Grønt Fransk vinaigrette",
+      "unitSizeFrom": 35,
+      "unitSizeTo": 35,
+      "unitSymbol": "g",
+      "price": 5,
+      "currencyCode": "DKK",
+      "unitPrice": 142.85714285714283,
+      "baseUnit": "kilogram",
       "departmentSlug": "groceries_discount",
       "validFrom": "2026-08-01T22:00:00+0000",
       "validUntil": "2026-08-08T21:59:59+0000"
