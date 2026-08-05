@@ -29,6 +29,12 @@ on:
 permissions:
   contents: write
 
+# Shared with fetch-rema-offers.yml: both commit into scrape-output/ on the
+# same ref, so let them queue instead of racing each other's pushes.
+concurrency:
+  group: scrape-output-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   scrape:
     runs-on: ubuntu-latest
@@ -50,10 +56,33 @@ jobs:
           path: scrape-output/rema-recipes.json
       - name: Commit the scrape
         if: ${{ github.event_name == 'push' || inputs.commit }}
+        env:
+          MESSAGE: "Scrape ${{ inputs.themes }} recipes from REMA 1000 [skip ci]"
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -A -f scrape-output
-          git diff --cached --quiet && echo "no changes" && exit 0
-          git commit -m "Scrape ${{ inputs.themes }} recipes from REMA 1000 [skip ci]"
-          git push origin HEAD:${GITHUB_REF_NAME}
+          # The scrape takes long enough that the ref usually moves under us —
+          # the sibling offers workflow commits into the same directory. So
+          # replay the fresh output onto whatever the ref points at now, and
+          # redo that if the push loses another race.
+          staged=$(mktemp -d)
+          cp -R scrape-output/. "$staged"/
+          for attempt in 1 2 3 4 5; do
+            git fetch origin "$GITHUB_REF_NAME"
+            git reset --hard FETCH_HEAD
+            mkdir -p scrape-output
+            cp -R "$staged"/. scrape-output/
+            git add -A -f scrape-output
+            if git diff --cached --quiet; then
+              echo "no changes"
+              exit 0
+            fi
+            git commit -m "$MESSAGE"
+            if git push origin "HEAD:$GITHUB_REF_NAME"; then
+              exit 0
+            fi
+            echo "Push rejected on attempt $attempt; retrying against the new tip"
+            sleep $((attempt * 5))
+          done
+          echo "::error::Could not push the scrape after 5 attempts"
+          exit 1
