@@ -1,3 +1,4 @@
+import { redirect } from "react-router";
 import { createServerClient, parseCookieHeader, serializeCookieHeader } from "@supabase/ssr";
 import type { SetAllCookies } from "@supabase/ssr";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -43,6 +44,27 @@ export async function requireUser(request: Request, headers: Headers) {
     data: { user },
   } = await supabase.auth.getUser();
   return user;
+}
+
+/**
+ * Page-route guard: returns a redirect to the login form when nobody is
+ * signed in, or null when they are. `redirectTo` points back at the page
+ * that was asked for, so a bookmarked or shared deep link survives the
+ * detour through sign-in. Shared by the layouts that wrap the signed-in
+ * pages (`_app`, `_cook`).
+ */
+export async function redirectToLoginIfSignedOut(
+  request: Request,
+  headers: Headers,
+): Promise<Response | null> {
+  const user = await requireUser(request, headers);
+  if (user) return null;
+
+  const { pathname, search } = new URL(request.url);
+  const redirectTo = `${pathname}${search}`;
+  const target =
+    redirectTo === "/" ? "/auth/login" : `/auth/login?redirectTo=${encodeURIComponent(redirectTo)}`;
+  return redirect(target, { headers });
 }
 
 /**

@@ -143,6 +143,25 @@ export const en: Record<keyof typeof da, string> = {
   "day.viewRecipe": "See the full recipe →",
   "day.viewOnRema": "Open on REMA 1000 ↗",
 
+  "cook.open": "Cook mode",
+  "cook.exit": "Exit cook mode",
+  "cook.stepCounter": "Step {{current}} of {{total}}",
+  "cook.previous": "← Previous",
+  "cook.next": "Next →",
+  "cook.finish": "Done ✓",
+  "cook.tickedCount": "{{ticked}}/{{total}}",
+  "cook.servingHeading": "Serving",
+  "cook.servingIntro": "The base dish is the same — this is what differs on the plates.",
+  "cook.keepAwakeLabel": "Keep the screen on",
+  "cook.keepAwakeStatusOn": "The screen stays on while you cook.",
+  "cook.keepAwakeStatusOff": "The screen sleeps as usual.",
+  "cook.keepAwakeUnsupported": "This browser can't keep the screen on, so it will sleep as usual.",
+  "cook.keepAwakeRefused":
+    "The browser wouldn't keep the screen on — check whether battery saver is on, then try again.",
+  "cook.noMethod": "No method was found for this recipe.",
+  "cook.nothingToCook": "This recipe has neither ingredients nor a method to cook from.",
+  "cook.notFound": "There's no recipe to cook here.",
+
   "calendar.subscribeButton": "Subscribe in your calendar app",
   "calendar.modalHeading": "Subscribe to your meal calendar",
   "calendar.modalDescription":

@@ -142,6 +142,25 @@ export const da = {
   "day.viewRecipe": "Se hele opskriften →",
   "day.viewOnRema": "Åbn hos REMA 1000 ↗",
 
+  "cook.open": "Køkkentilstand",
+  "cook.exit": "Afslut køkkentilstand",
+  "cook.stepCounter": "Trin {{current}} af {{total}}",
+  "cook.previous": "← Forrige",
+  "cook.next": "Næste →",
+  "cook.finish": "Færdig ✓",
+  "cook.tickedCount": "{{ticked}}/{{total}}",
+  "cook.servingHeading": "Servering",
+  "cook.servingIntro": "Grundretten er den samme — det her er forskellen på tallerkenerne.",
+  "cook.keepAwakeLabel": "Hold skærmen tændt",
+  "cook.keepAwakeStatusOn": "Skærmen holdes tændt, mens du laver mad.",
+  "cook.keepAwakeStatusOff": "Skærmen slukker som normalt.",
+  "cook.keepAwakeUnsupported": "Denne browser kan ikke holde skærmen tændt, så den slukker som normalt.",
+  "cook.keepAwakeRefused":
+    "Browseren ville ikke holde skærmen tændt — tjek om batterisparefunktionen er slået til, og prøv igen.",
+  "cook.noMethod": "Der blev ikke fundet en fremgangsmåde til denne opskrift.",
+  "cook.nothingToCook": "Denne opskrift har hverken ingredienser eller fremgangsmåde at lave mad efter.",
+  "cook.notFound": "Der er ingen opskrift at lave mad efter her.",
+
   "calendar.subscribeButton": "Abonnér i din kalenderapp",
   "calendar.modalHeading": "Abonnér på din madplan-kalender",
   "calendar.modalDescription":

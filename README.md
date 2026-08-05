@@ -135,6 +135,33 @@ to a specific product (`digitalProduct`, with `is_campaign`/`is_advertised`
 price flags), so ingredient-to-offer could become an exact product-id join
 instead of a string comparison. Nothing in the app uses that field yet.
 
+## Cook mode
+
+`/weeks/{weekStart}/day/{day}/cook` and `/recipes/{id}/cook` are the same
+recipes with everything else taken away: one step at a time in large type,
+ingredients one tap away with tick-off boxes, full-width Previous/Next
+targets (arrow keys too), and the screen held awake. They sit under their own
+pathless layout, `routes/_cook.tsx`, which keeps `_app`'s auth guard but not
+its top nav or article column — cooking is the one time the app's chrome is
+purely in the way. `buildCookSteps` (`app/domain/recipes/cookSteps.ts`) turns
+a recipe into that sequence: one step per method line (dropping the source's
+own "1." numbering), or a single ingredients step when the scrape found no
+method at all, closing on a serving step that carries the adult/child
+variants — the day-plan version only, since that's where the variants exist
+and the plate is when they matter.
+
+Keeping the screen on is the Screen Wake Lock API
+(`app/ui/hooks/useKeepScreenAwake.ts`), enabled on entry — opening cook mode
+*is* the request — with a toggle in the bar to take it back. Two facts about
+the API shape that hook: the OS drops the lock whenever the page is hidden
+and does *not* restore it on return, so the cook's intent is tracked
+separately from the lock and re-acquired on every `visibilitychange`; and the
+API is absent in some browsers (notably iOS before 16.4) and refusable in
+others (battery saver). Both are said out loud in the status line under the
+bar rather than swallowed — a screen that will dim anyway shouldn't be
+promised otherwise. There's no hidden-looping-video fallback for the browsers
+that lack it.
+
 ## Locale
 
 Danish (`da`) is the app's default and only fully-translated locale — see

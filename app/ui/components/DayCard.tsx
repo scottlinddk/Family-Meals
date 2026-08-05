@@ -4,6 +4,7 @@ import { AdultVariantPanel, ChildVariantPanel } from "~/ui/components/VariantPan
 import { RegenerateDayButton } from "~/ui/components/RegenerateDayButton";
 import { RecipeBody } from "~/ui/components/RecipeBody";
 import { Card, CardKicker } from "~/ui/components/ui/Card";
+import { LinkButton } from "~/ui/components/ui/Button";
 import { Tag } from "~/ui/components/ui/Tag";
 import { todayIso } from "~/lib/time";
 import { t } from "~/i18n/t";
@@ -76,17 +77,28 @@ export function DayCard({
       </header>
 
       {expanded ? (
-        <RecipeBody
-          description={snapshot.description}
-          ingredientLines={snapshot.ingredientLines}
-          instructionLines={snapshot.instructionLines}
-          offerIngredientLines={snapshot.offerIngredientLines}
-          url={snapshot.url}
-        />
+        <>
+          <LinkButton to={`/weeks/${weekStart}/day/${dayIndex}/cook`} className="self-start">
+            {t("cook.open")}
+          </LinkButton>
+          <RecipeBody
+            description={snapshot.description}
+            ingredientLines={snapshot.ingredientLines}
+            instructionLines={snapshot.instructionLines}
+            offerIngredientLines={snapshot.offerIngredientLines}
+            url={snapshot.url}
+          />
+        </>
       ) : (
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
           <Link to={`/weeks/${weekStart}/day/${dayIndex}`} className="text-accent hover:text-accent-700">
             {t("day.viewRecipe")}
+          </Link>
+          <Link
+            to={`/weeks/${weekStart}/day/${dayIndex}/cook`}
+            className="text-accent hover:text-accent-700"
+          >
+            {t("cook.open")}
           </Link>
           {snapshot.url && (
             <a href={snapshot.url} target="_blank" rel="noreferrer" className="text-muted hover:text-text">
