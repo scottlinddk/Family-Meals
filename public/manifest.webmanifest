@@ -9,8 +9,8 @@
   "scope": "/",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],
-  "background_color": "#f3f2f2",
-  "theme_color": "#b68235",
+  "background_color": "#ffffff",
+  "theme_color": "#dff0dc",
   "categories": ["food", "lifestyle", "shopping"],
   "icons": [
     { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" },

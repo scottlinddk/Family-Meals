@@ -5,7 +5,7 @@ import { t } from "~/i18n/t";
 export default function OffersPage() {
   return (
     <>
-      <h1 className="mb-5 text-3xl">{t("offers.pageTitle")}</h1>
+      <h1 className="mb-4 text-2xl">{t("offers.pageTitle")}</h1>
       <OfferJsonPasteForm />
       <RecipeSuggestions />
     </>

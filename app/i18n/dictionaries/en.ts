@@ -24,11 +24,10 @@ export const en: Record<keyof typeof da, string> = {
   "auth.signup.hasAccount": "Already have an account?",
   "auth.signup.link": "Sign in",
 
-  "week.prev": "← Prev",
-  "week.next": "Next →",
+  "week.prev": "Previous week",
+  "week.next": "Next week",
+  "week.kicker": "Week plan",
   "week.heading": "Week of {{date}}",
-  "week.manageOffers": "Manage offers",
-  "week.family": "Family",
   "week.signOut": "Sign out",
   "week.loading": "Loading…",
   "week.empty": "No plan generated for this week yet.",
@@ -45,7 +44,7 @@ export const en: Record<keyof typeof da, string> = {
   "week.today": "Today",
 
   "shoppingList.title": "Shopping list",
-  "shoppingList.open": "Open shopping list →",
+  "shoppingList.open": "Open shopping list",
   "shoppingList.noPlan": "Generate a week plan first — the shopping list is built from it.",
   "shoppingList.empty":
     "This week's recipes carry no ingredient lists, so there's nothing to collect. Try " +
@@ -84,7 +83,7 @@ export const en: Record<keyof typeof da, string> = {
   "shoppingList.dept.drinks": "Drinks",
   "shoppingList.dept.other": "Other",
 
-  "day.backToWeek": "← Back to week",
+  "day.backToWeek": "Back to week",
   "day.swapLabel": "Swap to a different recipe",
   "day.choosePlaceholder": "Choose a recipe…",
   "day.notFound": "There's no meal planned for this day.",
@@ -124,7 +123,7 @@ export const en: Record<keyof typeof da, string> = {
   "recipes.refreshError": "Could not refresh recipes automatically.",
   "recipes.none": "No recipes cached yet — click \"Refresh recipes\".",
   "recipes.onOffer": "On offer: {{names}}",
-  "recipes.viewRecipe": "View recipe →",
+  "recipes.viewRecipe": "View recipe",
   "recipes.noMatch": "No ingredients currently on offer.",
   "recipes.noIngredientsScraped": "No ingredient list found for this recipe.",
   "recipes.refreshedSummary":
@@ -135,11 +134,12 @@ export const en: Record<keyof typeof da, string> = {
     "{{recipes}} of {{total}} recipes in the \"{{theme}}\" theme ({{pages}} pages fetched).",
   "recipes.refreshedPagesSkipped": "Pages that could not be fetched: {{pages}}.",
 
-  "week.recipes": "Recipes",
-  "nav.plan": "Week plan",
+  // Bottom-nav labels: short enough to sit under an icon on the narrowest phone.
+  "nav.plan": "Week",
+  "nav.recipes": "Recipes",
+  "nav.offers": "Offers",
+  "nav.family": "Family",
   "nav.primary": "Main menu",
-  "nav.openMenu": "Open menu",
-  "nav.closeMenu": "Close menu",
 
   "recipesPage.title": "All recipes",
   "recipesPage.searchLabel": "Search by name or ingredient",
@@ -148,7 +148,7 @@ export const en: Record<keyof typeof da, string> = {
   "recipesPage.resultCount": "{{count}} recipe(s)",
   "recipesPage.none": "No recipes match these filters.",
 
-  "recipeDetail.backToRecipes": "← Back to recipes",
+  "recipeDetail.backToRecipes": "Back to recipes",
   "recipeDetail.notFound": "This recipe doesn't exist.",
   "recipeDetail.ingredientsHeading": "Ingredients",
   "recipeDetail.instructionsHeading": "Instructions",
@@ -160,7 +160,7 @@ export const en: Record<keyof typeof da, string> = {
   "recipeDetail.noIngredients":
     "No ingredient list was found for this recipe — open it on REMA 1000 below.",
 
-  "day.viewRecipe": "See the full recipe →",
+  "day.viewRecipe": "See the full recipe",
   "day.viewOnRema": "Open on REMA 1000 ↗",
 
   "cook.open": "Cook mode",

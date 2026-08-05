@@ -20,7 +20,7 @@
  * Bump VERSION when this file changes: it's the only thing that retires the
  * old caches.
  */
-const VERSION = "v1";
+const VERSION = "v2";
 const STATIC_CACHE = `family-meals-static-${VERSION}`;
 const DOCUMENT_CACHE = `family-meals-documents-${VERSION}`;
 const DATA_CACHE = `family-meals-data-${VERSION}`;

@@ -245,6 +245,35 @@ flick back. Undelivered marks say so under the count; a mark the server
 *refused* says something different, because then the screen and the family's
 list disagree.
 
+## Design system
+
+The UI follows *Fresh Table*: white pages, one flat mint band across the top,
+and a single deep green (`#1F4D2C`) reserved for anything actionable — filled
+primary buttons, the pressed "har vi" chip, the current section in the nav.
+Everything else is white, ink and grey behind hairline borders, so the only
+colour on a screen is either the band or something you can press. Photography
+carries the warmth instead: dish photos are rounded rectangles, edge to edge
+in their card, with the recipe's total time in a translucent badge over the
+top-left corner.
+
+The tokens live in one place, `app/app.css` (`@theme`): palette, the Inter
+type stack, the 8/12/14px radii, and two shadows. Nothing else hard-codes a
+colour — change a token there and the whole app follows, including cook mode.
+The primitives built on them are in `app/ui/components/ui/`: `Button` (three
+variants), `Card`, `Tag`, the form fields and the shadowed `SearchInput`, `Accordion` (a `<details>` row, so it folds without
+JavaScript), `BottomSheet` (every dialog, portalled to `<body>` so the sticky
+header's stacking context can't trap it under the nav), `Photo` and
+`BackLink`. Icons are inline outline SVGs in `app/ui/components/Icon.tsx` —
+one weight, no icon font, nothing to fetch on a cold offline start.
+
+Navigation is split in two: the mint band (`TopNav`) carries only what belongs
+to the whole app — the brand, the calendar subscription, sign-out — while
+`BottomNav` puts the four sections (uge, opskrifter, tilbud, familie) along
+the bottom of the screen, flat and white under a hairline, the current one
+green with a short underline. It replaces the hamburger menu: four
+destinations are few enough to always be on screen, and a plan you flick
+between week, recipes and offers shouldn't cost two taps each time.
+
 ## Installable web app
 
 The app declares a web app manifest (`public/manifest.webmanifest`) and a

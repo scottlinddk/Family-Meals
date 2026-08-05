@@ -21,12 +21,12 @@ export default function SharedShoppingListPage({ params }: Route.ComponentProps)
   const marks = useShoppingListMarks({ kind: "share", token });
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6">
+    <main className="mx-auto w-full max-w-3xl px-4 pt-6 pb-12 sm:px-6">
       <header className="mb-4">
         <p className="m-0 text-sm text-muted">
           {shared.data?.familyName ?? t("app.title")}
         </p>
-        <h1 className="m-0 mt-1 text-3xl">{t("shoppingList.title")}</h1>
+        <h1 className="m-0 mt-1 text-2xl">{t("shoppingList.title")}</h1>
         {shared.data && (
           <p className="m-0 mt-1 text-sm text-muted">
             {t("week.heading", { date: shared.data.weekStartDate })}

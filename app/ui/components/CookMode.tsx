@@ -8,6 +8,7 @@ import { useSetCookViewMode, useUserPreferences } from "~/ui/hooks/useUserPrefer
 import { AdultVariantPanel, ChildVariantPanel } from "~/ui/components/VariantPanel";
 import { Button } from "~/ui/components/ui/Button";
 import { Tag } from "~/ui/components/ui/Tag";
+import { ChevronDownIcon, CloseIcon } from "~/ui/components/Icon";
 import { t, type TranslationKey } from "~/i18n/t";
 
 export interface CookModeProps {
@@ -141,17 +142,17 @@ export function CookMode({
 
   return (
     <div className="flex min-h-dvh flex-col bg-bg">
-      <header className="sticky top-0 z-30 border-b border-divider bg-bg/95 backdrop-blur">
+      <header className="sticky top-0 z-30 border-b border-divider bg-surface/95 backdrop-blur">
         <div className="mx-auto flex w-full max-w-2xl items-center gap-2 px-3 py-2">
           <Link
             to={exitTo}
             aria-label={t("cook.exit")}
-            className="-ml-1 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-xl leading-none hover:bg-text/7"
+            className="-ml-1 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-muted transition-colors hover:bg-neutral-100 hover:text-text"
           >
-            <span aria-hidden="true">✕</span>
+            <CloseIcon />
           </Link>
 
-          <h1 className="min-w-0 flex-1 truncate font-heading text-lg leading-tight font-semibold">
+          <h1 className="min-w-0 flex-1 truncate text-lg leading-tight font-bold">
             {title}
           </h1>
 
@@ -216,7 +217,7 @@ export function CookMode({
       </main>
 
       {steppingThrough && stepCount > 0 && (
-        <footer className="sticky bottom-0 border-t border-divider bg-bg/95 px-3 py-3 backdrop-blur">
+        <footer className="sticky bottom-0 border-t border-divider bg-surface/95 px-3 py-3 backdrop-blur">
           <div className="mx-auto flex w-full max-w-2xl items-center gap-3">
             <Button
               type="button"
@@ -260,9 +261,9 @@ export function CookModeFallback({ exitTo, loading }: { exitTo: string; loading:
           <Link
             to={exitTo}
             aria-label={t("cook.exit")}
-            className="-ml-1 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-xl leading-none hover:bg-text/7"
+            className="-ml-1 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-muted transition-colors hover:bg-neutral-100 hover:text-text"
           >
-            <span aria-hidden="true">✕</span>
+            <CloseIcon />
           </Link>
         </div>
       </header>
@@ -310,7 +311,7 @@ function StepPane({
     <>
       {step.kind === "ingredients" && (
         <>
-          <h2 className="mb-1 text-3xl">{t("recipeDetail.ingredientsHeading")}</h2>
+          <h2 className="mb-1 text-2xl">{t("recipeDetail.ingredientsHeading")}</h2>
           <RecipeMeta servings={servings} totalTimeMinutes={totalTimeMinutes} />
           {ingredients}
           <p className="mt-4 text-sm text-muted">{t("cook.noMethod")}</p>
@@ -320,10 +321,10 @@ function StepPane({
 
       {step.kind === "instruction" && (
         <>
-          <p className="m-0 text-xs tracking-[0.1em] text-accent uppercase">
+          <p className="m-0 text-[11px] font-semibold tracking-[0.08em] text-accent-700 uppercase">
             {t("cook.stepCounter", { current: step.number, total: instructionCount })}
           </p>
-          <p className="mt-2 mb-6 text-2xl leading-relaxed sm:text-3xl">{step.text}</p>
+          <p className="mt-2 mb-6 text-2xl leading-relaxed sm:text-[28px]">{step.text}</p>
 
           {ingredientCount > 0 && (
             <section className="border-t border-divider pt-3">
@@ -332,15 +333,18 @@ function StepPane({
                 onClick={onToggleIngredients}
                 aria-expanded={ingredientsOpen}
                 aria-controls={INGREDIENTS_PANEL_ID}
-                className="flex min-h-11 w-full items-center justify-between gap-2 rounded-md px-1 text-left text-sm hover:bg-text/7"
+                className="flex min-h-11 w-full items-center justify-between gap-2 rounded-sm px-1 text-left text-sm transition-colors hover:bg-neutral-100"
               >
-                <span className="font-heading font-semibold">
+                <span className="font-semibold">
                   {t("recipeDetail.ingredientsHeading")}
                   <span className="ml-2 text-muted">
                     {t("cook.tickedCount", { ticked: tickedCount, total: ingredientCount })}
                   </span>
                 </span>
-                <span aria-hidden="true">{ingredientsOpen ? "▲" : "▼"}</span>
+                <ChevronDownIcon
+                  size={16}
+                  className={`text-muted transition-transform ${ingredientsOpen ? "rotate-180" : ""}`}
+                />
               </button>
               <div id={INGREDIENTS_PANEL_ID} hidden={!ingredientsOpen}>
                 <RecipeMeta servings={servings} totalTimeMinutes={totalTimeMinutes} />
@@ -396,7 +400,7 @@ function AllStepsPane({
               <li key={step.number} className="flex gap-3">
                 <span
                   aria-hidden="true"
-                  className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-sm bg-accent-100 font-heading text-sm font-semibold text-accent-800"
+                  className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-sm bg-accent-100 text-sm font-bold text-accent-700"
                 >
                   {step.number}
                 </span>
