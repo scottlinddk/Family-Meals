@@ -9,11 +9,11 @@ const variantClasses: Record<TagVariant, string> = {
   outline: "border border-divider text-text",
 };
 
-/** A pill — never a rounded rectangle, at any size. */
+/** A small, softly-cornered label. */
 export function Tag({ children, variant = "neutral" }: { children: ReactNode; variant?: TagVariant }) {
   return (
     <span
-      className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold ${variantClasses[variant]}`}
+      className={`inline-flex items-center rounded-sm px-2.5 py-1 text-[11px] font-semibold ${variantClasses[variant]}`}
     >
       {children}
     </span>

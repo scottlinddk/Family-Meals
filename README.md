@@ -257,11 +257,10 @@ in their card, with the recipe's total time in a translucent badge over the
 top-left corner.
 
 The tokens live in one place, `app/app.css` (`@theme`): palette, the Inter
-type stack, the 12/18/24px radii, and two shadows. Nothing else hard-codes a
+type stack, the 8/12/14px radii, and two shadows. Nothing else hard-codes a
 colour — change a token there and the whole app follows, including cook mode.
-The primitives built on them are in `app/ui/components/ui/`: `Button` (always
-a full pill, in three variants), `Card`, `Tag`, the form fields and the pill
-`SearchInput`, `Accordion` (a `<details>` row, so it folds without
+The primitives built on them are in `app/ui/components/ui/`: `Button` (three
+variants), `Card`, `Tag`, the form fields and the shadowed `SearchInput`, `Accordion` (a `<details>` row, so it folds without
 JavaScript), `BottomSheet` (every dialog, portalled to `<body>` so the sticky
 header's stacking context can't trap it under the nav), `Photo` and
 `BackLink`. Icons are inline outline SVGs in `app/ui/components/Icon.tsx` —

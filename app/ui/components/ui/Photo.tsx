@@ -44,7 +44,7 @@ export function ThumbPhoto({ src, size = 64 }: { src: string; size?: number }) {
 /** Reads over any photograph, dark or light, which a tinted pill would not. */
 export function TimeBadge({ minutes }: { minutes: number }) {
   return (
-    <span className="absolute top-2.5 left-2.5 inline-flex items-center gap-1 rounded-full bg-[rgb(15_20_13/0.55)] px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur-[2px]">
+    <span className="absolute top-2.5 left-2.5 inline-flex items-center gap-1 rounded-sm bg-[rgb(15_20_13/0.55)] px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur-[2px]">
       <ClockIcon size={12} />
       {t("recipeDetail.totalTime", { minutes })}
     </span>

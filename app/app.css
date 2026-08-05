@@ -53,11 +53,12 @@
   --color-accent-2-800: #6a4209;
   --color-accent-2-900: #472c06;
 
-  /* Generous corners: cards and photos are soft rectangles, and anything
-     tappable that isn't a card is a full pill (`rounded-full`). */
-  --radius-sm: 12px;
-  --radius-md: 18px;
-  --radius-lg: 24px;
+  /* Softened corners, not round ones: badges and tags at `sm`, buttons,
+     fields and cards at `md`, sheets and full-bleed photos at `lg`. Nothing
+     in the app is a full pill except a couple of 3px indicator bars. */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 14px;
 
   --shadow-sm: 0 4px 14px rgb(20 26 15 / 0.05);
   --shadow-md: 0 10px 24px rgb(20 26 15 / 0.08);

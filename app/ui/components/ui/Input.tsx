@@ -24,13 +24,13 @@ export function Select({ className = "", ...props }: SelectHTMLAttributes<HTMLSe
 }
 
 /**
- * The search bar of the design system: a white pill carrying its own shadow
+ * The search bar of the design system: a white field carrying its own shadow
  * rather than a border, with the magnifier inside it. Used where searching is
  * the point of the screen — everywhere else a plain `Input` is right.
  */
 export function SearchInput({ className = "", ...props }: InputHTMLAttributes<HTMLInputElement>) {
   return (
-    <div className="flex items-center gap-2.5 rounded-full bg-surface px-5 py-1 shadow-sm ring-1 ring-divider focus-within:ring-accent">
+    <div className="flex items-center gap-2.5 rounded-md bg-surface px-4 py-1 shadow-sm ring-1 ring-divider focus-within:ring-accent">
       <svg
         aria-hidden="true"
         width="16"

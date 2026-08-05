@@ -147,7 +147,7 @@ export function CookMode({
           <Link
             to={exitTo}
             aria-label={t("cook.exit")}
-            className="-ml-1 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-muted transition-colors hover:bg-neutral-100 hover:text-text"
+            className="-ml-1 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-muted transition-colors hover:bg-neutral-100 hover:text-text"
           >
             <CloseIcon />
           </Link>
@@ -261,7 +261,7 @@ export function CookModeFallback({ exitTo, loading }: { exitTo: string; loading:
           <Link
             to={exitTo}
             aria-label={t("cook.exit")}
-            className="-ml-1 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-muted transition-colors hover:bg-neutral-100 hover:text-text"
+            className="-ml-1 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-muted transition-colors hover:bg-neutral-100 hover:text-text"
           >
             <CloseIcon />
           </Link>
@@ -400,7 +400,7 @@ function AllStepsPane({
               <li key={step.number} className="flex gap-3">
                 <span
                   aria-hidden="true"
-                  className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent-100 text-sm font-bold text-accent-700"
+                  className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-sm bg-accent-100 text-sm font-bold text-accent-700"
                 >
                   {step.number}
                 </span>

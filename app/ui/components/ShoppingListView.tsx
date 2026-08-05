@@ -160,7 +160,7 @@ function ShoppingListRow({ item, marks }: { item: ShoppingListItem; marks: Shopp
         aria-pressed={atHome}
         aria-label={t("shoppingList.atHomeAria", { item: item.label })}
         onClick={() => marks.toggleMark(item.label, "at_home")}
-        className={`my-1 min-h-11 shrink-0 self-start rounded-full border px-3.5 text-xs font-semibold transition-colors ${
+        className={`my-1 min-h-11 shrink-0 self-start rounded-md border px-3.5 text-xs font-semibold transition-colors ${
           atHome
             ? "border-accent bg-accent text-white"
             : "border-divider text-muted hover:bg-neutral-100"
