@@ -118,23 +118,6 @@ export function OfferJsonPasteForm() {
         </p>
       )}
 
-      <div className="mt-4">
-        <Accordion title={t("offers.formHeading")} defaultOpen={false}>
-          <p className="-mt-1 text-sm text-muted">{t("offers.formDescription")}</p>
-          <Textarea value={raw} onChange={(e) => setRaw(e.target.value)} placeholder={PLACEHOLDER} rows={10} />
-          {error && <p className="text-sm text-red-700">{error}</p>}
-          <Button
-            type="button"
-            variant="secondary"
-            block
-            onClick={handleImport}
-            disabled={importOffers.isPending || raw.trim().length === 0}
-          >
-            {importOffers.isPending ? t("offers.importing") : t("offers.import")}
-          </Button>
-        </Accordion>
-      </div>
-
       {offers.isLoading && <p className="mt-3 text-sm text-muted">{t("week.loading")}</p>}
       {offers.isError && <p className="mt-3 text-sm text-red-700">{t("offers.loadFailed")}</p>}
 
@@ -161,6 +144,23 @@ export function OfferJsonPasteForm() {
           </div>
         </div>
       )}
+
+      <div className="mt-4">
+        <Accordion title={t("offers.formHeading")} defaultOpen={false}>
+          <p className="-mt-1 text-sm text-muted">{t("offers.formDescription")}</p>
+          <Textarea value={raw} onChange={(e) => setRaw(e.target.value)} placeholder={PLACEHOLDER} rows={10} />
+          {error && <p className="text-sm text-red-700">{error}</p>}
+          <Button
+            type="button"
+            variant="secondary"
+            block
+            onClick={handleImport}
+            disabled={importOffers.isPending || raw.trim().length === 0}
+          >
+            {importOffers.isPending ? t("offers.importing") : t("offers.import")}
+          </Button>
+        </Accordion>
+      </div>
     </Card>
   );
 }
