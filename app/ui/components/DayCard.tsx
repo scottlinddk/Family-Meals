@@ -105,7 +105,15 @@ export function DayCard({
                   {t("cook.open")}
                 </LinkButton>
                 <ShareButton target={{ kind: "day", date: day.date }} size="md" block />
-                <RegenerateDayButton weekStart={weekStart} dayIndex={dayIndex} size="md" block />
+                {/* Odd one out in the 2-column grid — spans both rather than
+                    leaving an empty column beside it. */}
+                <RegenerateDayButton
+                  weekStart={weekStart}
+                  dayIndex={dayIndex}
+                  size="md"
+                  block
+                  className="col-span-2"
+                />
               </div>
               <RecipeBody
                 description={snapshot.description}
@@ -131,7 +139,14 @@ export function DayCard({
               <LinkButton to={`/weeks/${weekStart}/day/${dayIndex}/cook`} variant="secondary" size="sm" block>
                 {t("cook.open")}
               </LinkButton>
-              <RegenerateDayButton weekStart={weekStart} dayIndex={dayIndex} block />
+              {/* Pairs with the "view on REMA" link below when there is one;
+                  otherwise it's the odd one out and spans both columns. */}
+              <RegenerateDayButton
+                weekStart={weekStart}
+                dayIndex={dayIndex}
+                block
+                className={snapshot.url ? "" : "col-span-2"}
+              />
               {snapshot.url && (
                 <a
                   href={snapshot.url}
