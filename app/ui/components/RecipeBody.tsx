@@ -1,6 +1,7 @@
 import { Card } from "~/ui/components/ui/Card";
 import { Accordion } from "~/ui/components/ui/Accordion";
 import { Tag } from "~/ui/components/ui/Tag";
+import { CalorieMeta } from "~/ui/components/RecipeCalories";
 import { t } from "~/i18n/t";
 
 export interface RecipeBodyProps {
@@ -38,10 +39,14 @@ export function RecipeBody({
     <>
       {description && <p className="mb-3 text-sm">{description}</p>}
 
-      {(servings || totalTimeMinutes) && (
-        <p className="mb-3 flex flex-wrap gap-x-4 text-sm text-muted">
+      {/* The calorie estimate stands on its own: a recipe can carry an
+          ingredient list without stating servings or a time, and the figure
+          is still worth having then. */}
+      {(servings || totalTimeMinutes || ingredientLines.length > 0) && (
+        <p className="mb-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted">
           {servings && <span>{t("recipeDetail.servings", { count: servings })}</span>}
           {totalTimeMinutes && <span>{t("recipeDetail.totalTime", { minutes: totalTimeMinutes })}</span>}
+          <CalorieMeta ingredientLines={ingredientLines} servings={servings} />
         </p>
       )}
 

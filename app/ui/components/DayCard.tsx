@@ -4,6 +4,7 @@ import { AdultVariantPanel, ChildVariantPanel } from "~/ui/components/VariantPan
 import { RegenerateDayButton } from "~/ui/components/RegenerateDayButton";
 import { RecipeBody } from "~/ui/components/RecipeBody";
 import { ShareButton } from "~/ui/components/ShareButton";
+import { CalorieMeta } from "~/ui/components/RecipeCalories";
 import { Card, CardKicker } from "~/ui/components/ui/Card";
 import { LinkButton } from "~/ui/components/ui/Button";
 import { Tag } from "~/ui/components/ui/Tag";
@@ -71,10 +72,19 @@ export function DayCard({
                   </Link>
                 </h3>
               )}
+              {/* Servings, time and calories are the recipe's own facts, so on
+                  the day page they belong to `RecipeBody` below rather than
+                  being repeated up here. The offer count stays either way:
+                  it's about this week, not about the dish. */}
               <p className="m-0 mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-muted">
-                {snapshot.servings && <span>{t("recipeDetail.servings", { count: snapshot.servings })}</span>}
+                {snapshot.servings && !expanded && (
+                  <span>{t("recipeDetail.servings", { count: snapshot.servings })}</span>
+                )}
                 {snapshot.totalTimeMinutes && !expanded && (
                   <span>{t("recipeDetail.totalTime", { minutes: snapshot.totalTimeMinutes })}</span>
+                )}
+                {!expanded && (
+                  <CalorieMeta ingredientLines={snapshot.ingredientLines} servings={snapshot.servings} />
                 )}
                 {offerCount > 0 && (
                   <Tag variant="accent">{t("recipeDetail.onOfferCount", { count: offerCount })}</Tag>
@@ -98,6 +108,7 @@ export function DayCard({
             </div>
             <RecipeBody
               description={snapshot.description}
+              servings={snapshot.servings}
               ingredientLines={snapshot.ingredientLines}
               instructionLines={snapshot.instructionLines}
               offerIngredientLines={snapshot.offerIngredientLines}

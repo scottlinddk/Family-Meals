@@ -153,7 +153,6 @@ export const da = {
   "suggestions.explain.calories":
     "Færrest kalorier pr. portion først. Tallet er et skøn ud fra ingredienslisten — REMA " +
     "oplyser ikke næringsindhold.",
-  "suggestions.kcalPerServing": "~{{kcal}} kcal/portion (skøn)",
   "suggestions.vegetarian": "Kødfri",
   "suggestions.noneVegetarian":
     "Ingen af de hentede opskrifter er kødfri. Prøv at slå filteret fra, eller hent opskrifterne igen.",
@@ -173,6 +172,10 @@ export const da = {
   "recipeDetail.viewOriginal": "Se den originale opskrift på REMA 1000 →",
   "recipeDetail.servings": "{{count}} portioner",
   "recipeDetail.totalTime": "{{minutes}} min",
+  // Shown wherever a recipe is — the "~" and "(skøn)" are not decoration:
+  // REMA publishes no nutrition data, so this is computed from the
+  // ingredient lines and must never read as a measured figure.
+  "recipeDetail.kcalPerServing": "~{{kcal}} kcal/portion (skøn)",
   "recipeDetail.onOfferBadge": "På tilbud",
   "recipeDetail.onOfferCount": "{{count}} ingrediens(er) på tilbud",
   "recipeDetail.noIngredients":
