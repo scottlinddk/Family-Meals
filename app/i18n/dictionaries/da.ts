@@ -26,7 +26,6 @@ export const da = {
   "week.next": "Næste uge",
   "week.kicker": "Ugeplan",
   "week.heading": "Uge fra {{date}}",
-  "week.signOut": "Log ud",
   "week.loading": "Indlæser…",
   "week.empty": "Der er endnu ikke lavet en plan for denne uge.",
   "week.generating": "Genererer...",
@@ -134,11 +133,13 @@ export const da = {
     "{{recipes}} af {{total}} opskrifter i temaet \"{{theme}}\" ({{pages}} sider hentet).",
   "recipes.refreshedPagesSkipped": "Sider der ikke kunne hentes: {{pages}}.",
 
-  // Bottom-nav labels: short enough to sit under an icon on the narrowest phone.
+  // Bottom-nav labels: these have to fit on one line under an icon, in a
+  // quarter of the narrowest phone. "Bruger & familie" is the longest at 77px
+  // of an 80px column at 320px — check any change to it at that width.
   "nav.plan": "Uge",
   "nav.recipes": "Opskrifter",
   "nav.offers": "Tilbud",
-  "nav.family": "Familie",
+  "nav.family": "Bruger & familie",
   "nav.primary": "Hovedmenu",
 
   "suggestions.sortLabel": "Sortering",
@@ -254,7 +255,10 @@ export const da = {
   "variant.addLabel": "Tilføj {{qty}}{{unit}} {{name}}",
   "variant.notCurated": "Der er endnu ingen kalorievejledning til denne opskrift — juster portionerne manuelt.",
 
-  "family.pageTitle": "Familie",
+  "family.pageTitle": "Bruger & familie",
+  "family.accountHeading": "Bruger",
+  "family.signedInAs": "Logget ind som {{email}}",
+  "family.signOut": "Log ud",
   "family.yourFamiliesHeading": "Dine familier",
   "family.switch": "Skift",
   "family.active": "Aktiv",

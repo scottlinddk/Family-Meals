@@ -68,6 +68,15 @@
 body {
   background: var(--color-bg);
   color: var(--color-text);
+  /*
+    Nothing in this app writes its own copy: ingredient lines, dish titles,
+    offer names and member emails all arrive from REMA, from a scrape, or
+    from whoever signed up. Any of them can be one long unbreakable word, and
+    on a 320px phone a single one of those used to push the whole page
+    sideways. Let a word that can't fit break rather than escape — layout
+    still prefers to break at spaces, so ordinary text is unaffected.
+  */
+  overflow-wrap: break-word;
 }
 
 h1,

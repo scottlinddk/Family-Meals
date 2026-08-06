@@ -1,6 +1,6 @@
 import { Outlet } from "react-router";
 import type { Route } from "./+types/_app";
-import { redirectToLoginIfSignedOut } from "~/lib/auth";
+import { redirectToLogin, requireUser } from "~/lib/auth";
 import { TopNav } from "~/ui/components/TopNav";
 import { BottomNav } from "~/ui/components/BottomNav";
 
@@ -16,7 +16,12 @@ import { BottomNav } from "~/ui/components/BottomNav";
  * survives the detour through sign-in.
  */
 export async function loader({ request }: Route.LoaderArgs) {
-  return redirectToLoginIfSignedOut(request, new Headers());
+  const headers = new Headers();
+  const user = await requireUser(request, headers);
+  if (!user) return redirectToLogin(request, headers);
+  // The email is the only thing about the signed-in person any page needs —
+  // the "Bruger" card on /family names who is about to be signed out.
+  return { email: user.email ?? null };
 }
 
 export default function AppLayout() {
@@ -25,7 +30,7 @@ export default function AppLayout() {
       <TopNav />
       {/* The trailing padding clears the fixed bottom nav, so the last card
           of a page can still be scrolled out from behind it. */}
-      <main className="mx-auto w-full max-w-3xl px-4 pt-6 pb-28 sm:px-6">
+      <main className="mx-auto w-full max-w-3xl px-4 pt-5 pb-24 sm:px-6">
         <Outlet />
       </main>
       <BottomNav />

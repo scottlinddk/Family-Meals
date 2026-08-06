@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Form } from "react-router";
+import { useSignedInEmail } from "~/ui/hooks/useSignedInEmail";
 import {
   useFamilyMembers,
   useFamilyInvites,
@@ -12,9 +14,19 @@ import { useIcsUrl } from "~/ui/hooks/useIcsUrl";
 import { Card, CardTitle } from "~/ui/components/ui/Card";
 import { Button } from "~/ui/components/ui/Button";
 import { Input } from "~/ui/components/ui/Input";
+import { SignOutIcon } from "~/ui/components/Icon";
 import { t } from "~/i18n/t";
 
+/**
+ * "Bruger & familie": everything that's true about the person using the app
+ * and the household they're planning for, rather than about any one page.
+ *
+ * Signing out lives here, at the top, rather than in the header band. It's a
+ * once-in-a-blue-moon action that was taking a permanent slot on every screen
+ * next to the calendar button — and it belongs with the account it ends.
+ */
 export default function FamilyPage() {
+  const signedInEmail = useSignedInEmail();
   const family = useIcsUrl();
   const members = useFamilyMembers();
   const invites = useFamilyInvites();
@@ -31,13 +43,28 @@ export default function FamilyPage() {
     <>
       <h1 className="mb-4 text-2xl">{t("family.pageTitle")}</h1>
 
+      <Card className="mb-5">
+        <CardTitle>{t("family.accountHeading")}</CardTitle>
+        {signedInEmail && (
+          <p className="m-0 min-w-0 text-sm break-all text-muted">
+            {t("family.signedInAs", { email: signedInEmail })}
+          </p>
+        )}
+        <Form method="post" action="/auth/logout" className="mt-1">
+          <Button type="submit" variant="secondary" size="sm">
+            <SignOutIcon size={16} />
+            {t("family.signOut")}
+          </Button>
+        </Form>
+      </Card>
+
       {(myFamilies.data?.length ?? 0) > 1 && (
         <Card className="mb-5">
           <CardTitle>{t("family.yourFamiliesHeading")}</CardTitle>
           <ul className="m-0 list-none p-0 text-sm">
             {myFamilies.data!.map((f) => (
-              <li key={f.id} className="flex items-center justify-between border-b border-divider py-1.5 last:border-0">
-                <span>{f.name ?? t("family.namePlaceholder")}</span>
+              <li key={f.id} className="flex items-center justify-between gap-3 border-b border-divider py-1.5 last:border-0">
+                <span className="min-w-0">{f.name ?? t("family.namePlaceholder")}</span>
                 {f.active ? (
                   <span className="text-xs text-muted uppercase">{t("family.active")}</span>
                 ) : (
@@ -45,6 +72,7 @@ export default function FamilyPage() {
                     type="button"
                     variant="ghost"
                     size="sm"
+                    className="shrink-0"
                     onClick={() => switchFamily.mutate(f.id)}
                     disabled={switchFamily.isPending}
                   >
@@ -82,9 +110,11 @@ export default function FamilyPage() {
         {members.isLoading && <p className="text-muted">{t("week.loading")}</p>}
         <ul className="m-0 list-none p-0 text-sm">
           {members.data?.map((member) => (
-            <li key={member.id} className="flex items-center justify-between border-b border-divider py-1.5 last:border-0">
-              <span>{member.email ?? member.userId}</span>
-              <span className="text-xs text-muted uppercase">{member.role}</span>
+            <li key={member.id} className="flex items-center justify-between gap-3 border-b border-divider py-1.5 last:border-0">
+              {/* Emails and user ids are single unbreakable words, so the
+                  line has to be allowed to shrink and wrap inside itself. */}
+              <span className="min-w-0 break-all">{member.email ?? member.userId}</span>
+              <span className="shrink-0 text-xs text-muted uppercase">{member.role}</span>
             </li>
           ))}
         </ul>
@@ -124,12 +154,13 @@ export default function FamilyPage() {
         {!!invites.data?.length && (
           <ul className="m-0 mt-2 list-none p-0 text-sm">
             {invites.data.map((invite) => (
-              <li key={invite.id} className="flex items-center justify-between border-b border-divider py-1.5 last:border-0">
-                <span>{invite.email}</span>
+              <li key={invite.id} className="flex items-center justify-between gap-3 border-b border-divider py-1.5 last:border-0">
+                <span className="min-w-0 break-all">{invite.email}</span>
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
+                  className="shrink-0"
                   onClick={() => revokeInvite.mutate(invite.id)}
                   disabled={revokeInvite.isPending}
                 >
