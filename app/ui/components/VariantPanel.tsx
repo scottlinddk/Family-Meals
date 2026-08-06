@@ -84,8 +84,12 @@ export function VariantsGrid({
   childVariant: ChildVariant;
 }) {
   if (!adultVariant.curated && !childVariant.curated) return null;
+  // Only splits into two columns once there are two panels to fill them —
+  // one curated variant alone stays full width rather than sitting in half
+  // a row with empty space beside it.
+  const bothCurated = adultVariant.curated && childVariant.curated;
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
+    <div className={`grid gap-3 ${bothCurated ? "sm:grid-cols-2" : ""}`}>
       <AdultVariantPanel variant={adultVariant} />
       <ChildVariantPanel variant={childVariant} />
     </div>
