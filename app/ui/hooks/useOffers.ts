@@ -16,8 +16,10 @@ export interface OfferSnapshotSummary {
 export interface OffersResponse {
   /** The family's latest import, or null if they've never imported. */
   snapshot: OfferSnapshotSummary | null;
-  /** Offers from that import that are still valid today. */
+  /** Offers from that import that are on offer right now. */
   offers: Offer[];
+  /** Offers from that import that haven't started yet — REMA's next catalog. */
+  upcomingOffers: Offer[];
   /** How many offers the import contained in total, valid or not. */
   importedCount: number;
 }

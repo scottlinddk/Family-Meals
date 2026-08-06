@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gte, lte } from "drizzle-orm";
+import { and, asc, desc, eq, gt, gte, lte } from "drizzle-orm";
 import { db } from "~/data/db/client";
 import { offers as offersTable, offerSnapshots } from "~/data/db/schema";
 import type { Offer } from "~/domain/types";
@@ -59,6 +59,7 @@ export const offerRepository: OfferReader & {
   getLatestSnapshot(familyId: string): Promise<OfferSnapshot | undefined>;
   listOffersInSnapshot(snapshotId: string): Promise<Offer[]>;
   listOffersValidDuring(familyId: string, from: Date, to: Date): Promise<Offer[]>;
+  listUpcomingOffers(familyId: string): Promise<Offer[]>;
   replaceCurrentOffers(
     familyId: string,
     offers: OfferInput[],
@@ -110,6 +111,25 @@ export const offerRepository: OfferReader & {
         ),
       )
       .orderBy(asc(offersTable.name));
+    return rows.map(toDomain);
+  },
+
+  /**
+   * Offers from the family's latest import that haven't started yet — REMA's
+   * next catalog, once `EtilbudsavisOfferSource` has picked it up ahead of
+   * this week's ending. Lets the offers page show what's coming without
+   * mixing it into "on offer now".
+   */
+  async listUpcomingOffers(familyId: string): Promise<Offer[]> {
+    const snapshot = await latestSnapshotRow(familyId);
+    if (!snapshot) return [];
+
+    const now = new Date();
+    const rows = await db
+      .select()
+      .from(offersTable)
+      .where(and(eq(offersTable.snapshotId, snapshot.id), gt(offersTable.validFrom, now)))
+      .orderBy(asc(offersTable.validFrom), asc(offersTable.name));
     return rows.map(toDomain);
   },
 

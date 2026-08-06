@@ -58,6 +58,7 @@ export default [
   route("api/shared/:token", "routes/api.shared.$token.tsx"),
   route("api/offers", "routes/api.offers.tsx"),
   route("api/offers/refresh", "routes/api.offers.refresh.tsx"),
+  route("api/cron/offers-refresh", "routes/api.cron.offers-refresh.tsx"),
   route("api/recipes", "routes/api.recipes.tsx"),
   route("api/recipes/refresh", "routes/api.recipes.refresh.tsx"),
   route("api/recipes/suggestions", "routes/api.recipes.suggestions.tsx"),

@@ -102,7 +102,9 @@ export const da = {
     "Indsæt tilbuds-JSON i referenceformatet (samme felter som REMA's egne lister bruger). Dette erstatter det aktuelt importerede tilbudssæt.",
   "offers.importing": "Importerer...",
   "offers.import": "Importér tilbud",
-  "offers.currentlyImported": "Aktuelt importeret ({{count}})",
+  "offers.thisWeek": "På tilbud denne uge ({{count}})",
+  "offers.nextWeek": "På tilbud næste uge ({{count}})",
+  "offers.nextWeekEmpty": "Næste uges tilbud er endnu ikke hentet.",
   "offers.autoFetchHeading": "Automatiske tilbud",
   "offers.autoFetchDescription":
     "Hent REMA 1000's aktuelle tilbud automatisk fra etilbudsavis.dk (en tredjeparts tilbudsavis bygget på Tjek-platformen, ikke selve webshoppen).",
@@ -157,6 +159,9 @@ export const da = {
   "suggestions.noneVegetarian":
     "Ingen af de hentede opskrifter er kødfri. Prøv at slå filteret fra, eller hent opskrifterne igen.",
   "suggestions.loadFailed": "Forslagene kunne ikke hentes.",
+  "suggestions.prevPage": "Forrige side",
+  "suggestions.nextPage": "Næste side",
+  "suggestions.page": "Side {{page}} af {{pages}}",
 
   "recipesPage.title": "Alle opskrifter",
   "recipesPage.searchLabel": "Søg på navn eller ingrediens",
