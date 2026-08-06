@@ -5,7 +5,7 @@ import { buildCookSteps, type CookStep } from "~/domain/recipes/cookSteps";
 import { COOK_VIEW_MODES, DEFAULT_USER_PREFERENCES, type CookViewMode } from "~/domain/preferences";
 import { useKeepScreenAwake, type KeepScreenAwake } from "~/ui/hooks/useKeepScreenAwake";
 import { useSetCookViewMode, useUserPreferences } from "~/ui/hooks/useUserPreferences";
-import { AdultVariantPanel, ChildVariantPanel } from "~/ui/components/VariantPanel";
+import { VariantsGrid, VariantGuidanceNote } from "~/ui/components/VariantPanel";
 import { Button } from "~/ui/components/ui/Button";
 import { Tag } from "~/ui/components/ui/Tag";
 import { ChevronDownIcon, CloseIcon } from "~/ui/components/Icon";
@@ -434,9 +434,9 @@ function ServingSection({
     <section>
       <h2 className="mb-1 text-2xl">{t("cook.servingHeading")}</h2>
       <p className="mt-0 mb-4 text-base text-muted">{t("cook.servingIntro")}</p>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <AdultVariantPanel variant={adultVariant} />
-        <ChildVariantPanel variant={childVariant} />
+      <VariantsGrid adultVariant={adultVariant} childVariant={childVariant} />
+      <div className="mt-3">
+        <VariantGuidanceNote adultVariant={adultVariant} childVariant={childVariant} />
       </div>
     </section>
   );

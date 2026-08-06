@@ -270,6 +270,7 @@ export const da = {
   "variant.childHeading": "Mindre barn (grundret + kalorietæt tilføjelse)",
   "variant.addLabel": "Tilføj {{qty}}{{unit}} {{name}}",
   "variant.notCurated": "Der er endnu ingen kalorievejledning til denne opskrift — juster portionerne manuelt.",
+  "variant.guidanceMissingLabel": "Vejledning mangler for denne ret",
 
   "family.pageTitle": "Bruger & familie",
   "family.accountHeading": "Bruger",

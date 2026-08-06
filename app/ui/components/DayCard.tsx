@@ -1,6 +1,6 @@
 import { Link } from "react-router";
 import type { DayPlan } from "~/domain/types";
-import { AdultVariantPanel, ChildVariantPanel } from "~/ui/components/VariantPanel";
+import { VariantsGrid, VariantGuidanceNote } from "~/ui/components/VariantPanel";
 import { RegenerateDayButton } from "~/ui/components/RegenerateDayButton";
 import { RecipeBody } from "~/ui/components/RecipeBody";
 import { ShareButton } from "~/ui/components/ShareButton";
@@ -40,115 +40,118 @@ export function DayCard({
   const isToday = day.date === todayIso();
 
   return (
-    <Card
-      as="article"
-      interactive={!expanded}
-      // The hero runs to the card's own edges, so the padding moves inside.
-      className={`gap-3 p-0 ${isToday ? "border-accent" : ""}`}
-    >
-      {expanded && snapshot.imageUrl && (
-        <HeroPhoto
-          src={snapshot.imageUrl}
-          time={snapshot.totalTimeMinutes}
-          className="overflow-hidden rounded-t-md"
-        />
-      )}
-
-      <div className={`flex flex-col gap-4 p-4 pt-0 first:pt-4 ${expanded ? "sm:p-6 sm:pt-0 sm:first:pt-6" : ""}`}>
-        <header className="flex flex-col gap-3">
-          <div className="flex min-w-0 flex-1 items-start gap-3">
-            {!expanded && snapshot.imageUrl && <ThumbPhoto src={snapshot.imageUrl} size={64} />}
-            <div className="min-w-0">
-              <CardKicker>
-                {weekday} · {day.date}
-                {isToday && <span className="ml-2 text-accent">{t("week.today")}</span>}
-              </CardKicker>
-              {expanded ? (
-                <h1 className="mt-2 text-3xl">{snapshot.title}</h1>
-              ) : (
-                <h3 className="mt-1 text-[17px] leading-snug">
-                  <Link to={`/weeks/${weekStart}/day/${dayIndex}`} className="hover:text-accent">
-                    {snapshot.title}
-                  </Link>
-                </h3>
-              )}
-              {/* Servings, time and calories are the recipe's own facts, so on
-                  the day page they belong to `RecipeBody` below rather than
-                  being repeated up here. The offer count stays either way:
-                  it's about this week, not about the dish. */}
-              <p className="m-0 mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-muted">
-                {snapshot.servings && !expanded && (
-                  <span>{t("recipeDetail.servings", { count: snapshot.servings })}</span>
-                )}
-                {snapshot.totalTimeMinutes && !expanded && (
-                  <span>{t("recipeDetail.totalTime", { minutes: snapshot.totalTimeMinutes })}</span>
-                )}
-                {!expanded && (
-                  <CalorieMeta ingredientLines={snapshot.ingredientLines} servings={snapshot.servings} />
-                )}
-                {offerCount > 0 && (
-                  <Tag variant="accent">{t("recipeDetail.onOfferCount", { count: offerCount })}</Tag>
-                )}
-              </p>
-            </div>
-          </div>
-        </header>
-
-        {expanded ? (
-          <>
-            {/* Each action gets its own half of the row rather than a tight
-                inline cluster, so the three things you can do with an
-                evening's dinner read as clear, separate choices. */}
-            <div className="grid grid-cols-2 gap-3">
-              <LinkButton to={`/weeks/${weekStart}/day/${dayIndex}/cook`} size="md" block>
-                {t("cook.open")}
-              </LinkButton>
-              <ShareButton target={{ kind: "day", date: day.date }} size="md" block />
-              <RegenerateDayButton weekStart={weekStart} dayIndex={dayIndex} size="md" block />
-            </div>
-            <RecipeBody
-              description={snapshot.description}
-              servings={snapshot.servings}
-              ingredientLines={snapshot.ingredientLines}
-              instructionLines={snapshot.instructionLines}
-              offerIngredientLines={snapshot.offerIngredientLines}
-              url={snapshot.url}
-            />
-          </>
-        ) : (
-          <div className="grid grid-cols-2 gap-2">
-            <LinkButton
-              to={`/weeks/${weekStart}/day/${dayIndex}`}
-              variant="secondary"
-              size="sm"
-              block
-              className="justify-between"
-            >
-              {t("day.viewRecipe")}
-              <ChevronRightIcon size={14} />
-            </LinkButton>
-            <LinkButton to={`/weeks/${weekStart}/day/${dayIndex}/cook`} variant="secondary" size="sm" block>
-              {t("cook.open")}
-            </LinkButton>
-            <RegenerateDayButton weekStart={weekStart} dayIndex={dayIndex} block />
-            {snapshot.url && (
-              <a
-                href={snapshot.url}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center justify-center rounded-md border border-divider px-4 py-2 text-[13px] font-semibold text-muted transition-colors hover:bg-neutral-100 hover:text-text"
-              >
-                {t("day.viewOnRema")}
-              </a>
-            )}
-          </div>
+    <div className="flex flex-col gap-1.5">
+      <Card
+        as="article"
+        interactive={!expanded}
+        // The hero runs to the card's own edges, so the padding moves inside.
+        className={`gap-3 p-0 ${isToday ? "border-accent" : ""}`}
+      >
+        {expanded && snapshot.imageUrl && (
+          <HeroPhoto
+            src={snapshot.imageUrl}
+            time={snapshot.totalTimeMinutes}
+            className="overflow-hidden rounded-t-md"
+          />
         )}
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          <AdultVariantPanel variant={day.adultVariant} />
-          <ChildVariantPanel variant={day.childVariant} />
+        <div className={`flex flex-col gap-4 p-4 pt-0 first:pt-4 ${expanded ? "sm:p-6 sm:pt-0 sm:first:pt-6" : ""}`}>
+          <header className="flex flex-col gap-3">
+            <div className="flex min-w-0 flex-1 items-start gap-3">
+              {!expanded && snapshot.imageUrl && <ThumbPhoto src={snapshot.imageUrl} size={64} />}
+              <div className="min-w-0">
+                <CardKicker>
+                  {weekday} · {day.date}
+                  {isToday && <span className="ml-2 text-accent">{t("week.today")}</span>}
+                </CardKicker>
+                {expanded ? (
+                  <h1 className="mt-2 text-3xl">{snapshot.title}</h1>
+                ) : (
+                  <h3 className="mt-1 text-[17px] leading-snug">
+                    <Link to={`/weeks/${weekStart}/day/${dayIndex}`} className="hover:text-accent">
+                      {snapshot.title}
+                    </Link>
+                  </h3>
+                )}
+                {/* Servings, time and calories are the recipe's own facts, so on
+                    the day page they belong to `RecipeBody` below rather than
+                    being repeated up here. The offer count stays either way:
+                    it's about this week, not about the dish. */}
+                <p className="m-0 mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-muted">
+                  {snapshot.servings && !expanded && (
+                    <span>{t("recipeDetail.servings", { count: snapshot.servings })}</span>
+                  )}
+                  {snapshot.totalTimeMinutes && !expanded && (
+                    <span>{t("recipeDetail.totalTime", { minutes: snapshot.totalTimeMinutes })}</span>
+                  )}
+                  {!expanded && (
+                    <CalorieMeta ingredientLines={snapshot.ingredientLines} servings={snapshot.servings} />
+                  )}
+                  {offerCount > 0 && (
+                    <Tag variant="accent">{t("recipeDetail.onOfferCount", { count: offerCount })}</Tag>
+                  )}
+                </p>
+              </div>
+            </div>
+          </header>
+
+          {expanded ? (
+            <>
+              {/* Each action gets its own half of the row rather than a tight
+                  inline cluster, so the three things you can do with an
+                  evening's dinner read as clear, separate choices. */}
+              <div className="grid grid-cols-2 gap-3">
+                <LinkButton to={`/weeks/${weekStart}/day/${dayIndex}/cook`} size="md" block>
+                  {t("cook.open")}
+                </LinkButton>
+                <ShareButton target={{ kind: "day", date: day.date }} size="md" block />
+                <RegenerateDayButton weekStart={weekStart} dayIndex={dayIndex} size="md" block />
+              </div>
+              <RecipeBody
+                description={snapshot.description}
+                servings={snapshot.servings}
+                ingredientLines={snapshot.ingredientLines}
+                instructionLines={snapshot.instructionLines}
+                offerIngredientLines={snapshot.offerIngredientLines}
+                url={snapshot.url}
+              />
+            </>
+          ) : (
+            <div className="grid grid-cols-2 gap-2">
+              <LinkButton
+                to={`/weeks/${weekStart}/day/${dayIndex}`}
+                variant="secondary"
+                size="sm"
+                block
+                className="justify-between"
+              >
+                {t("day.viewRecipe")}
+                <ChevronRightIcon size={14} />
+              </LinkButton>
+              <LinkButton to={`/weeks/${weekStart}/day/${dayIndex}/cook`} variant="secondary" size="sm" block>
+                {t("cook.open")}
+              </LinkButton>
+              <RegenerateDayButton weekStart={weekStart} dayIndex={dayIndex} block />
+              {snapshot.url && (
+                <a
+                  href={snapshot.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center justify-center rounded-md border border-divider px-4 py-2 text-[13px] font-semibold text-muted transition-colors hover:bg-neutral-100 hover:text-text"
+                >
+                  {t("day.viewOnRema")}
+                </a>
+              )}
+            </div>
+          )}
+
+          <VariantsGrid adultVariant={day.adultVariant} childVariant={day.childVariant} />
         </div>
-      </div>
-    </Card>
+      </Card>
+
+      {/* Outside the card: a caveat about the app's coverage, not part of
+          the recipe itself. */}
+      <VariantGuidanceNote adultVariant={day.adultVariant} childVariant={day.childVariant} />
+    </div>
   );
 }
