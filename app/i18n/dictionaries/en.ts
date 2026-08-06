@@ -119,6 +119,7 @@ export const en: Record<keyof typeof da, string> = {
   "offers.snapshotAuto": "Fetched from etilbudsavis.dk on {{date}}.",
   "offers.snapshotValidity": "Valid {{from}}–{{to}}.",
   "offers.snapshotExpired": "{{count}} of them have expired and are no longer used.",
+  "offers.loadFailed": "Could not load offers.",
 
   "recipes.suggestionsHeading": "Best meals from this week's offers",
   "recipes.suggestionsDescription":
