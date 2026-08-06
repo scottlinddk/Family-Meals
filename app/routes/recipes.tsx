@@ -5,6 +5,7 @@ import { Card, CardTitle } from "~/ui/components/ui/Card";
 import { SearchInput } from "~/ui/components/ui/Input";
 import { ThumbPhoto } from "~/ui/components/ui/Photo";
 import { Button } from "~/ui/components/ui/Button";
+import { CalorieMeta } from "~/ui/components/RecipeCalories";
 import { ChevronRightIcon } from "~/ui/components/Icon";
 import { t } from "~/i18n/t";
 
@@ -77,14 +78,13 @@ export default function RecipesPage() {
                   {recipe.imageUrl && <ThumbPhoto src={recipe.imageUrl} size={64} />}
                   <div className="min-w-0 flex-1">
                     <CardTitle>{recipe.title}</CardTitle>
-                    {(recipe.servings || recipe.totalTimeMinutes) && (
-                      <p className="m-0 mt-1 flex gap-x-3 text-xs text-muted">
-                        {recipe.servings && <span>{t("recipeDetail.servings", { count: recipe.servings })}</span>}
-                        {recipe.totalTimeMinutes && (
-                          <span>{t("recipeDetail.totalTime", { minutes: recipe.totalTimeMinutes })}</span>
-                        )}
-                      </p>
-                    )}
+                    <p className="m-0 mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted">
+                      {recipe.servings && <span>{t("recipeDetail.servings", { count: recipe.servings })}</span>}
+                      {recipe.totalTimeMinutes && (
+                        <span>{t("recipeDetail.totalTime", { minutes: recipe.totalTimeMinutes })}</span>
+                      )}
+                      <CalorieMeta ingredientLines={recipe.ingredients} servings={recipe.servings} />
+                    </p>
                   </div>
                   <ChevronRightIcon size={18} className="shrink-0 text-muted-2" />
                 </div>

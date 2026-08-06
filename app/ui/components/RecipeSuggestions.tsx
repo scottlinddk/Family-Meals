@@ -179,7 +179,7 @@ function SuggestionCard({ suggestion }: { suggestion: RankedSuggestion }) {
       */}
       <div className="flex flex-wrap gap-1.5">
         {calories && (
-          <Tag variant="neutral">{t("suggestions.kcalPerServing", { kcal: calories.perServingKcal })}</Tag>
+          <Tag variant="neutral">{t("recipeDetail.kcalPerServing", { kcal: calories.perServingKcal })}</Tag>
         )}
         {vegetarian.vegetarian && <Tag variant="accent-2">{t("suggestions.vegetarian")}</Tag>}
       </div>

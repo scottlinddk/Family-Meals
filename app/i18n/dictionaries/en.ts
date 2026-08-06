@@ -153,7 +153,6 @@ export const en: Record<keyof typeof da, string> = {
   "suggestions.explain.calories":
     "Fewest calories per serving first. The figure is estimated from the ingredient list — REMA " +
     "publishes no nutrition data.",
-  "suggestions.kcalPerServing": "~{{kcal}} kcal/serving (estimate)",
   "suggestions.vegetarian": "Meat-free",
   "suggestions.noneVegetarian":
     "None of the fetched recipes are meat-free. Try turning the filter off, or refresh the recipes.",
@@ -173,6 +172,10 @@ export const en: Record<keyof typeof da, string> = {
   "recipeDetail.viewOriginal": "View original recipe on REMA 1000 →",
   "recipeDetail.servings": "{{count}} servings",
   "recipeDetail.totalTime": "{{minutes}} min",
+  // Shown wherever a recipe is — the "~" and "(estimate)" are not decoration:
+  // REMA publishes no nutrition data, so this is computed from the
+  // ingredient lines and must never read as a measured figure.
+  "recipeDetail.kcalPerServing": "~{{kcal}} kcal/serving (estimate)",
   "recipeDetail.onOfferBadge": "On offer",
   "recipeDetail.onOfferCount": "{{count}} ingredient(s) on offer",
   "recipeDetail.noIngredients":

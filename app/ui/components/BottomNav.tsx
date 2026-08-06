@@ -57,15 +57,17 @@ export function BottomNav() {
               key={to}
               to={to}
               aria-current={active ? "page" : undefined}
-              className={`flex min-w-0 flex-1 flex-col items-center gap-0.5 pt-1.5 pb-1 text-[10px] leading-tight font-semibold transition-colors ${
+              className={`flex min-w-0 flex-1 flex-col items-center gap-0.5 pt-2 pb-1.5 text-[10px] leading-tight font-semibold transition-colors ${
                 active ? "text-accent" : "text-muted hover:text-text"
               }`}
             >
-              <Icon size={17} />
+              <Icon size={19} />
+              {/* The label stays at 10px whatever else grows: "Bruger &
+                  familie" already runs 77px of an 80px column at 320px. */}
               <span className="max-w-full truncate">{t(labelKey)}</span>
               <span
                 aria-hidden="true"
-                className={`h-[2px] w-5 rounded-full ${active ? "bg-accent" : ""}`}
+                className={`h-[3px] w-5.5 rounded-full ${active ? "bg-accent" : ""}`}
               />
             </NavLink>
           );
