@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { AdultVariant, ChildVariant } from "~/domain/types";
+import { InfoPopover } from "~/ui/components/InfoPopover";
 import { t } from "~/i18n/t";
 
 /**
@@ -10,10 +11,25 @@ import { t } from "~/i18n/t";
  * they sit in. The soft mint is the same tint the header band uses, at the
  * one strength the palette allows.
  */
-function VariantSection({ title, children }: { title: string; children: ReactNode }) {
+function VariantSection({
+  title,
+  notCurated,
+  children,
+}: {
+  title: string;
+  /** Shown behind an info icon instead of inline, so an uncurated recipe's
+   *  panel reads the same as a curated one at a glance. */
+  notCurated?: boolean;
+  children: ReactNode;
+}) {
   return (
     <section className="flex flex-col gap-1.5 rounded-sm bg-accent-100 p-3.5">
-      <h4 className="text-[13px] font-semibold text-accent-700">{title}</h4>
+      <div className="flex items-center gap-1.5">
+        <h4 className="text-[13px] font-semibold text-accent-700">{title}</h4>
+        {notCurated && (
+          <InfoPopover ariaLabel={t("variant.notCurated")} items={[{ heading: title, body: t("variant.notCurated") }]} />
+        )}
+      </div>
       {children}
     </section>
   );
@@ -21,8 +37,7 @@ function VariantSection({ title, children }: { title: string; children: ReactNod
 
 export function AdultVariantPanel({ variant }: { variant: AdultVariant }) {
   return (
-    <VariantSection title={t("variant.adultsHeading")}>
-      {!variant.curated && <p className="m-0 text-[13px] text-muted italic">{t("variant.notCurated")}</p>}
+    <VariantSection title={t("variant.adultsHeading")} notCurated={!variant.curated}>
       {variant.substitutions.length > 0 && (
         <ul className="m-0 list-disc pl-4.5 text-[13px]">
           {variant.substitutions.map((sub, i) => (
@@ -46,8 +61,7 @@ export function AdultVariantPanel({ variant }: { variant: AdultVariant }) {
 
 export function ChildVariantPanel({ variant }: { variant: ChildVariant }) {
   return (
-    <VariantSection title={t("variant.childHeading")}>
-      {!variant.curated && <p className="m-0 text-[13px] text-muted italic">{t("variant.notCurated")}</p>}
+    <VariantSection title={t("variant.childHeading")} notCurated={!variant.curated}>
       {variant.additions.length > 0 && (
         <ul className="m-0 list-disc pl-4.5 text-[13px]">
           {variant.additions.map((addition, i) => (

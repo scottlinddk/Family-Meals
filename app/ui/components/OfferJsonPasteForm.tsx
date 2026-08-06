@@ -139,19 +139,23 @@ export function OfferJsonPasteForm() {
         <div className="mt-3">
           <OfferSnapshotNote data={offers.data} />
 
-          <h3 className="mt-3 text-[11px] font-semibold tracking-[0.08em] text-muted uppercase">
-            {t("offers.thisWeek", { count: offers.data.offers.length })}
-          </h3>
-          <OfferList offers={offers.data.offers} />
+          <div className="mt-3 rounded-md border border-accent-300 bg-accent-100 p-3.5">
+            <h3 className="text-sm font-bold tracking-[0.02em] text-accent-700 uppercase">
+              {t("offers.thisWeek", { count: offers.data.offers.length })}
+            </h3>
+            <OfferList offers={offers.data.offers} />
+          </div>
 
-          <h3 className="mt-3 text-[11px] font-semibold tracking-[0.08em] text-muted uppercase">
-            {t("offers.nextWeek", { count: offers.data.upcomingOffers.length })}
-          </h3>
-          {offers.data.upcomingOffers.length > 0 ? (
-            <OfferList offers={offers.data.upcomingOffers} />
-          ) : (
-            <p className="m-0 mt-1.5 text-sm text-muted">{t("offers.nextWeekEmpty")}</p>
-          )}
+          <div className="mt-3 rounded-md border border-divider bg-neutral-100 p-3.5">
+            <h3 className="text-sm font-bold tracking-[0.02em] text-neutral-700 uppercase">
+              {t("offers.nextWeek", { count: offers.data.upcomingOffers.length })}
+            </h3>
+            {offers.data.upcomingOffers.length > 0 ? (
+              <OfferList offers={offers.data.upcomingOffers} />
+            ) : (
+              <p className="m-0 mt-1.5 text-sm text-muted">{t("offers.nextWeekEmpty")}</p>
+            )}
+          </div>
         </div>
       )}
     </Card>

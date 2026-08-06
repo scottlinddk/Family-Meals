@@ -18,7 +18,7 @@ export default function ShoppingListPage({ params }: Route.ComponentProps) {
       <BackLink to={`/weeks/${weekStart}`}>{t("day.backToWeek")}</BackLink>
 
       <div className="mt-2 mb-5 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="m-0 text-2xl">{t("shoppingList.title")}</h1>
+        <h1 className="m-0 min-w-0 text-2xl">{t("shoppingList.title")}</h1>
         {list.data && list.data.itemCount > 0 && <ShareListPanel weekStart={weekStart} />}
       </div>
 

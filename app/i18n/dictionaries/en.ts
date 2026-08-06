@@ -90,6 +90,9 @@ export const en: Record<keyof typeof da, string> = {
   "dayCard.regenerating": "Regenerating...",
   "dayCard.regenerateThisDay": "Regenerate this day",
 
+  "info.close": "Close",
+
+  "infant.calloutLabel": "Age guidance",
   "infant.label": "6-month-old",
   "infant.note":
     "This app does not plan meals for your 6-month-old. Follow your health visitor's " +
@@ -142,6 +145,7 @@ export const en: Record<keyof typeof da, string> = {
   "nav.plan": "Week",
   "nav.recipes": "Recipes",
   "nav.offers": "Offers",
+  "nav.shoppingList": "Shopping",
   "nav.family": "User & family",
   "nav.primary": "Main menu",
 
@@ -165,6 +169,7 @@ export const en: Record<keyof typeof da, string> = {
   "suggestions.nextPage": "Next page",
   "suggestions.page": "Page {{page}} of {{pages}}",
 
+  "recipesPage.heading": "Recipes",
   "recipesPage.title": "All recipes",
   "recipesPage.searchLabel": "Search by name or ingredient",
   "recipesPage.searchPlaceholder": "e.g. broccoli, salmon…",

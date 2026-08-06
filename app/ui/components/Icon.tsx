@@ -109,3 +109,24 @@ export function SignOutIcon(props: SVGProps<SVGSVGElement> & { size?: number }) 
     </Glyph>
   );
 }
+
+export function InfoIcon(props: SVGProps<SVGSVGElement> & { size?: number }) {
+  return (
+    <Glyph {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 11v5.5" />
+      <path d="M12 7.5v.01" />
+    </Glyph>
+  );
+}
+
+export function ChecklistIcon(props: SVGProps<SVGSVGElement> & { size?: number }) {
+  return (
+    <Glyph {...props}>
+      <path d="M9 6h11M9 12h11M9 18h11" />
+      <path d="m4 6 1 1 2-2" />
+      <path d="m4 12 1 1 2-2" />
+      <path d="m4 18 1 1 2-2" />
+    </Glyph>
+  );
+}
