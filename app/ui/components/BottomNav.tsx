@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from "react-router";
-import { BasketIcon, BookIcon, CalendarIcon, UsersIcon } from "~/ui/components/Icon";
+import { BasketIcon, BookIcon, CalendarIcon, ChecklistIcon, UsersIcon } from "~/ui/components/Icon";
 import { t, type TranslationKey } from "~/i18n/t";
 
 /**
@@ -17,15 +17,23 @@ const NAV_ITEMS: {
     to: "/",
     labelKey: "nav.plan",
     Icon: CalendarIcon,
-    match: (p) => p === "/" || p.startsWith("/weeks"),
+    // Excludes `/weeks/:weekStart/shopping-list`, which belongs to the
+    // shopping list tab below rather than the plan it's nested under.
+    match: (p) => (p === "/" || p.startsWith("/weeks")) && !p.includes("/shopping-list"),
   },
   { to: "/recipes", labelKey: "nav.recipes", Icon: BookIcon, match: (p) => p.startsWith("/recipes") },
   { to: "/offers", labelKey: "nav.offers", Icon: BasketIcon, match: (p) => p.startsWith("/offers") },
+  {
+    to: "/shopping-list",
+    labelKey: "nav.shoppingList",
+    Icon: ChecklistIcon,
+    match: (p) => p.includes("/shopping-list"),
+  },
   { to: "/family", labelKey: "nav.family", Icon: UsersIcon, match: (p) => p.startsWith("/family") },
 ];
 
 /**
- * The four sections of the app, along the bottom of the screen.
+ * The five sections of the app, along the bottom of the screen.
  *
  * A flat white bar with a hairline above it — not floating, not a pill, not
  * dark — because it belongs to the page rather than hovering over it. The
@@ -37,9 +45,9 @@ const NAV_ITEMS: {
  * item is still a full column wide, which is what makes it a comfortable
  * target at this height.
  *
- * It replaces the old hamburger menu: four destinations are few enough to
- * always be on screen, and a plan you flick between week, recipes and offers
- * shouldn't cost two taps each time.
+ * It replaces the old hamburger menu: five destinations are few enough to
+ * always be on screen, and a plan you flick between week, recipes, offers
+ * and the shopping list shouldn't cost two taps each time.
  */
 export function BottomNav() {
   const { pathname } = useLocation();

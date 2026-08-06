@@ -89,6 +89,9 @@ export const da = {
   "dayCard.regenerating": "Genererer...",
   "dayCard.regenerateThisDay": "Genskab denne dag",
 
+  "info.close": "Luk",
+
+  "infant.calloutLabel": "Aldersvejledning",
   "infant.label": "6 måneder gammel",
   "infant.note":
     "Denne app planlægger ikke mad til jeres 6 måneder gamle barn. Følg sundhedsplejerskens " +
@@ -142,6 +145,7 @@ export const da = {
   "nav.plan": "Uge",
   "nav.recipes": "Opskrifter",
   "nav.offers": "Tilbud",
+  "nav.shoppingList": "Indkøb",
   "nav.family": "Bruger & familie",
   "nav.primary": "Hovedmenu",
 
@@ -165,6 +169,7 @@ export const da = {
   "suggestions.nextPage": "Næste side",
   "suggestions.page": "Side {{page}} af {{pages}}",
 
+  "recipesPage.heading": "Opskrifter",
   "recipesPage.title": "Alle opskrifter",
   "recipesPage.searchLabel": "Søg på navn eller ingrediens",
   "recipesPage.searchPlaceholder": "f.eks. broccoli, laks…",

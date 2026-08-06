@@ -58,8 +58,13 @@ export function ShoppingListView({
   return (
     <>
       <div className="mb-4 flex flex-col gap-1">
-        <div className="flex items-center justify-between gap-3">
-          <p className="m-0 text-sm text-muted">
+        {/* `min-w-0` on the summary text and `flex-wrap` on the row: the
+            summary and the "clear marks" button are both flex items with no
+            wrap otherwise, and a long summary string (or a translation
+            that's longer than the Danish original) could push the button
+            off the edge of a narrow phone instead of wrapping under it. */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="m-0 min-w-0 text-sm text-muted">
             {t("shoppingList.summary", {
               remaining: progress.remaining,
               total: list.itemCount,

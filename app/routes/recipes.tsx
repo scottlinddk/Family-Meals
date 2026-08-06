@@ -6,6 +6,7 @@ import { SearchInput } from "~/ui/components/ui/Input";
 import { ThumbPhoto } from "~/ui/components/ui/Photo";
 import { Button } from "~/ui/components/ui/Button";
 import { CalorieMeta } from "~/ui/components/RecipeCalories";
+import { RecipeSuggestions } from "~/ui/components/RecipeSuggestions";
 import { ChevronRightIcon } from "~/ui/components/Icon";
 import { t } from "~/i18n/t";
 
@@ -27,7 +28,11 @@ export default function RecipesPage() {
 
   return (
     <>
-      <h1 className="mb-4 text-2xl">{t("recipesPage.title")}</h1>
+      <h1 className="mb-4 text-2xl">{t("recipesPage.heading")}</h1>
+
+      <RecipeSuggestions />
+
+      <h2 className="mt-8 mb-4 text-lg">{t("recipesPage.title")}</h2>
 
       <div className="mb-4">
         <SearchInput
