@@ -236,10 +236,17 @@ function SuggestionCard({ suggestion }: { suggestion: RankedSuggestion }) {
       */}
       {matchedIngredients.length > 0 ? (
         <ul className="m-0 flex list-none flex-col gap-1 p-0 text-sm">
-          {matchedIngredients.map(({ ingredient, offerNames }) => (
-            <li key={ingredient} className="flex flex-wrap items-center gap-2">
-              <span className="font-medium">{ingredient}</span>
-              <span className="text-xs text-muted">{offerNames.join(", ")}</span>
+          {matchedIngredients.map(({ ingredient, offerNames, weekendOnlyOfferNames }) => (
+            <li key={ingredient} className="flex flex-col gap-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-medium">{ingredient}</span>
+                <span className="text-xs text-muted">{offerNames.join(", ")}</span>
+              </div>
+              {weekendOnlyOfferNames.length > 0 && (
+                <Tag variant="accent-2">
+                  {t("suggestions.weekendOnly", { offers: weekendOnlyOfferNames.join(", ") })}
+                </Tag>
+              )}
             </li>
           ))}
         </ul>

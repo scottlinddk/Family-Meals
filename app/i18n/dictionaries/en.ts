@@ -157,6 +157,7 @@ export const en: Record<keyof typeof da, string> = {
     "Fewest calories per serving first. The figure is estimated from the ingredient list — REMA " +
     "publishes no nutrition data.",
   "suggestions.vegetarian": "Meat-free",
+  "suggestions.weekendOnly": "Weekend only: {{offers}}",
   "suggestions.noneVegetarian":
     "None of the fetched recipes are meat-free. Try turning the filter off, or refresh the recipes.",
   "suggestions.loadFailed": "The suggestions couldn't be loaded.",

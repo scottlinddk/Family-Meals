@@ -46,6 +46,8 @@ export interface RankedSuggestion {
   offerCoverage: number;
   matchedIngredients: MatchedIngredient[];
   matchedOfferNames: string[];
+  /** Subset of `matchedOfferNames` that only run part of the week (see `offerTiming.ts`). */
+  weekendOnlyOfferNames: string[];
   /** Null when the recipe has no ingredient list to estimate from. */
   calories: CalorieEstimate | null;
   vegetarian: VegetarianAssessment;
@@ -159,6 +161,7 @@ export function rankRecipeSuggestions(
       offerCoverage: offerMatch.coverage,
       matchedIngredients: offerMatch.matchedIngredients,
       matchedOfferNames: offerMatch.matchedOfferNames,
+      weekendOnlyOfferNames: offerMatch.weekendOnlyOfferNames,
       calories,
       vegetarian,
       score:

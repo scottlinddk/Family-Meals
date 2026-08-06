@@ -157,6 +157,7 @@ export const da = {
     "Færrest kalorier pr. portion først. Tallet er et skøn ud fra ingredienslisten — REMA " +
     "oplyser ikke næringsindhold.",
   "suggestions.vegetarian": "Kødfri",
+  "suggestions.weekendOnly": "Kun i weekenden: {{offers}}",
   "suggestions.noneVegetarian":
     "Ingen af de hentede opskrifter er kødfri. Prøv at slå filteret fra, eller hent opskrifterne igen.",
   "suggestions.loadFailed": "Forslagene kunne ikke hentes.",

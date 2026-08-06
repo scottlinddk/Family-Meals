@@ -1,5 +1,6 @@
 import type { ExternalRecipe, Offer } from "~/domain/types";
 import { offersMatchingIngredient } from "~/domain/recipes/ingredientOfferScore";
+import { isWeekendOnlyOffer } from "~/domain/offers/offerTiming";
 
 /** One ingredient line of a recipe that is covered by this week's offers. */
 export interface MatchedIngredient {
@@ -7,6 +8,12 @@ export interface MatchedIngredient {
   ingredient: string;
   /** Offer names covering it — usually one, occasionally a bundled offer. */
   offerNames: string[];
+  /**
+   * Subset of `offerNames` that only run part of the week (see
+   * `offerTiming.ts`) — a recipe planned for Tuesday shouldn't be sold on an
+   * ingredient that isn't discounted until Thursday.
+   */
+  weekendOnlyOfferNames: string[];
   /** Cheapest matching offer price, for showing what the saving applies to. */
   price?: number;
 }
@@ -20,6 +27,8 @@ export interface RankedExternalRecipe {
   matchedIngredients: MatchedIngredient[];
   /** Offer names that matched at least one ingredient, for display ("on offer: ..."). */
   matchedOfferNames: string[];
+  /** Subset of `matchedOfferNames` that only run part of the week. */
+  weekendOnlyOfferNames: string[];
 }
 
 /**
@@ -43,16 +52,21 @@ export function rankExternalRecipesByOffers(
     .map((recipe) => {
       const matchedIngredients: MatchedIngredient[] = [];
       const matchedOfferNames = new Set<string>();
+      const weekendOnlyOfferNames = new Set<string>();
 
       for (const ingredient of recipe.ingredients) {
         const matches = offersMatchingIngredient(ingredient, offers);
         if (matches.length === 0) continue;
 
-        for (const offer of matches) matchedOfferNames.add(offer.name);
+        for (const offer of matches) {
+          matchedOfferNames.add(offer.name);
+          if (isWeekendOnlyOffer(offer)) weekendOnlyOfferNames.add(offer.name);
+        }
 
         matchedIngredients.push({
           ingredient,
           offerNames: matches.map((offer) => offer.name),
+          weekendOnlyOfferNames: matches.filter(isWeekendOnlyOffer).map((offer) => offer.name),
           price: Math.min(...matches.map((offer) => offer.price)),
         });
       }
@@ -63,6 +77,7 @@ export function rankExternalRecipesByOffers(
         coverage: recipe.ingredients.length > 0 ? matchedIngredients.length / recipe.ingredients.length : 0,
         matchedIngredients,
         matchedOfferNames: [...matchedOfferNames],
+        weekendOnlyOfferNames: [...weekendOnlyOfferNames],
       };
     })
     .sort((a, b) => b.score - a.score || b.coverage - a.coverage);
