@@ -119,6 +119,7 @@ export const da = {
   "offers.snapshotAuto": "Hentet fra etilbudsavis.dk {{date}}.",
   "offers.snapshotValidity": "Gælder {{from}}–{{to}}.",
   "offers.snapshotExpired": "{{count}} af tilbuddene er udløbet og bruges ikke længere.",
+  "offers.loadFailed": "Kunne ikke indlæse tilbud.",
 
   "recipes.suggestionsHeading": "Bedste måltider ud fra ugens tilbud",
   "recipes.suggestionsDescription":

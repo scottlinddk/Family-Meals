@@ -135,6 +135,9 @@ export function OfferJsonPasteForm() {
         </Accordion>
       </div>
 
+      {offers.isLoading && <p className="mt-3 text-sm text-muted">{t("week.loading")}</p>}
+      {offers.isError && <p className="mt-3 text-sm text-red-700">{t("offers.loadFailed")}</p>}
+
       {offers.data?.snapshot && (
         <div className="mt-3">
           <OfferSnapshotNote data={offers.data} />

@@ -32,7 +32,7 @@ export default function SignupPage() {
   const redirectTo = searchParams.get("redirectTo") ?? "/";
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-5 p-8">
+    <main className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center gap-5 p-8">
       <div>
         <p className="text-sm text-muted">{t("app.title")}</p>
         <h1 className="mt-1 text-3xl">{t("auth.signup.heading")}</h1>

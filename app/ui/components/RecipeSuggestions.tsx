@@ -152,6 +152,8 @@ export function RecipeSuggestions() {
       </div>
       <p className="mt-1.5 mb-0 text-xs text-muted">{t(SORT_EXPLANATION_KEYS[preferences.sort])}</p>
 
+      {suggestions.isLoading && <p className="mt-3 text-sm text-muted">{t("week.loading")}</p>}
+
       {suggestions.isError && <p className="mt-3 text-sm text-red-700">{t("suggestions.loadFailed")}</p>}
 
       {suggestions.data && suggestions.data.length === 0 && (

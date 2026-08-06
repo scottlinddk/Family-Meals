@@ -47,7 +47,15 @@ export function Layout({ children }: { children: ReactNode }) {
         <Meta />
         <Links />
       </head>
-      <body className="min-h-screen bg-bg font-body text-text antialiased">
+      {/*
+        `min-h-dvh` rather than `min-h-screen` (`100vh`): iOS Safari sizes
+        `100vh` to the page with its toolbar collapsed, which is taller than
+        what's actually visible whenever the toolbar is showing. That left
+        the fixed bottom nav floating above a strip of blank body with
+        nothing below it — `dvh` tracks the toolbar and always matches what's
+        on screen.
+      */}
+      <body className="min-h-dvh overflow-x-hidden bg-bg font-body text-text antialiased">
         {children}
         <ScrollRestoration />
         <Scripts />
