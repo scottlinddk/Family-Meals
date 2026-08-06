@@ -270,6 +270,7 @@ export const en: Record<keyof typeof da, string> = {
   "variant.childHeading": "Toddler (base dish + calorie-dense addition)",
   "variant.addLabel": "Add {{qty}}{{unit}} {{name}}",
   "variant.notCurated": "No calorie guidance is available for this recipe yet — adjust portions manually.",
+  "variant.guidanceMissingLabel": "Guidance missing for this dish",
 
   "family.pageTitle": "User & family",
   "family.accountHeading": "User",
