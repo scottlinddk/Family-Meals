@@ -33,6 +33,11 @@ export default [
   // the ICS feed below — the person in the shop may not have an account.
   route("list/:token", "routes/list.$token.tsx"),
 
+  // The read-only twin of the pages above: a week, a day or a recipe, handed
+  // to someone who has no account and isn't being asked to get one. Same
+  // token-in-the-path model, and nothing here can be written back.
+  route("share/:token", "routes/share.$token.tsx"),
+
   // Live ICS subscription feed — a resource route (no HTML), authenticated
   // by the opaque token in the path rather than a Supabase Auth session.
   route("calendar/:token.ics", "routes/calendar.$token[.]ics.tsx"),
@@ -48,6 +53,9 @@ export default [
   // Token-authenticated twins of the two routes above, for the share link.
   route("api/shopping-list/:token", "routes/api.shopping-list.$token.tsx"),
   route("api/shopping-list/:token/marks", "routes/api.shopping-list.$token.marks.tsx"),
+  // Issuing/revoking `/share/{token}` links (session), and reading one (token).
+  route("api/shares", "routes/api.shares.tsx"),
+  route("api/shared/:token", "routes/api.shared.$token.tsx"),
   route("api/offers", "routes/api.offers.tsx"),
   route("api/offers/refresh", "routes/api.offers.refresh.tsx"),
   route("api/recipes", "routes/api.recipes.tsx"),

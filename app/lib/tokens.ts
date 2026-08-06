@@ -24,3 +24,14 @@ export function generateInviteToken(): string {
 export function generateShoppingListShareToken(): string {
   return nanoid(32);
 }
+
+/**
+ * Generates the unguessable token embedded in a `/share/{token}` link — the
+ * read-only week, day or recipe someone sends out of the app. Same shape and
+ * strength as the tokens above, and the same bargain: the URL is the whole
+ * credential, so it is scoped to exactly one thing and revocable (see
+ * `planShareRepository`).
+ */
+export function generatePlanShareToken(): string {
+  return nanoid(32);
+}

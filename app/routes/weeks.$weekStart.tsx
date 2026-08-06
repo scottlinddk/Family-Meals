@@ -3,6 +3,7 @@ import type { Route } from "./+types/weeks.$weekStart";
 import { useWeekPlan, useGenerateWeekPlan, NoRecipesError } from "~/ui/hooks/useWeekPlan";
 import { SchemaOutOfDateError } from "~/lib/dbErrors";
 import { WeekGrid } from "~/ui/components/WeekGrid";
+import { ShareButton } from "~/ui/components/ShareButton";
 import { InfantNote } from "~/ui/components/InfantNote";
 import { Button, IconLink, LinkButton } from "~/ui/components/ui/Button";
 import { CardKicker } from "~/ui/components/ui/Card";
@@ -80,6 +81,13 @@ export default function WeekPage({ params }: Route.ComponentProps) {
             <LinkButton to={`/weeks/${weekStart}/shopping-list`} variant="primary" block className="sm:w-auto">
               {t("shoppingList.open")}
             </LinkButton>
+            {/* Sends the seven dinners as they stand — read-only, and live,
+                so a dish swapped after sending updates for them too. */}
+            <ShareButton
+              target={{ kind: "week", weekStartDate: weekStart }}
+              size="md"
+              className="w-full sm:w-auto"
+            />
           </div>
           <WeekGrid week={weekPlan.data} />
         </>

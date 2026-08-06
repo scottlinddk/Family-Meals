@@ -262,6 +262,57 @@ export const shoppingListShares = pgTable(
   ],
 );
 
+export const planShareKind = pgEnum("plan_share_kind", ["week", "day", "recipe"]);
+
+/**
+ * A `/share/{token}` link handing one *read-only* thing to someone outside
+ * the family: the week's dinners, one evening's dinner, or a recipe.
+ *
+ * Same bearer-URL model as `shoppingListShares` and the ICS feed — the token
+ * is the whole credential, so it decides what is served and nothing about it
+ * comes from the caller. Unlike the shopping-list link, holders can't write
+ * anything at all: a plan someone was sent to look at is not a plan they
+ * should be able to edit, and there is no equivalent of a tick box to make
+ * shared state worth having.
+ *
+ * One row per kind rather than three tables, because everything around the
+ * link — issue, reuse, revoke — is identical and only the payload differs.
+ * The three target columns are nullable and exactly one is set per row
+ * (see `ShareTarget` in `app/domain/sharing/shareTarget.ts`): a week share
+ * carries `weekStartDate`, a day share the `dayDate` it is pinned to, and a
+ * recipe share the `externalRecipes` id.
+ *
+ * Days are pinned by date rather than by their index in the week, so a link
+ * sent for Wednesday still opens Wednesday after the week is regenerated
+ * around it. Like the ICS feed, the page is computed fresh on every request
+ * — the link shares the plan, not a copy of it, so a swapped dish shows up
+ * for the person holding the link too.
+ *
+ * Revoking sets `revokedAt`; the row is kept so a revoked token stays
+ * permanently dead rather than becoming re-issuable.
+ */
+export const planShares = pgTable(
+  "plan_shares",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    familyId: uuid("family_id")
+      .notNull()
+      .references(() => families.id, { onDelete: "cascade" }),
+    kind: planShareKind("kind").notNull(),
+    /** Set for `week` shares — the Monday the shared week starts on. */
+    weekStartDate: date("week_start_date"),
+    /** Set for `day` shares — the exact date whose dinner is shared. */
+    dayDate: date("day_date"),
+    /** Set for `recipe` shares — an `external_recipes.id`. */
+    recipeId: text("recipe_id"),
+    token: text("token").notNull().unique(),
+    createdByUserId: uuid("created_by_user_id").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+  },
+  (table) => [index("plan_shares_family_id_kind_idx").on(table.familyId, table.kind)],
+);
+
 export const weekPlans = pgTable(
   "week_plans",
   {

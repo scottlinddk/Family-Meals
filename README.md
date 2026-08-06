@@ -91,7 +91,7 @@ the crawl uses are ordinary crawlable pages.
 This cache is the single source of recipes for the whole app: the `/recipes`
 browse page (`GET /api/recipes`), a recipe's detail page (`GET
 /api/recipes/:id`), the "Best meals from this week's offers" panel
-(`GET /api/recipes/suggestions`, `app/domain/recipes/externalRecipeMatch.ts`),
+(`GET /api/recipes/suggestions`, `app/domain/recipes/suggestionRanking.ts`),
 and the weekly plan generator (`generateWeekPlan.ts`/`regenerateDay.ts`,
 ranked by offer overlap the same way). Because REMA's own recipes only
 expose a title, ingredient list, and image (no structured quantities or a
@@ -134,6 +134,69 @@ fix is already in reach — REMA's listing payload links every recipe ingredient
 to a specific product (`digitalProduct`, with `is_campaign`/`is_advertised`
 price flags), so ingredient-to-offer could become an exact product-id join
 instead of a string comparison. Nothing in the app uses that field yet.
+
+### Ranking the suggestions
+
+Offer overlap is what the panel *used* to rank on, and on its own it answers
+only one of the three questions that actually decide a Tuesday dinner. The
+other two — how heavy it is, and whether it's meat-free — aren't in the source
+data at all, so they're computed:
+
+- **Calories** (`calorieEstimate.ts`). REMA publishes no nutrition data, so
+  kcal per serving is read off the ingredient lines: a quantity and unit are
+  parsed from each line (`500 g`, `2-3 spsk` averaged, `½ citron`, `2 løg`
+  counted by item weight), then priced through a table of kcal per 100 g. It
+  is an *estimate* and says so — `coverage` reports what share of the lines
+  were recognised, and the UI writes the figure with a `~`. Its job is
+  comparative, not nutritional: a lentil soup and a creamy pork dish differ by
+  a factor of three, which no plausible error in the table reorders.
+- **Meat-free** (`vegetarian.ts`). REMA's own `kodfri` theme tag decides —
+  it's on 68 of the 350 scraped dinners — and a scan of the ingredient lines
+  can only ever take the claim away, never grant it. That order came out of
+  measurement: the text scan alone called 115 of 350 recipes meat-free,
+  *Pasta, kødboller og tomatsovs* among them, while the tag is the publisher
+  classifying its own recipe. The veto still earns its place — *Aspargessuppe*
+  is tagged `kodfri` and lists "1 pakke bacon i tern", and several tagged soups
+  are built on kyllingefond or oksebouillon. The asymmetry drives everything
+  here: a missed suggestion costs one dinner idea, a wrong one puts meat in
+  front of someone who asked for none, so the tag-and-veto pair is deliberately
+  stricter than either signal alone. (Note that `kyllingebouillon` counts as
+  chicken here and deliberately *doesn't* in `ingredientOfferScore` — buying
+  the stock cube doesn't get you the bird, but eating it isn't meat-free. Two
+  questions, same word, different answers.)
+
+`suggestionRanking.ts` scores every recipe on all three and changes what they
+*weigh* rather than swapping the ranking out, so sorting by calories still
+prefers a cheap light dinner to an expensive one:
+
+| mode | offers | calories | meat-free |
+| --- | --- | --- | --- |
+| `balanced` (default) | 0.5 | 0.3 | 0.2 |
+| `offers` | 0.85 | 0.1 | 0.05 |
+| `calories` | 0.15 | 0.8 | 0.05 |
+
+The offer component folds both numbers the matcher produces — matched-ingredient
+count against the best any recipe managed this week (0.7) and the share of the
+recipe that is (0.3) — so three discounted ingredients beat one, and between
+two recipes with three, the shorter shop wins. Calories are normalised by
+**rank within the candidate set**, not min-max: one 4000 kcal outlier would
+otherwise compress every ordinary dinner into a few percent of the range.
+Meat-free is also a hard *filter* (`?vegetar=1`), because when it's asked for
+it's a requirement, and a list that merely demotes meat still serves it.
+
+Ties break on offer count, then calories, then title, so the same week always
+produces the same list. The mode and the filter live in the query string
+(`/offers?sort=calories&vegetar=1`) — a bookmarkable, sendable view — and the
+endpoint returns the best 24 rather than all 350, since a suggestion list you
+scroll for a minute isn't suggesting anything.
+
+Both computed signals were developed the way the offer matcher was: by running
+against the committed `scrape-output/` capture rather than against invented
+examples. That found the two bugs `suggestionRanking.realData.test.ts` now pins
+— a typo'd unit in REMA's own data ("100 cm fløde", in *Saltimbocca på
+Frilandsgris*) parsed as a hundred portions of cream and priced that recipe at
+8900 kcal a serving, and the meat-free over-reporting above. Ingredient
+recognition currently sits at 94% of lines across the 350 recipes.
 
 ## Cook mode
 
@@ -244,6 +307,42 @@ screen so a poll landing mid-queue can't make the line someone just tapped
 flick back. Undelivered marks say so under the count; a mark the server
 *refused* says something different, because then the screen and the family's
 list disagree.
+
+## Sharing a week, a day or a recipe
+
+Three things besides the shopping list are worth sending to someone: the
+week's dinners ("here's what we're eating"), one evening's dinner (the
+grandparent cooking on Thursday), and a recipe. All three are one feature —
+`plan_shares`, with a `kind` — because everything around the link is identical
+and only the payload differs: issue it, reuse it, revoke it, and render it for
+whoever opens `/share/{token}`.
+
+Same bearer-URL model as the ICS feed and the shopping list: the token is the
+whole credential, so it decides the family *and* what is served, and nothing
+about the answer comes from the caller. Unlike `/list/{token}`, holders can't
+write anything at all — a plan someone was sent to look at is not a plan they
+should be able to edit, and there's no equivalent of a tick box to make shared
+state worth having. `ShareButton` sits on the week page, the day card and the
+recipe page; pressing it opens the sheet *and* issues the link in one gesture,
+since wanting the link is the only reason to press it, and hands back the live
+link if there is one rather than killing the one already sitting in someone's
+messages.
+
+A day is pinned by its **date**, not by its index in the week, so a link sent
+for Wednesday still opens Wednesday after the week is regenerated around it.
+And like the ICS feed, the page is computed fresh on every request: the link
+shares the plan, not a copy of it, so a dish swapped on Tuesday shows up for
+the person holding the link too. A live link whose content has moved on — the
+week not generated yet, the recipe gone in a re-scrape — says so specifically,
+which is a different thing from the link being dead (revoked or unknown, and a
+404).
+
+What each kind shows differs on purpose. A shared **week** is the compact form
+of all seven days — photo, weekday, dish, timing — because someone sent it to
+say what's for dinner, and seventy ingredient lines would bury that. A shared
+**day** is the whole recipe *plus both variants*, since the adult/child split
+is what makes the plan this family's: whoever is cooking needs to know the
+toddler's plate isn't the one being cut down.
 
 ## Design system
 

@@ -141,6 +141,23 @@ export const en: Record<keyof typeof da, string> = {
   "nav.family": "Family",
   "nav.primary": "Main menu",
 
+  "suggestions.sortLabel": "Sort by",
+  "suggestions.sort.balanced": "Balanced",
+  "suggestions.sort.offers": "On offer",
+  "suggestions.sort.calories": "Fewest calories",
+  "suggestions.vegetarianOnly": "Meat-free only",
+  "suggestions.explain.balanced":
+    "Weighs this week's offers, calories per serving and meat-free dishes together.",
+  "suggestions.explain.offers": "Most ingredients on offer first — calories break the ties.",
+  "suggestions.explain.calories":
+    "Fewest calories per serving first. The figure is estimated from the ingredient list — REMA " +
+    "publishes no nutrition data.",
+  "suggestions.kcalPerServing": "~{{kcal}} kcal/serving (estimate)",
+  "suggestions.vegetarian": "Meat-free",
+  "suggestions.noneVegetarian":
+    "None of the fetched recipes are meat-free. Try turning the filter off, or refresh the recipes.",
+  "suggestions.loadFailed": "The suggestions couldn't be loaded.",
+
   "recipesPage.title": "All recipes",
   "recipesPage.searchLabel": "Search by name or ingredient",
   "recipesPage.searchPlaceholder": "e.g. broccoli, salmon…",
@@ -162,6 +179,39 @@ export const en: Record<keyof typeof da, string> = {
 
   "day.viewRecipe": "See the full recipe",
   "day.viewOnRema": "Open on REMA 1000 ↗",
+
+  "share.button.week": "Share week",
+  "share.button.day": "Share day",
+  "share.button.recipe": "Share recipe",
+  "share.heading.week": "Share the week's meal plan",
+  "share.heading.day": "Share this day's dinner",
+  "share.heading.recipe": "Share the recipe",
+  "share.description.week":
+    "Send the link to anyone — no account needed. They can see the week's seven dinners but " +
+    "change nothing, and the link always shows the plan as it stands right now. You can revoke " +
+    "it at any time.",
+  "share.description.day":
+    "Send the link to anyone — no account needed. They can see the day's dish with its " +
+    "ingredients, method and both plates (adult and child), but change nothing. Swap the dish " +
+    "later and the link follows.",
+  "share.description.recipe":
+    "Send the link to anyone — no account needed. They can see the whole recipe, but nothing " +
+    "else of your meal plan.",
+  "share.creating": "Creating link...",
+  "share.failed": "The share link couldn't be created. Try again.",
+  "share.revoke": "Revoke link",
+  "share.revoking": "Revoking...",
+  "share.close": "Close",
+  "share.sharedBy": "Shared from Family Meals",
+  "share.sharedByFamily": "Shared by {{family}}",
+  "share.loadFailed": "The shared content couldn't be loaded.",
+  "share.notFound":
+    "This share link no longer works — it has either been revoked or never existed. Ask for a " +
+    "new one.",
+  "share.gone.week": "No meal plan has been made for this week (yet). Try again later.",
+  "share.gone.day": "There's no longer a dish planned for this day.",
+  "share.gone.recipe": "This recipe no longer exists.",
+  "share.madeWith": "Made with",
 
   "cook.open": "Cook mode",
   "cook.exit": "Exit cook mode",

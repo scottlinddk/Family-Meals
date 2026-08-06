@@ -3,6 +3,7 @@ import type { DayPlan } from "~/domain/types";
 import { AdultVariantPanel, ChildVariantPanel } from "~/ui/components/VariantPanel";
 import { RegenerateDayButton } from "~/ui/components/RegenerateDayButton";
 import { RecipeBody } from "~/ui/components/RecipeBody";
+import { ShareButton } from "~/ui/components/ShareButton";
 import { Card, CardKicker } from "~/ui/components/ui/Card";
 import { LinkButton } from "~/ui/components/ui/Button";
 import { Tag } from "~/ui/components/ui/Tag";
@@ -89,9 +90,12 @@ export function DayCard({
 
         {expanded ? (
           <>
-            <LinkButton to={`/weeks/${weekStart}/day/${dayIndex}/cook`} className="self-start">
-              {t("cook.open")}
-            </LinkButton>
+            <div className="flex flex-wrap gap-2">
+              <LinkButton to={`/weeks/${weekStart}/day/${dayIndex}/cook`}>{t("cook.open")}</LinkButton>
+              {/* Only on the day page: seven share buttons down the week
+                  grid would be seven ways to send one evening's dinner. */}
+              <ShareButton target={{ kind: "day", date: day.date }} size="md" />
+            </div>
             <RecipeBody
               description={snapshot.description}
               ingredientLines={snapshot.ingredientLines}
