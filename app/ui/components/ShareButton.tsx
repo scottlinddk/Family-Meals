@@ -26,11 +26,13 @@ export function ShareButton({
   className,
   size = "sm",
   variant = "secondary",
+  block = false,
 }: {
   target: ShareTarget;
   className?: string;
   size?: "sm" | "md";
   variant?: "primary" | "secondary" | "ghost";
+  block?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const share = useShare(target);
@@ -69,6 +71,7 @@ export function ShareButton({
         type="button"
         variant={variant}
         size={size}
+        block={block}
         className={className}
         onClick={() => setOpen(true)}
       >

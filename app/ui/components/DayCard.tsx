@@ -54,8 +54,8 @@ export function DayCard({
         />
       )}
 
-      <div className="flex flex-col gap-3 p-4 pt-0 first:pt-4">
-        <header className="flex items-start justify-between gap-3">
+      <div className={`flex flex-col gap-4 p-4 pt-0 first:pt-4 ${expanded ? "sm:p-6 sm:pt-0 sm:first:pt-6" : ""}`}>
+        <header className="flex flex-col gap-3">
           <div className="flex min-w-0 flex-1 items-start gap-3">
             {!expanded && snapshot.imageUrl && <ThumbPhoto src={snapshot.imageUrl} size={64} />}
             <div className="min-w-0">
@@ -64,7 +64,7 @@ export function DayCard({
                 {isToday && <span className="ml-2 text-accent">{t("week.today")}</span>}
               </CardKicker>
               {expanded ? (
-                <h1 className="mt-1 text-2xl">{snapshot.title}</h1>
+                <h1 className="mt-2 text-3xl">{snapshot.title}</h1>
               ) : (
                 <h3 className="mt-1 text-[17px] leading-snug">
                   <Link to={`/weeks/${weekStart}/day/${dayIndex}`} className="hover:text-accent">
@@ -76,7 +76,7 @@ export function DayCard({
                   the day page they belong to `RecipeBody` below rather than
                   being repeated up here. The offer count stays either way:
                   it's about this week, not about the dish. */}
-              <p className="m-0 mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-muted">
+              <p className="m-0 mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-muted">
                 {snapshot.servings && !expanded && (
                   <span>{t("recipeDetail.servings", { count: snapshot.servings })}</span>
                 )}
@@ -92,19 +92,19 @@ export function DayCard({
               </p>
             </div>
           </div>
-          {/* On the day page there's room beside the title; in the week list
-              the button would squeeze the dish's name into two or three
-              lines, so it joins the row of actions below instead. */}
-          {expanded && <RegenerateDayButton weekStart={weekStart} dayIndex={dayIndex} />}
         </header>
 
         {expanded ? (
           <>
-            <div className="flex flex-wrap gap-2">
-              <LinkButton to={`/weeks/${weekStart}/day/${dayIndex}/cook`}>{t("cook.open")}</LinkButton>
-              {/* Only on the day page: seven share buttons down the week
-                  grid would be seven ways to send one evening's dinner. */}
-              <ShareButton target={{ kind: "day", date: day.date }} size="md" />
+            {/* Each action gets its own half of the row rather than a tight
+                inline cluster, so the three things you can do with an
+                evening's dinner read as clear, separate choices. */}
+            <div className="grid grid-cols-2 gap-3">
+              <LinkButton to={`/weeks/${weekStart}/day/${dayIndex}/cook`} size="md" block>
+                {t("cook.open")}
+              </LinkButton>
+              <ShareButton target={{ kind: "day", date: day.date }} size="md" block />
+              <RegenerateDayButton weekStart={weekStart} dayIndex={dayIndex} size="md" block />
             </div>
             <RecipeBody
               description={snapshot.description}
@@ -116,29 +116,32 @@ export function DayCard({
             />
           </>
         ) : (
-          <>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[13px] font-semibold">
-              <Link
-                to={`/weeks/${weekStart}/day/${dayIndex}`}
-                className="inline-flex items-center gap-1 text-accent hover:text-accent-700"
+          <div className="grid grid-cols-2 gap-2">
+            <LinkButton
+              to={`/weeks/${weekStart}/day/${dayIndex}`}
+              variant="secondary"
+              size="sm"
+              block
+              className="justify-between"
+            >
+              {t("day.viewRecipe")}
+              <ChevronRightIcon size={14} />
+            </LinkButton>
+            <LinkButton to={`/weeks/${weekStart}/day/${dayIndex}/cook`} variant="secondary" size="sm" block>
+              {t("cook.open")}
+            </LinkButton>
+            <RegenerateDayButton weekStart={weekStart} dayIndex={dayIndex} block />
+            {snapshot.url && (
+              <a
+                href={snapshot.url}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center justify-center rounded-md border border-divider px-4 py-2 text-[13px] font-semibold text-muted transition-colors hover:bg-neutral-100 hover:text-text"
               >
-                {t("day.viewRecipe")}
-                <ChevronRightIcon size={14} />
-              </Link>
-              <Link
-                to={`/weeks/${weekStart}/day/${dayIndex}/cook`}
-                className="text-accent hover:text-accent-700"
-              >
-                {t("cook.open")}
-              </Link>
-              {snapshot.url && (
-                <a href={snapshot.url} target="_blank" rel="noreferrer" className="text-muted hover:text-text">
-                  {t("day.viewOnRema")}
-                </a>
-              )}
-            </div>
-            <RegenerateDayButton weekStart={weekStart} dayIndex={dayIndex} className="self-start" />
-          </>
+                {t("day.viewOnRema")}
+              </a>
+            )}
+          </div>
         )}
 
         <div className="grid gap-3 sm:grid-cols-2">
