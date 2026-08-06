@@ -105,6 +105,7 @@ export const en: Record<keyof typeof da, string> = {
   "offers.thisWeek": "On offer this week ({{count}})",
   "offers.nextWeek": "On offer next week ({{count}})",
   "offers.nextWeekEmpty": "Next week's offers haven't been fetched yet.",
+  "offers.weekendOnly": "Weekend only ({{from}}–{{to}})",
   "offers.autoFetchHeading": "Automatic offers",
   "offers.autoFetchDescription":
     "Fetch REMA 1000's current offers automatically from etilbudsavis.dk (a third-party tilbudsavis built on the Tjek platform, not the webshop itself).",
@@ -156,6 +157,7 @@ export const en: Record<keyof typeof da, string> = {
     "Fewest calories per serving first. The figure is estimated from the ingredient list — REMA " +
     "publishes no nutrition data.",
   "suggestions.vegetarian": "Meat-free",
+  "suggestions.weekendOnly": "Weekend only: {{offers}}",
   "suggestions.noneVegetarian":
     "None of the fetched recipes are meat-free. Try turning the filter off, or refresh the recipes.",
   "suggestions.loadFailed": "The suggestions couldn't be loaded.",

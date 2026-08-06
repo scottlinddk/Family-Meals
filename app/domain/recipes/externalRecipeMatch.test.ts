@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { rankExternalRecipesByOffers } from "~/domain/recipes/externalRecipeMatch";
 import type { ExternalRecipe, Offer } from "~/domain/types";
 
-function offer(name: string): Offer {
+function offer(name: string, validity?: { validFrom: string; validUntil: string }): Offer {
   return {
     name,
     unitSizeFrom: 1,
@@ -13,8 +13,8 @@ function offer(name: string): Offer {
     unitPrice: 10,
     baseUnit: "stk",
     departmentSlug: "meat-and-fish",
-    validFrom: "2026-08-01T00:00:00Z",
-    validUntil: "2026-08-08T00:00:00Z",
+    validFrom: validity?.validFrom ?? "2026-08-01T22:00:00+0000",
+    validUntil: validity?.validUntil ?? "2026-08-08T21:59:59+0000",
   };
 }
 
@@ -49,8 +49,24 @@ describe("rankExternalRecipesByOffers", () => {
       {
         ingredient: "500 g hakket oksekød",
         offerNames: ["Friland Hakket dansk oksekød 8-12%"],
+        weekendOnlyOfferNames: [],
         price: 10,
       },
+    ]);
+  });
+
+  it("flags matched offers that only run part of the week", () => {
+    const weekendOffer = offer("Naturli' Drik eller kokosvand", {
+      validFrom: "2026-08-12T22:00:00+0000", // Thursday
+      validUntil: "2026-08-15T21:59:59+0000", // Saturday
+    });
+
+    const ranked = rankExternalRecipesByOffers([recipe("r", ["Naturli' Drik"])], [weekendOffer]);
+
+    expect(ranked[0]?.matchedOfferNames).toEqual(["Naturli' Drik eller kokosvand"]);
+    expect(ranked[0]?.weekendOnlyOfferNames).toEqual(["Naturli' Drik eller kokosvand"]);
+    expect(ranked[0]?.matchedIngredients[0]?.weekendOnlyOfferNames).toEqual([
+      "Naturli' Drik eller kokosvand",
     ]);
   });
 

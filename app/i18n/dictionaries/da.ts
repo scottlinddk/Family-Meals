@@ -105,6 +105,7 @@ export const da = {
   "offers.thisWeek": "På tilbud denne uge ({{count}})",
   "offers.nextWeek": "På tilbud næste uge ({{count}})",
   "offers.nextWeekEmpty": "Næste uges tilbud er endnu ikke hentet.",
+  "offers.weekendOnly": "Kun i weekenden ({{from}}–{{to}})",
   "offers.autoFetchHeading": "Automatiske tilbud",
   "offers.autoFetchDescription":
     "Hent REMA 1000's aktuelle tilbud automatisk fra etilbudsavis.dk (en tredjeparts tilbudsavis bygget på Tjek-platformen, ikke selve webshoppen).",
@@ -156,6 +157,7 @@ export const da = {
     "Færrest kalorier pr. portion først. Tallet er et skøn ud fra ingredienslisten — REMA " +
     "oplyser ikke næringsindhold.",
   "suggestions.vegetarian": "Kødfri",
+  "suggestions.weekendOnly": "Kun i weekenden: {{offers}}",
   "suggestions.noneVegetarian":
     "Ingen af de hentede opskrifter er kødfri. Prøv at slå filteret fra, eller hent opskrifterne igen.",
   "suggestions.loadFailed": "Forslagene kunne ikke hentes.",
