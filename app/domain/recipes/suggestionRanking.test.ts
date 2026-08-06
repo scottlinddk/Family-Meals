@@ -83,7 +83,7 @@ describe("rankRecipeSuggestions", () => {
     const [top] = rankRecipeSuggestions([cheapAndHeavy], offers, { sort: "offers" });
     expect(top!.offerScore).toBeGreaterThan(0);
     expect(top!.components.vegetarian).toBe(0);
-    expect(top!.calories?.perServingKcal).toBeGreaterThan(0);
+    expect(top!.nutrition?.perServingKcal).toBeGreaterThan(0);
     expect(top!.matchedIngredients.map((match) => match.ingredient)).toContain("1 kg svinekød");
   });
 

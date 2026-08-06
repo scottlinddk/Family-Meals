@@ -166,6 +166,47 @@ export const externalRecipes = pgTable("external_recipes", {
   fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const nutritionFactSource = pgEnum("nutrition_fact_source", ["fatsecret", "unmatched"]);
+
+/**
+ * Nutrition per 100 g of one *ingredient term*, from FatSecret's food
+ * database — the app's only source of protein, fat and carbohydrate.
+ *
+ * Keyed by the Danish product word an ingredient line resolves to (see
+ * `app/domain/nutrition/ingredientTerms.ts`), not by recipe and not by
+ * ingredient line. That is what makes the integration affordable: 350
+ * recipes list `løg` hundreds of times and the answer is the same every
+ * time, so the cache is a few hundred rows rather than tens of thousands of
+ * API calls. Global rather than family-scoped for the same reason — what
+ * onion is made of is not a fact about one family.
+ *
+ * Misses are cached too, as `source = 'unmatched'` with null figures. A term
+ * FatSecret doesn't know won't start being known next week, and without a
+ * negative cache every refresh would spend its whole call budget re-asking
+ * the same unanswerable questions. Re-asking is still possible — deleting the
+ * row is all it takes — and `fetchedAt` says how old the answer is.
+ */
+export const nutritionFacts = pgTable("nutrition_facts", {
+  /** The Danish vocabulary word or cleaned ingredient line this describes. */
+  term: text("term").primaryKey(),
+  source: nutritionFactSource("source").notNull(),
+  /** What was actually sent to FatSecret — English for most terms. */
+  query: text("query").notNull(),
+  /** FatSecret's own id and name for the matched food, so a figure is traceable. */
+  foodId: text("food_id"),
+  foodName: text("food_name"),
+  // All per 100 g, and all null on an unmatched term.
+  kcal: doublePrecision("kcal"),
+  proteinG: doublePrecision("protein_g"),
+  fatG: doublePrecision("fat_g"),
+  carbsG: doublePrecision("carbs_g"),
+  saturatedFatG: doublePrecision("saturated_fat_g"),
+  fiberG: doublePrecision("fiber_g"),
+  sugarG: doublePrecision("sugar_g"),
+  sodiumMg: doublePrecision("sodium_mg"),
+  fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 /**
  * What a family has settled about a shopping-list line:
  *

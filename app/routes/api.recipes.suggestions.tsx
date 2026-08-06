@@ -2,6 +2,7 @@ import type { Route } from "./+types/api.recipes.suggestions";
 import { requireFamily } from "~/lib/auth";
 import { offerRepository } from "~/data/repositories/offerRepository";
 import { externalRecipeRepository } from "~/data/repositories/externalRecipeRepository";
+import { nutritionFactRepository } from "~/data/repositories/nutritionFactRepository";
 import { isSuggestionSort, rankRecipeSuggestions } from "~/domain/recipes/suggestionRanking";
 
 /**
@@ -32,15 +33,21 @@ export async function loader({ request }: Route.LoaderArgs) {
   const sort = params.get("sort");
   const limit = Number(params.get("limit"));
 
-  const [offers, recipes] = await Promise.all([
+  // The nutrition cache is read here rather than fetched: FatSecret is called
+  // only by /api/nutrition, so ranking 350 recipes never waits on a
+  // third-party API, and an empty cache simply means the calorie figures come
+  // from the ingredient-line estimate as they always did.
+  const [offers, recipes, nutrition] = await Promise.all([
     offerRepository.listCurrentOffers(family.id),
     externalRecipeRepository.listAll(),
+    nutritionFactRepository.loadLookup(),
   ]);
 
   const ranked = rankRecipeSuggestions(recipes, offers, {
     sort: isSuggestionSort(sort) ? sort : "balanced",
     vegetarianOnly: params.get("vegetarian") === "1",
     limit: Number.isFinite(limit) && limit > 0 ? Math.min(limit, MAX_LIMIT) : DEFAULT_LIMIT,
+    nutrition,
   });
 
   return new Response(JSON.stringify(ranked), {

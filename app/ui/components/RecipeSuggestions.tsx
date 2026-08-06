@@ -6,6 +6,7 @@ import {
   type RankedSuggestion,
   type SuggestionSort,
 } from "~/domain/recipes/suggestionRanking";
+import { NutritionRefresh } from "~/ui/components/NutritionRefresh";
 import { Button } from "~/ui/components/ui/Button";
 import { Card, CardTitle } from "~/ui/components/ui/Card";
 import { Tag } from "~/ui/components/ui/Tag";
@@ -104,6 +105,11 @@ export function RecipeSuggestions() {
           </p>
         ))}
 
+      {/* Nutrition is fetched separately from the recipes: the recipes come
+          from a scrape and the figures from FatSecret, and the two have very
+          different costs. */}
+      <NutritionRefresh />
+
       <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
         <div role="group" aria-label={t("suggestions.sortLabel")} className="flex flex-wrap gap-1">
           {SUGGESTION_SORTS.map((sort) => (
@@ -153,7 +159,8 @@ export function RecipeSuggestions() {
 }
 
 function SuggestionCard({ suggestion }: { suggestion: RankedSuggestion }) {
-  const { recipe, matchedIngredients, matchedOfferNames, calories, vegetarian } = suggestion;
+  const { recipe, matchedIngredients, matchedOfferNames, nutrition, vegetarian } = suggestion;
+  const macros = nutrition?.macrosPerServing;
 
   return (
     <Card as="li">
@@ -173,13 +180,22 @@ function SuggestionCard({ suggestion }: { suggestion: RankedSuggestion }) {
       </div>
 
       {/*
-        The two signals the source data doesn't carry, shown as what they are:
-        the calorie figure is computed from the ingredient lines, so it's
-        written with a "~" rather than as something to count on to the calorie.
+        The signals the source data doesn't carry, shown as what they are.
+        A recipe whose ingredients FatSecret measured gets a plain figure and
+        its protein alongside; one still resting on the ingredient-line table
+        keeps the "~", because that number is an estimate and shouldn't be
+        read as anything else.
       */}
       <div className="flex flex-wrap gap-1.5">
-        {calories && (
-          <Tag variant="neutral">{t("suggestions.kcalPerServing", { kcal: calories.perServingKcal })}</Tag>
+        {nutrition && (
+          <Tag variant="neutral">
+            {macros
+              ? t("suggestions.kcalPerServingMeasured", { kcal: nutrition.perServingKcal })
+              : t("suggestions.kcalPerServing", { kcal: nutrition.perServingKcal })}
+          </Tag>
+        )}
+        {macros && (
+          <Tag variant="neutral">{t("suggestions.proteinPerServing", { grams: macros.proteinG! })}</Tag>
         )}
         {vegetarian.vegetarian && <Tag variant="accent-2">{t("suggestions.vegetarian")}</Tag>}
       </div>

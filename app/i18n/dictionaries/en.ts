@@ -150,13 +150,50 @@ export const en: Record<keyof typeof da, string> = {
     "Weighs this week's offers, calories per serving and meat-free dishes together.",
   "suggestions.explain.offers": "Most ingredients on offer first — calories break the ties.",
   "suggestions.explain.calories":
-    "Fewest calories per serving first. The figure is estimated from the ingredient list — REMA " +
-    "publishes no nutrition data.",
+    "Fewest calories per serving first. REMA publishes no nutrition data, so the figure comes from " +
+    "FatSecret's food database where an ingredient resolves to it, and from an estimate off the " +
+    "ingredient list where it doesn't.",
   "suggestions.kcalPerServing": "~{{kcal}} kcal/serving (estimate)",
+  "suggestions.kcalPerServingMeasured": "{{kcal}} kcal/serving",
+  "suggestions.proteinPerServing": "{{grams}} g protein/serving",
   "suggestions.vegetarian": "Meat-free",
   "suggestions.noneVegetarian":
     "None of the fetched recipes are meat-free. Try turning the filter off, or refresh the recipes.",
   "suggestions.loadFailed": "The suggestions couldn't be loaded.",
+
+  // Nutrition, from FatSecret's food database — see app/domain/nutrition.
+  // The wording carries the distinction the panel exists for: a measured
+  // figure is stated plainly, an estimated one is never allowed to look like
+  // one.
+  "nutrition.heading": "Nutrition per serving",
+  "nutrition.energy": "Energy",
+  "nutrition.protein": "Protein",
+  "nutrition.fat": "Fat",
+  "nutrition.carbs": "Carbs",
+  "nutrition.kcal": "{{value}} kcal",
+  "nutrition.kcalApprox": "~{{value}} kcal",
+  "nutrition.grams": "{{value}} g",
+  "nutrition.measured":
+    "From FatSecret's food database, covering {{percent}}% of the ingredient lines.",
+  "nutrition.partial":
+    "Calories only: FatSecret covers {{percent}}% of the ingredient lines, and protein and fat " +
+    "need two thirds before they say anything. The rest is estimated from the ingredient list.",
+  "nutrition.estimated":
+    "Estimated from the ingredient list — REMA publishes no nutrition data, and nothing has been " +
+    "fetched from FatSecret yet.",
+  "nutrition.servingsAssumed": "Servings aren't stated, so this assumes {{count}}.",
+  "nutrition.refresh": "Fetch nutrition data ({{missing}} ingredients left)",
+  "nutrition.refreshing": "Fetching nutrition data…",
+  "nutrition.upToDate": "Nutrition data is up to date",
+  "nutrition.coverage":
+    "{{matched}} of {{terms}} ingredients have nutrition data ({{unmatched}} not found).",
+  "nutrition.refreshed":
+    "Looked up {{lookedUp}} ingredients — {{matched}} found, {{remaining}} still to do.",
+  "nutrition.refreshFailures": "{{count}} lookups failed: {{message}}",
+  "nutrition.refreshError": "The nutrition data couldn't be fetched.",
+  "nutrition.notConfigured":
+    "No FatSecret key is configured, so calories are estimated from the ingredient list and there " +
+    "are no protein or fat figures.",
 
   "recipesPage.title": "All recipes",
   "recipesPage.searchLabel": "Search by name or ingredient",

@@ -1,9 +1,15 @@
 import { describe, expect, it } from "vitest";
-import {
-  estimateLineGrams,
-  estimateRecipeCalories,
-  parseQuantity,
-} from "~/domain/recipes/calorieEstimate";
+import { estimateLineGrams, parseQuantity } from "~/domain/recipes/calorieEstimate";
+import { computeRecipeNutrition } from "~/domain/nutrition/recipeNutrition";
+
+/**
+ * `computeRecipeNutrition` with no lookup is the ingredient-line calorie
+ * estimate — the fallback the app uses for every line FatSecret has nothing
+ * for, which is all of them until nutrition is fetched. These are the
+ * estimator's own tests, so they pass no lookup on purpose.
+ */
+const estimateRecipeCalories = (recipe: { ingredients: string[]; servings?: number }) =>
+  computeRecipeNutrition(recipe);
 
 describe("parseQuantity", () => {
   it("reads the forms REMA's ingredient lines use", () => {

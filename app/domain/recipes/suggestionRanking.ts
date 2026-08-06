@@ -3,7 +3,11 @@ import {
   rankExternalRecipesByOffers,
   type MatchedIngredient,
 } from "~/domain/recipes/externalRecipeMatch";
-import { estimateRecipeCalories, type CalorieEstimate } from "~/domain/recipes/calorieEstimate";
+import {
+  computeRecipeNutrition,
+  type NutrientLookup,
+  type RecipeNutrition,
+} from "~/domain/nutrition/recipeNutrition";
 import { assessVegetarian, type VegetarianAssessment } from "~/domain/recipes/vegetarian";
 
 /**
@@ -25,9 +29,11 @@ import { assessVegetarian, type VegetarianAssessment } from "~/domain/recipes/ve
  * wants for dinner: when it's asked for, it's a requirement.
  *
  * The two signals that don't exist in the source data are computed:
- * `calorieEstimate.ts` reads calories off the ingredient lines, and
- * `vegetarian.ts` reads meat off them. Both are honest about being estimates,
- * and both are only ever used *comparatively* here.
+ * `nutrition/recipeNutrition.ts` works calories out from the ingredient lines
+ * — against FatSecret's food database where a line resolves to it, against
+ * the local kcal table where it doesn't — and `vegetarian.ts` reads meat off
+ * them. Both are honest about how much they actually recognised, and both are
+ * only ever used *comparatively* here.
  */
 
 export type SuggestionSort = "balanced" | "offers" | "calories";
@@ -46,8 +52,11 @@ export interface RankedSuggestion {
   offerCoverage: number;
   matchedIngredients: MatchedIngredient[];
   matchedOfferNames: string[];
-  /** Null when the recipe has no ingredient list to estimate from. */
-  calories: CalorieEstimate | null;
+  /**
+   * Calories, macros and how much of each was measured rather than estimated.
+   * Null when the recipe has no ingredient list to compute from.
+   */
+  nutrition: RecipeNutrition | null;
   vegetarian: VegetarianAssessment;
   /** The 0–1 composite this list is sorted by. */
   score: number;
@@ -76,6 +85,13 @@ export interface SuggestionOptions {
   vegetarianOnly?: boolean;
   /** How many suggestions to return. The full 350 is a scroll, not a suggestion. */
   limit?: number;
+  /**
+   * FatSecret's per-100 g figures, keyed by ingredient term. Omitted — before
+   * any nutrition has been fetched, or with no credentials configured — the
+   * ranking falls back to the ingredient-line calorie estimate and behaves
+   * exactly as it did before.
+   */
+  nutrition?: NutrientLookup;
 }
 
 /**
@@ -115,26 +131,26 @@ function caloriePercentiles(perServing: (number | null)[]): number[] {
 export function rankRecipeSuggestions(
   recipes: ExternalRecipe[],
   offers: Offer[],
-  { sort = "balanced", vegetarianOnly = false, limit }: SuggestionOptions = {},
+  { sort = "balanced", vegetarianOnly = false, limit, nutrition }: SuggestionOptions = {},
 ): RankedSuggestion[] {
   const byOffers = rankExternalRecipesByOffers(recipes, offers);
 
   const candidates = byOffers
     .map((ranked) => ({
       ranked,
-      calories: estimateRecipeCalories(ranked.recipe),
+      nutrition: computeRecipeNutrition(ranked.recipe, { lookup: nutrition }),
       vegetarian: assessVegetarian(ranked.recipe),
     }))
     .filter((candidate) => !vegetarianOnly || candidate.vegetarian.vegetarian);
 
   const maxOfferScore = Math.max(0, ...candidates.map((candidate) => candidate.ranked.score));
   const calorieScores = caloriePercentiles(
-    candidates.map((candidate) => candidate.calories?.perServingKcal ?? null),
+    candidates.map((candidate) => candidate.nutrition?.perServingKcal ?? null),
   );
   const weights = WEIGHTS[sort];
 
   const ranked = candidates.map((candidate, index): RankedSuggestion => {
-    const { ranked: offerMatch, calories, vegetarian } = candidate;
+    const { ranked: offerMatch, nutrition: recipeNutrition, vegetarian } = candidate;
 
     /*
      * Offer overlap folds the two numbers the offer matcher produces: how
@@ -159,7 +175,7 @@ export function rankRecipeSuggestions(
       offerCoverage: offerMatch.coverage,
       matchedIngredients: offerMatch.matchedIngredients,
       matchedOfferNames: offerMatch.matchedOfferNames,
-      calories,
+      nutrition: recipeNutrition,
       vegetarian,
       score:
         weights.offers * components.offers +
@@ -173,7 +189,7 @@ export function rankRecipeSuggestions(
     (a, b) =>
       b.score - a.score ||
       b.offerScore - a.offerScore ||
-      (a.calories?.perServingKcal ?? Infinity) - (b.calories?.perServingKcal ?? Infinity) ||
+      (a.nutrition?.perServingKcal ?? Infinity) - (b.nutrition?.perServingKcal ?? Infinity) ||
       a.recipe.title.localeCompare(b.recipe.title),
   );
 

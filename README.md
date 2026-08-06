@@ -25,7 +25,11 @@ for the generator, and `app/domain/calendar/icsBuilder.ts` for the ICS feed.
 2. `npm install`
 3. `npm run db:generate && npm run db:migrate` to create the schema (see
    `app/data/db/schema.ts`).
-4. `npm run dev`
+4. Optionally add `FATSECRET_CLIENT_ID`/`FATSECRET_CLIENT_SECRET` for real
+   nutrition data — see [Nutrition](#nutrition-calories-protein-and-fat-from-fatsecret).
+   Without them the app estimates calories from the ingredient lines and shows
+   no protein or fat.
+5. `npm run dev`
 
 ## Data source for weekly offers
 
@@ -142,14 +146,15 @@ only one of the three questions that actually decide a Tuesday dinner. The
 other two — how heavy it is, and whether it's meat-free — aren't in the source
 data at all, so they're computed:
 
-- **Calories** (`calorieEstimate.ts`). REMA publishes no nutrition data, so
-  kcal per serving is read off the ingredient lines: a quantity and unit are
-  parsed from each line (`500 g`, `2-3 spsk` averaged, `½ citron`, `2 løg`
-  counted by item weight), then priced through a table of kcal per 100 g. It
-  is an *estimate* and says so — `coverage` reports what share of the lines
-  were recognised, and the UI writes the figure with a `~`. Its job is
-  comparative, not nutritional: a lentil soup and a creamy pork dish differ by
-  a factor of three, which no plausible error in the table reorders.
+- **Calories** (`nutrition/recipeNutrition.ts`). REMA publishes no nutrition
+  data, so kcal per serving is worked out from the ingredient lines: a quantity
+  and unit are parsed from each line (`500 g`, `2-3 spsk` averaged, `½ citron`,
+  `2 løg` counted by item weight) to get grams, which are then priced either
+  against FatSecret's food database or — for lines FatSecret has nothing for —
+  against the local table of kcal per 100 g in `calorieEstimate.ts`. The mix is
+  per line, and `dataCoverage` reports how much of it was measured rather than
+  estimated; the UI writes an estimated figure with a `~` and a measured one
+  plainly. See [Nutrition](#nutrition-calories-protein-and-fat-from-fatsecret).
 - **Meat-free** (`vegetarian.ts`). REMA's own `kodfri` theme tag decides —
   it's on 68 of the 350 scraped dinners — and a scan of the ingredient lines
   can only ever take the claim away, never grant it. That order came out of
@@ -197,6 +202,111 @@ examples. That found the two bugs `suggestionRanking.realData.test.ts` now pins
 Frilandsgris*) parsed as a hundred portions of cream and priced that recipe at
 8900 kcal a serving, and the meat-free over-reporting above. Ingredient
 recognition currently sits at 94% of lines across the 350 recipes.
+
+## Nutrition: calories, protein and fat from FatSecret
+
+REMA publishes no nutrition data with its recipes, so for a long time the only
+thing the app could say about a dinner was a calorie figure inferred from the
+ingredient lines against a hand-written table of kcal per 100 g. That table is
+good at what it was built for — putting 350 dinners in order — and could never
+be more than that, because protein and fat for 250 Danish products is a
+nutrition database, not a constant. [FatSecret's Platform
+API](https://platform.fatsecret.com/docs/guides) is that database.
+
+### How an ingredient line becomes a number
+
+```
+"600 g kyllingebryst"
+   ├─ estimateLineGrams  → 600 g              (calorieEstimate.ts, unchanged)
+   └─ ingredientTerm     → key "kyllingebryst", query "chicken breast"
+                              ↓
+                         nutrition_facts cache  ── miss ──▶ FatSecret
+                              ↓                              foods.search
+                         165 kcal / 31 g protein / 3.6 g fat per 100 g
+                              ↓                              food.get.v4
+                         × 6  →  990 kcal, 186 g protein
+```
+
+Three decisions carry this:
+
+- **Lookups are keyed by *product*, not by recipe or by line.** 350 recipes
+  list `løg` hundreds of times and the answer is the same every time, so the
+  whole cache resolves to a few hundred terms. That is the difference between
+  an affordable integration and tens of thousands of calls against a
+  rate-limited key.
+- **The product vocabulary is the one already in `calorieEstimate.ts`** — the
+  ~250 Danish words tuned against the scraped dinners, which know that
+  `kyllingebryst` is a kind of `kylling` and that `friske krydderurter` is not
+  rice. `ingredientTerms.ts` adds an English name for each, because FatSecret's
+  database is English unless the key carries the `localization` scope (set
+  `FATSECRET_REGION=DK` and `FATSECRET_LANGUAGE=da` if yours does). The cache
+  key stays Danish either way, so changing the search language doesn't
+  invalidate anything.
+- **Misses are cached too.** A term FatSecret doesn't know won't start being
+  known next week, and without a negative cache every refresh would spend its
+  call budget re-asking the same unanswerable questions.
+
+### Measured, estimated, and the difference between them
+
+The two sources are mixed *per line*, not chosen per recipe: a line uses
+FatSecret's figures when they exist and the local kcal table when they don't.
+Dropping a whole recipe because one line missed would leave most of the cache
+unranked. What comes back says how much of it was which:
+
+| field | meaning |
+| --- | --- |
+| `coverage` | share of lines that got any energy figure at all |
+| `dataCoverage` | share of lines whose figures came from FatSecret |
+| `macrosPerServing` | protein/fat/carbs, or **null** below ⅔ `dataCoverage` |
+
+Macros are withheld below two thirds because a protein figure computed from a
+third of a recipe's ingredients is not a low-protein dinner — it is a half-read
+one, and showing it as a number would be a claim the data doesn't support. The
+UI carries the same distinction: a measured figure is stated plainly, an
+estimated one keeps its `~` and the word *skøn*.
+
+### Auth, and the one thing that will bite you
+
+OAuth 2.0 client credentials: key and secret as HTTP Basic against
+`https://oauth.fatsecret.com/connect/token`, scope `basic`, then a bearer token
+on `https://platform.fatsecret.com/rest/server.api`. Tokens last a day and are
+held in memory, so a batch of 200 lookups costs one token request.
+
+**FatSecret only accepts token requests from IP addresses registered against
+the key**, which a serverless deployment does not have a stable set of. This is
+the single most common way the integration fails, and a refused token says so
+in the error rather than reporting a bad secret. Two ways round it: point
+`FATSECRET_TOKEN_URL`/`FATSECRET_API_URL` at a proxy with a stable address, or
+fill the cache by calling `POST /api/nutrition` from a machine whose address
+*is* registered — the cache is in Postgres, so it only has to be filled once
+from anywhere.
+
+Everything degrades cleanly. With no credentials configured, `fromEnv()`
+returns null, the refresh endpoint answers 501 with an explanation, the panel
+in the UI says so, and every calorie figure comes from the ingredient-line
+estimate exactly as it did before.
+
+### Filling the cache
+
+`POST /api/nutrition` looks up the terms that have none yet, 50 at a time
+(`?limit=`, max 200) so a serverless request can't time out and a rate-limited
+key can't be spent in one click. It is incremental — anything already cached,
+matched or missed, is skipped — so the button on the recipes page is meant to
+be pressed until it reports nothing remaining. `GET /api/nutrition` reports
+coverage without calling FatSecret at all.
+
+Read paths never call FatSecret. `/api/recipes/suggestions` and
+`/api/recipes/:id` read the `nutrition_facts` cache, which is why ranking 350
+recipes doesn't wait on a third-party API.
+
+### What isn't verified
+
+The adapter is covered by fixture tests against the response shapes FatSecret
+documents — stringly-typed numbers, a bare object where a one-element list
+would be, an error body behind an HTTP 200 — and has **not** been run against
+the live API from this repo: `platform.fatsecret.com` is unreachable from the
+dev sandbox, and no key has been issued. This is the same position
+`EtilbudsavisOfferSource` started from.
 
 ## Cook mode
 
