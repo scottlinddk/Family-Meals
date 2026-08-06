@@ -28,7 +28,6 @@ export const en: Record<keyof typeof da, string> = {
   "week.next": "Next week",
   "week.kicker": "Week plan",
   "week.heading": "Week of {{date}}",
-  "week.signOut": "Sign out",
   "week.loading": "Loading…",
   "week.empty": "No plan generated for this week yet.",
   "week.generating": "Generating...",
@@ -134,11 +133,13 @@ export const en: Record<keyof typeof da, string> = {
     "{{recipes}} of {{total}} recipes in the \"{{theme}}\" theme ({{pages}} pages fetched).",
   "recipes.refreshedPagesSkipped": "Pages that could not be fetched: {{pages}}.",
 
-  // Bottom-nav labels: short enough to sit under an icon on the narrowest phone.
+  // Bottom-nav labels: these have to fit on one line under an icon, in a
+  // quarter of the narrowest phone — see the Danish dictionary, whose longest
+  // label ("Bruger & familie") is the one that sets the budget.
   "nav.plan": "Week",
   "nav.recipes": "Recipes",
   "nav.offers": "Offers",
-  "nav.family": "Family",
+  "nav.family": "User & family",
   "nav.primary": "Main menu",
 
   "suggestions.sortLabel": "Sort by",
@@ -254,7 +255,10 @@ export const en: Record<keyof typeof da, string> = {
   "variant.addLabel": "Add {{qty}}{{unit}} {{name}}",
   "variant.notCurated": "No calorie guidance is available for this recipe yet — adjust portions manually.",
 
-  "family.pageTitle": "Family",
+  "family.pageTitle": "User & family",
+  "family.accountHeading": "User",
+  "family.signedInAs": "Signed in as {{email}}",
+  "family.signOut": "Sign out",
   "family.yourFamiliesHeading": "Your families",
   "family.switch": "Switch",
   "family.active": "Active",

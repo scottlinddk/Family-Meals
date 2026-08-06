@@ -121,7 +121,10 @@ function ShoppingListRow({ item, marks }: { item: ShoppingListItem; marks: Shopp
 
   return (
     <li className="flex items-start gap-2 border-b border-divider last:border-0">
-      <label className="flex min-h-11 flex-1 cursor-pointer items-start gap-3 py-2">
+      {/* `min-w-0` all the way down: an ingredient line can be one long
+          unbreakable word, and without it the row's min-content width is that
+          word's, which pushes the whole page sideways. */}
+      <label className="flex min-h-11 min-w-0 flex-1 cursor-pointer items-start gap-3 py-2">
         <input
           type="checkbox"
           checked={inTrolley}

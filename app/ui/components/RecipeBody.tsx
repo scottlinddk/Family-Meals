@@ -58,7 +58,7 @@ export function RecipeBody({
                     key={i}
                     className="flex flex-wrap items-center justify-between gap-2 border-b border-divider py-2.5 last:border-b-0 last:pb-0"
                   >
-                    <span className={onOffer.has(line) ? "font-medium" : undefined}>{line}</span>
+                    <span className={`min-w-0 ${onOffer.has(line) ? "font-medium" : ""}`}>{line}</span>
                     {onOffer.has(line) && <Tag variant="accent">{t("recipeDetail.onOfferBadge")}</Tag>}
                   </li>
                 ))}

@@ -32,6 +32,11 @@ const NAV_ITEMS: {
  * current section turns green and grows a short underline beneath its label,
  * which is the one place in the app where a nav item is coloured at all.
  *
+ * Kept deliberately low: it and the header band are on screen on every page
+ * of the app, so every pixel they take is a pixel of plan nobody sees. Each
+ * item is still a full column wide, which is what makes it a comfortable
+ * target at this height.
+ *
  * It replaces the old hamburger menu: four destinations are few enough to
  * always be on screen, and a plan you flick between week, recipes and offers
  * shouldn't cost two taps each time.
@@ -52,15 +57,15 @@ export function BottomNav() {
               key={to}
               to={to}
               aria-current={active ? "page" : undefined}
-              className={`flex flex-1 flex-col items-center gap-1 pt-2.5 pb-1.5 text-[11px] font-semibold transition-colors ${
+              className={`flex min-w-0 flex-1 flex-col items-center gap-0.5 pt-1.5 pb-1 text-[10px] leading-tight font-semibold transition-colors ${
                 active ? "text-accent" : "text-muted hover:text-text"
               }`}
             >
-              <Icon size={19} />
-              {t(labelKey)}
+              <Icon size={17} />
+              <span className="max-w-full truncate">{t(labelKey)}</span>
               <span
                 aria-hidden="true"
-                className={`h-[3px] w-5.5 rounded-full ${active ? "bg-accent" : ""}`}
+                className={`h-[2px] w-5 rounded-full ${active ? "bg-accent" : ""}`}
               />
             </NavLink>
           );

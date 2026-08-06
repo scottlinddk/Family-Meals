@@ -117,7 +117,7 @@ export function OfferJsonPasteForm() {
               key={i}
               className="flex items-center justify-between gap-3 border-b border-divider py-2.5 text-sm last:border-b-0"
             >
-              <span className="min-w-0">{offer.name}</span>
+              <span className="min-w-0 flex-1">{offer.name}</span>
               <span className="shrink-0 text-[13px] font-bold text-accent-700">
                 {offer.price} {offer.currencyCode}
               </span>
