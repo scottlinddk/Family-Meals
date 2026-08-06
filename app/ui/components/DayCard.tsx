@@ -55,7 +55,7 @@ export function DayCard({
           />
         )}
 
-        <div className={`flex flex-col gap-4 p-4 pt-0 first:pt-4 ${expanded ? "sm:p-6 sm:pt-0 sm:first:pt-6" : ""}`}>
+        <div className={`flex flex-col gap-4 p-3 pt-0 first:pt-3 ${expanded ? "sm:p-5 sm:pt-0 sm:first:pt-5" : ""}`}>
           <header className="flex flex-col gap-3">
             <div className="flex min-w-0 flex-1 items-start gap-3">
               {!expanded && snapshot.imageUrl && <ThumbPhoto src={snapshot.imageUrl} size={64} />}

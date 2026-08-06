@@ -1,4 +1,3 @@
-import { Card } from "~/ui/components/ui/Card";
 import { Accordion } from "~/ui/components/ui/Accordion";
 import { Tag } from "~/ui/components/ui/Tag";
 import { CalorieMeta } from "~/ui/components/RecipeCalories";
@@ -50,8 +49,12 @@ export function RecipeBody({
         </p>
       )}
 
+      {/* No card here — a border and shadow around what's already the widest,
+          most-used part of the page just repeats the page's own edges at a
+          smaller size. Full-width accordion rows, hairline-separated, read
+          as part of the page rather than a box within it. */}
       {(ingredientLines.length > 0 || instructionLines.length > 0) && (
-        <Card className="mb-3 gap-0 py-0">
+        <div className="mb-3 flex flex-col">
           {ingredientLines.length > 0 && (
             <Accordion
               title={t("recipeDetail.ingredientsHeading")}
@@ -80,7 +83,7 @@ export function RecipeBody({
               </ol>
             </Accordion>
           )}
-        </Card>
+        </div>
       )}
 
       {/*
