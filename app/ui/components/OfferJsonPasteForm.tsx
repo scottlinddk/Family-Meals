@@ -3,6 +3,8 @@ import { useImportOffers, useOffers, useRefreshOffers, type OffersResponse } fro
 import { Button } from "~/ui/components/ui/Button";
 import { Card } from "~/ui/components/ui/Card";
 import { Textarea } from "~/ui/components/ui/Input";
+import { Accordion } from "~/ui/components/ui/Accordion";
+import type { Offer } from "~/domain/types";
 import { t } from "~/i18n/t";
 
 const PLACEHOLDER = `[
@@ -31,10 +33,10 @@ function formatDate(iso: string): string {
  * identical to never having imported at all.
  */
 function OfferSnapshotNote({ data }: { data: OffersResponse }) {
-  const { snapshot, offers, importedCount } = data;
+  const { snapshot, offers, upcomingOffers, importedCount } = data;
   if (!snapshot) return null;
 
-  const expired = importedCount - offers.length;
+  const expired = importedCount - offers.length - upcomingOffers.length;
 
   return (
     <p className="m-0 mt-1 text-xs text-muted">
@@ -52,6 +54,24 @@ function OfferSnapshotNote({ data }: { data: OffersResponse }) {
       )}
       {expired > 0 && <> {t("offers.snapshotExpired", { count: expired })}</>}
     </p>
+  );
+}
+
+function OfferList({ offers }: { offers: Offer[] }) {
+  return (
+    <ul className="m-0 mt-1.5 flex max-h-56 list-none flex-col overflow-y-auto p-0">
+      {offers.map((offer, i) => (
+        <li
+          key={i}
+          className="flex items-center justify-between gap-3 border-b border-divider py-2.5 text-sm last:border-b-0"
+        >
+          <span className="min-w-0 flex-1">{offer.name}</span>
+          <span className="shrink-0 text-[13px] font-bold text-accent-700">
+            {offer.price} {offer.currencyCode}
+          </span>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -92,39 +112,42 @@ export function OfferJsonPasteForm() {
         </p>
       )}
 
-      <h2 className="mt-4 text-lg">{t("offers.formHeading")}</h2>
-      <p className="-mt-1 text-sm text-muted">{t("offers.formDescription")}</p>
-      <Textarea value={raw} onChange={(e) => setRaw(e.target.value)} placeholder={PLACEHOLDER} rows={10} />
-      {error && <p className="text-sm text-red-700">{error}</p>}
-      <Button
-        type="button"
-        variant="secondary"
-        block
-        onClick={handleImport}
-        disabled={importOffers.isPending || raw.trim().length === 0}
-      >
-        {importOffers.isPending ? t("offers.importing") : t("offers.import")}
-      </Button>
-
-      <div className="mt-3">
-        <h3 className="text-[11px] font-semibold tracking-[0.08em] text-muted uppercase">
-          {t("offers.currentlyImported", { count: offers.data?.offers.length ?? 0 })}
-        </h3>
-        {offers.data?.snapshot && <OfferSnapshotNote data={offers.data} />}
-        <ul className="m-0 mt-1.5 flex max-h-56 list-none flex-col overflow-y-auto p-0">
-          {offers.data?.offers.map((offer, i) => (
-            <li
-              key={i}
-              className="flex items-center justify-between gap-3 border-b border-divider py-2.5 text-sm last:border-b-0"
-            >
-              <span className="min-w-0 flex-1">{offer.name}</span>
-              <span className="shrink-0 text-[13px] font-bold text-accent-700">
-                {offer.price} {offer.currencyCode}
-              </span>
-            </li>
-          ))}
-        </ul>
+      <div className="mt-4">
+        <Accordion title={t("offers.formHeading")} defaultOpen={false}>
+          <p className="-mt-1 text-sm text-muted">{t("offers.formDescription")}</p>
+          <Textarea value={raw} onChange={(e) => setRaw(e.target.value)} placeholder={PLACEHOLDER} rows={10} />
+          {error && <p className="text-sm text-red-700">{error}</p>}
+          <Button
+            type="button"
+            variant="secondary"
+            block
+            onClick={handleImport}
+            disabled={importOffers.isPending || raw.trim().length === 0}
+          >
+            {importOffers.isPending ? t("offers.importing") : t("offers.import")}
+          </Button>
+        </Accordion>
       </div>
+
+      {offers.data?.snapshot && (
+        <div className="mt-3">
+          <OfferSnapshotNote data={offers.data} />
+
+          <h3 className="mt-3 text-[11px] font-semibold tracking-[0.08em] text-muted uppercase">
+            {t("offers.thisWeek", { count: offers.data.offers.length })}
+          </h3>
+          <OfferList offers={offers.data.offers} />
+
+          <h3 className="mt-3 text-[11px] font-semibold tracking-[0.08em] text-muted uppercase">
+            {t("offers.nextWeek", { count: offers.data.upcomingOffers.length })}
+          </h3>
+          {offers.data.upcomingOffers.length > 0 ? (
+            <OfferList offers={offers.data.upcomingOffers} />
+          ) : (
+            <p className="m-0 mt-1.5 text-sm text-muted">{t("offers.nextWeekEmpty")}</p>
+          )}
+        </div>
+      )}
     </Card>
   );
 }

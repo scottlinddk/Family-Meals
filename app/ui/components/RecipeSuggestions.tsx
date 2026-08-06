@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router";
 import { useRecipeSuggestions, useRefreshRecipes } from "~/ui/hooks/useRecipeSuggestions";
 import { useSuggestionPreferences } from "~/ui/hooks/useSuggestionPreferences";
@@ -6,12 +7,15 @@ import {
   type RankedSuggestion,
   type SuggestionSort,
 } from "~/domain/recipes/suggestionRanking";
-import { Button } from "~/ui/components/ui/Button";
+import { Button, IconButton } from "~/ui/components/ui/Button";
 import { Card, CardTitle } from "~/ui/components/ui/Card";
 import { Tag } from "~/ui/components/ui/Tag";
 import { ThumbPhoto } from "~/ui/components/ui/Photo";
-import { ChevronRightIcon } from "~/ui/components/Icon";
+import { ChevronLeftIcon, ChevronRightIcon } from "~/ui/components/Icon";
 import { t, type TranslationKey } from "~/i18n/t";
+
+/** How many suggestions a page of the panel shows at once. */
+const PAGE_SIZE = 6;
 
 const SORT_LABEL_KEYS: Record<SuggestionSort, TranslationKey> = {
   balanced: "suggestions.sort.balanced",
@@ -39,6 +43,21 @@ export function RecipeSuggestions() {
   const { preferences, setSort, toggleVegetarianOnly } = useSuggestionPreferences();
   const suggestions = useRecipeSuggestions(preferences);
   const refreshRecipes = useRefreshRecipes();
+
+  // A page of a *different* ranked list, not a scroll position within this
+  // one — so switching sort or the vegetarian filter starts back at the top.
+  // Reset during render (rather than an effect) by noticing the preferences
+  // changed since the last render, so there's no flash of the old page.
+  const [page, setPage] = useState(0);
+  const [seenPreferences, setSeenPreferences] = useState(preferences);
+  if (seenPreferences.sort !== preferences.sort || seenPreferences.vegetarianOnly !== preferences.vegetarianOnly) {
+    setSeenPreferences(preferences);
+    setPage(0);
+  }
+
+  const pageCount = suggestions.data ? Math.max(1, Math.ceil(suggestions.data.length / PAGE_SIZE)) : 1;
+  const currentPage = Math.min(page, pageCount - 1);
+  const pageItems = suggestions.data?.slice(currentPage * PAGE_SIZE, currentPage * PAGE_SIZE + PAGE_SIZE) ?? [];
 
   return (
     <div className="mt-6">
@@ -142,11 +161,37 @@ export function RecipeSuggestions() {
       )}
 
       {suggestions.data && suggestions.data.length > 0 && (
-        <ul className="m-0 mt-3 flex list-none flex-col gap-3 p-0">
-          {suggestions.data.map((suggestion) => (
-            <SuggestionCard key={suggestion.recipe.id} suggestion={suggestion} />
-          ))}
-        </ul>
+        <>
+          <ul className="m-0 mt-3 flex list-none flex-col gap-3 p-0">
+            {pageItems.map((suggestion) => (
+              <SuggestionCard key={suggestion.recipe.id} suggestion={suggestion} />
+            ))}
+          </ul>
+
+          {pageCount > 1 && (
+            <div className="mt-4 flex items-center justify-center gap-3">
+              <IconButton
+                type="button"
+                aria-label={t("suggestions.prevPage")}
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                disabled={currentPage === 0}
+              >
+                <ChevronLeftIcon size={18} />
+              </IconButton>
+              <span className="text-sm text-muted">
+                {t("suggestions.page", { page: currentPage + 1, pages: pageCount })}
+              </span>
+              <IconButton
+                type="button"
+                aria-label={t("suggestions.nextPage")}
+                onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
+                disabled={currentPage === pageCount - 1}
+              >
+                <ChevronRightIcon size={18} />
+              </IconButton>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

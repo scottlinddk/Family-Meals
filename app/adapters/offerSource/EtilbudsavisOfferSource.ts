@@ -10,11 +10,19 @@ import { offerListSchema } from "~/adapters/offerSource/offerSchema";
  * "future scraper-based source" the `OfferSource` interface was designed to
  * accommodate — see `app/adapters/offerSource/OfferSource.ts`.
  *
- * Flow: resolve REMA 1000's dealer id, find its current catalog (weekly
- * flyer), then list that catalog's offers. `/v2/offers/search` looks like
+ * Flow: resolve REMA 1000's dealer id, find its most recent catalogs (weekly
+ * flyers), then list each catalog's offers. `/v2/offers/search` looks like
  * the obvious endpoint but requires a non-empty `query` (returns
  * `MISSING_QUERY` otherwise) — there's no per-dealer "list everything"
- * search, so we go through the catalog instead.
+ * search, so we go through catalogs instead.
+ *
+ * REMA publishes next week's catalog a few days before this week's ends —
+ * from around Wednesday/Thursday, `-publication_date` order puts *next*
+ * week's flyer first even though this week's is still running. Fetching just
+ * the newest catalog would then return only future-dated offers, so this
+ * takes the two most recent catalogs and merges their offers; each offer
+ * carries its own `validFrom`/`validUntil`, so downstream code (`offerRepository`)
+ * can still tell this week's offers apart from next week's.
  *
  * Endpoint shapes and field mappings below (dealer id "11deC", catalog id
  * shape, `quantity.unit` as a sibling of `quantity.size`, no `unitPrice`
@@ -26,17 +34,25 @@ export class EtilbudsavisOfferSource implements OfferSource {
   private static readonly API_BASE = "https://api.etilbudsavis.dk/v2";
   private static readonly DEALER_QUERY = "REMA 1000";
   private static readonly PAGE_SIZE = 100;
+  /** This week's catalog plus next week's, once the latter is published. */
+  private static readonly CATALOG_COUNT = 2;
 
   constructor(private readonly fetchImpl: typeof fetch = fetch) {}
 
   async fetchCurrentOffers(): Promise<Offer[]> {
     const dealerId = await this.resolveDealerId();
-    const catalog = await this.resolveCurrentCatalog(dealerId);
-    const raw = await this.fetchOffersForCatalog(catalog.id);
-    const departmentSlug = catalog.categoryIds[0] ?? "unspecified";
+    const catalogs = await this.resolveCatalogs(dealerId);
 
-    const mapped = raw
-      .map((offer) => this.toOfferInput(offer, departmentSlug))
+    const perCatalog = await Promise.all(
+      catalogs.map(async (catalog) => {
+        const raw = await this.fetchOffersForCatalog(catalog.id);
+        const departmentSlug = catalog.categoryIds[0] ?? "unspecified";
+        return raw.map((offer) => this.toOfferInput(offer, departmentSlug));
+      }),
+    );
+
+    const mapped = perCatalog
+      .flat()
       .filter((o): o is NonNullable<typeof o> => o !== null);
 
     // Re-validate against the same reference schema manual entry uses, so a
@@ -67,22 +83,22 @@ export class EtilbudsavisOfferSource implements OfferSource {
     return rema.id;
   }
 
-  private async resolveCurrentCatalog(
+  private async resolveCatalogs(
     dealerId: string,
-  ): Promise<{ id: string; categoryIds: string[] }> {
+  ): Promise<{ id: string; categoryIds: string[] }[]> {
     const url =
       `${EtilbudsavisOfferSource.API_BASE}/catalogs` +
-      `?dealer_ids=${encodeURIComponent(dealerId)}&order_by=-publication_date&offset=0&limit=1`;
+      `?dealer_ids=${encodeURIComponent(dealerId)}&order_by=-publication_date&offset=0` +
+      `&limit=${EtilbudsavisOfferSource.CATALOG_COUNT}`;
     const res = await this.fetchImpl(url);
     if (!res.ok) {
       throw new Error(`EtilbudsavisOfferSource: catalog lookup failed (${res.status})`);
     }
     const catalogs = (await res.json()) as Array<{ id: string; category_ids?: string[] }>;
-    const current = catalogs[0];
-    if (!current) {
+    if (catalogs.length === 0) {
       throw new Error("EtilbudsavisOfferSource: REMA 1000 has no current catalog");
     }
-    return { id: current.id, categoryIds: current.category_ids ?? [] };
+    return catalogs.map((catalog) => ({ id: catalog.id, categoryIds: catalog.category_ids ?? [] }));
   }
 
   private async fetchOffersForCatalog(catalogId: string): Promise<TjekOffer[]> {

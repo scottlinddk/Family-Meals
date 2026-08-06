@@ -74,6 +74,40 @@ describe("EtilbudsavisOfferSource", () => {
     expect(chicken.unitSizeTo).toBe(1350);
   });
 
+  it("merges offers from both the current and the next catalog", async () => {
+    const catalogsResponse = [
+      { id: "NEXT-WEEK", category_ids: ["groceries_discount"] },
+      { id: "THIS-WEEK", category_ids: ["groceries_discount"] },
+    ];
+    const offersByCatalog: Record<string, unknown[]> = {
+      "NEXT-WEEK": [
+        {
+          heading: "Næste uges tilbud",
+          run_from: "2026-08-08T22:00:00+0000",
+          run_till: "2026-08-15T21:59:59+0000",
+          pricing: { price: 10, currency: "DKK" },
+          quantity: { unit: { symbol: "stk" }, size: { from: 1, to: 1 } },
+        },
+      ],
+      "THIS-WEEK": OFFERS_RESPONSE,
+    };
+
+    const fetchImpl = (async (input: Parameters<typeof fetch>[0]) => {
+      const url = String(input);
+      if (url.includes("/dealers")) return new Response(JSON.stringify(DEALERS_RESPONSE), { status: 200 });
+      if (url.includes("/catalogs")) return new Response(JSON.stringify(catalogsResponse), { status: 200 });
+      const catalogId = url.includes("NEXT-WEEK") ? "NEXT-WEEK" : "THIS-WEEK";
+      return new Response(JSON.stringify(offersByCatalog[catalogId]), { status: 200 });
+    }) as typeof fetch;
+
+    const source = new EtilbudsavisOfferSource(fetchImpl);
+    const offers = await source.fetchCurrentOffers();
+
+    expect(offers).toHaveLength(4);
+    expect(offers.some((o) => o.name === "Næste uges tilbud")).toBe(true);
+    expect(offers.filter((o) => o.validFrom === "2026-08-01T22:00:00+0000")).toHaveLength(3);
+  });
+
   it("throws a clear error when the dealer can't be resolved", async () => {
     const emptyFetch = (async () => new Response(JSON.stringify([]), { status: 200 })) as typeof fetch;
     const source = new EtilbudsavisOfferSource(emptyFetch);

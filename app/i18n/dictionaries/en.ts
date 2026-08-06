@@ -102,7 +102,9 @@ export const en: Record<keyof typeof da, string> = {
     "Paste offer JSON in the reference schema shape (same fields REMA's own listings use). This replaces the currently-imported offer set.",
   "offers.importing": "Importing...",
   "offers.import": "Import offers",
-  "offers.currentlyImported": "Currently imported ({{count}})",
+  "offers.thisWeek": "On offer this week ({{count}})",
+  "offers.nextWeek": "On offer next week ({{count}})",
+  "offers.nextWeekEmpty": "Next week's offers haven't been fetched yet.",
   "offers.autoFetchHeading": "Automatic offers",
   "offers.autoFetchDescription":
     "Fetch REMA 1000's current offers automatically from etilbudsavis.dk (a third-party tilbudsavis built on the Tjek platform, not the webshop itself).",
@@ -157,6 +159,9 @@ export const en: Record<keyof typeof da, string> = {
   "suggestions.noneVegetarian":
     "None of the fetched recipes are meat-free. Try turning the filter off, or refresh the recipes.",
   "suggestions.loadFailed": "The suggestions couldn't be loaded.",
+  "suggestions.prevPage": "Previous page",
+  "suggestions.nextPage": "Next page",
+  "suggestions.page": "Page {{page}} of {{pages}}",
 
   "recipesPage.title": "All recipes",
   "recipesPage.searchLabel": "Search by name or ingredient",
