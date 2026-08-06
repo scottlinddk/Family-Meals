@@ -1,6 +1,7 @@
 import type { Route } from "./+types/recipes.$id";
 import { useExternalRecipe } from "~/ui/hooks/useExternalRecipes";
 import { RecipeBody } from "~/ui/components/RecipeBody";
+import { ShareButton } from "~/ui/components/ShareButton";
 import { LinkButton } from "~/ui/components/ui/Button";
 import { BackLink } from "~/ui/components/ui/BackLink";
 import { HeroPhoto } from "~/ui/components/ui/Photo";
@@ -28,7 +29,10 @@ export default function RecipeDetailPage({ params }: Route.ComponentProps) {
 
           <div className="mb-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-3">
             <h1 className="m-0 text-2xl">{recipe.data.title}</h1>
-            <LinkButton to={`/recipes/${params.id}/cook`}>{t("cook.open")}</LinkButton>
+            <div className="flex flex-wrap gap-2">
+              <LinkButton to={`/recipes/${params.id}/cook`}>{t("cook.open")}</LinkButton>
+              <ShareButton target={{ kind: "recipe", recipeId: params.id! }} size="md" />
+            </div>
           </div>
 
           <RecipeBody

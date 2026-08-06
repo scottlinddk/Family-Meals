@@ -1,15 +1,43 @@
 import { Link } from "react-router";
 import { useRecipeSuggestions, useRefreshRecipes } from "~/ui/hooks/useRecipeSuggestions";
+import { useSuggestionPreferences } from "~/ui/hooks/useSuggestionPreferences";
+import {
+  SUGGESTION_SORTS,
+  type RankedSuggestion,
+  type SuggestionSort,
+} from "~/domain/recipes/suggestionRanking";
 import { Button } from "~/ui/components/ui/Button";
 import { Card, CardTitle } from "~/ui/components/ui/Card";
 import { Tag } from "~/ui/components/ui/Tag";
 import { ThumbPhoto } from "~/ui/components/ui/Photo";
 import { ChevronRightIcon } from "~/ui/components/Icon";
-import { t } from "~/i18n/t";
+import { t, type TranslationKey } from "~/i18n/t";
 
-/** REMA 1000's own recipes, cross-checked against this week's offers and ranked best-match-first. */
+const SORT_LABEL_KEYS: Record<SuggestionSort, TranslationKey> = {
+  balanced: "suggestions.sort.balanced",
+  offers: "suggestions.sort.offers",
+  calories: "suggestions.sort.calories",
+};
+
+const SORT_EXPLANATION_KEYS: Record<SuggestionSort, TranslationKey> = {
+  balanced: "suggestions.explain.balanced",
+  offers: "suggestions.explain.offers",
+  calories: "suggestions.explain.calories",
+};
+
+/**
+ * "Best meals this week" — REMA's own recipes, ranked on the three things
+ * that actually decide dinner: what's on offer, what's light, and what's
+ * meat-free (see `suggestionRanking.ts`).
+ *
+ * One control rather than three lists. Which signal should lead changes from
+ * week to week — a week with cheap mince ranks differently from a week
+ * someone wants to eat lighter — and the balanced default is what the panel
+ * opens with, because most weeks the answer is a bit of each.
+ */
 export function RecipeSuggestions() {
-  const suggestions = useRecipeSuggestions();
+  const { preferences, setSort, toggleVegetarianOnly } = useSuggestionPreferences();
+  const suggestions = useRecipeSuggestions(preferences);
   const refreshRecipes = useRefreshRecipes();
 
   return (
@@ -76,81 +104,126 @@ export function RecipeSuggestions() {
           </p>
         ))}
 
+      <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
+        <div role="group" aria-label={t("suggestions.sortLabel")} className="flex flex-wrap gap-1">
+          {SUGGESTION_SORTS.map((sort) => (
+            <Button
+              key={sort}
+              type="button"
+              size="sm"
+              variant={sort === preferences.sort ? "primary" : "secondary"}
+              aria-pressed={sort === preferences.sort}
+              onClick={() => sort !== preferences.sort && setSort(sort)}
+            >
+              {t(SORT_LABEL_KEYS[sort])}
+            </Button>
+          ))}
+        </div>
+        {/* A filter, not a fourth sort: when meat-free is asked for, it's a
+            requirement, and a list that merely demotes meat still serves it. */}
+        <Button
+          type="button"
+          size="sm"
+          variant={preferences.vegetarianOnly ? "primary" : "secondary"}
+          aria-pressed={preferences.vegetarianOnly}
+          onClick={toggleVegetarianOnly}
+        >
+          {t("suggestions.vegetarianOnly")}
+        </Button>
+      </div>
+      <p className="mt-1.5 mb-0 text-xs text-muted">{t(SORT_EXPLANATION_KEYS[preferences.sort])}</p>
+
+      {suggestions.isError && <p className="mt-3 text-sm text-red-700">{t("suggestions.loadFailed")}</p>}
+
       {suggestions.data && suggestions.data.length === 0 && (
-        <p className="mt-3 text-sm text-muted">{t("recipes.none")}</p>
+        <p className="mt-3 text-sm text-muted">
+          {preferences.vegetarianOnly ? t("suggestions.noneVegetarian") : t("recipes.none")}
+        </p>
       )}
 
       {suggestions.data && suggestions.data.length > 0 && (
         <ul className="m-0 mt-3 flex list-none flex-col gap-3 p-0">
-          {suggestions.data.map(({ recipe, matchedIngredients, matchedOfferNames }) => (
-            <Card as="li" key={recipe.id}>
-              <div className="flex items-center gap-3">
-                {recipe.imageUrl && <ThumbPhoto src={recipe.imageUrl} size={56} />}
-                <div>
-                  <CardTitle>{recipe.title}</CardTitle>
-                  {(recipe.servings || recipe.totalTimeMinutes) && (
-                    <p className="m-0 flex gap-x-3 text-xs text-muted">
-                      {recipe.servings && <span>{t("recipeDetail.servings", { count: recipe.servings })}</span>}
-                      {recipe.totalTimeMinutes && (
-                        <span>{t("recipeDetail.totalTime", { minutes: recipe.totalTimeMinutes })}</span>
-                      )}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/*
-                Naming the matched ingredient next to the offer makes the
-                ranking auditable — "hakket oksekød → Friland Hakket dansk
-                oksekød" is checkable at a glance in a way a bare offer tag
-                was not.
-              */}
-              {matchedIngredients.length > 0 ? (
-                <ul className="m-0 flex list-none flex-col gap-1 p-0 text-sm">
-                  {matchedIngredients.map(({ ingredient, offerNames }) => (
-                    <li key={ingredient} className="flex flex-wrap items-center gap-2">
-                      <span className="font-medium">{ingredient}</span>
-                      <span className="text-xs text-muted">{offerNames.join(", ")}</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <div className="flex flex-wrap gap-1.5">
-                  <Tag variant="neutral">
-                    {recipe.ingredients.length === 0
-                      ? t("recipes.noIngredientsScraped")
-                      : t("recipes.noMatch")}
-                  </Tag>
-                </div>
-              )}
-
-              {matchedOfferNames.length > 0 && (
-                <p className="m-0 text-xs text-muted">
-                  {t("recipeDetail.onOfferCount", { count: matchedIngredients.length })}
-                </p>
-              )}
-
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] font-semibold">
-                <Link
-                  to={`/recipes/${recipe.id}`}
-                  className="inline-flex items-center gap-1 text-accent hover:text-accent-700"
-                >
-                  {t("recipes.viewRecipe")}
-                  <ChevronRightIcon size={14} />
-                </Link>
-                <a
-                  href={recipe.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-muted hover:text-text"
-                >
-                  {t("day.viewOnRema")}
-                </a>
-              </div>
-            </Card>
+          {suggestions.data.map((suggestion) => (
+            <SuggestionCard key={suggestion.recipe.id} suggestion={suggestion} />
           ))}
         </ul>
       )}
     </div>
+  );
+}
+
+function SuggestionCard({ suggestion }: { suggestion: RankedSuggestion }) {
+  const { recipe, matchedIngredients, matchedOfferNames, calories, vegetarian } = suggestion;
+
+  return (
+    <Card as="li">
+      <div className="flex items-center gap-3">
+        {recipe.imageUrl && <ThumbPhoto src={recipe.imageUrl} size={56} />}
+        <div>
+          <CardTitle>{recipe.title}</CardTitle>
+          {(recipe.servings || recipe.totalTimeMinutes) && (
+            <p className="m-0 flex gap-x-3 text-xs text-muted">
+              {recipe.servings && <span>{t("recipeDetail.servings", { count: recipe.servings })}</span>}
+              {recipe.totalTimeMinutes && (
+                <span>{t("recipeDetail.totalTime", { minutes: recipe.totalTimeMinutes })}</span>
+              )}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/*
+        The two signals the source data doesn't carry, shown as what they are:
+        the calorie figure is computed from the ingredient lines, so it's
+        written with a "~" rather than as something to count on to the calorie.
+      */}
+      <div className="flex flex-wrap gap-1.5">
+        {calories && (
+          <Tag variant="neutral">{t("suggestions.kcalPerServing", { kcal: calories.perServingKcal })}</Tag>
+        )}
+        {vegetarian.vegetarian && <Tag variant="accent-2">{t("suggestions.vegetarian")}</Tag>}
+      </div>
+
+      {/*
+        Naming the matched ingredient next to the offer makes the ranking
+        auditable — "hakket oksekød → Friland Hakket dansk oksekød" is
+        checkable at a glance in a way a bare offer tag was not.
+      */}
+      {matchedIngredients.length > 0 ? (
+        <ul className="m-0 flex list-none flex-col gap-1 p-0 text-sm">
+          {matchedIngredients.map(({ ingredient, offerNames }) => (
+            <li key={ingredient} className="flex flex-wrap items-center gap-2">
+              <span className="font-medium">{ingredient}</span>
+              <span className="text-xs text-muted">{offerNames.join(", ")}</span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <div className="flex flex-wrap gap-1.5">
+          <Tag variant="neutral">
+            {recipe.ingredients.length === 0 ? t("recipes.noIngredientsScraped") : t("recipes.noMatch")}
+          </Tag>
+        </div>
+      )}
+
+      {matchedOfferNames.length > 0 && (
+        <p className="m-0 text-xs text-muted">
+          {t("recipeDetail.onOfferCount", { count: matchedIngredients.length })}
+        </p>
+      )}
+
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] font-semibold">
+        <Link
+          to={`/recipes/${recipe.id}`}
+          className="inline-flex items-center gap-1 text-accent hover:text-accent-700"
+        >
+          {t("recipes.viewRecipe")}
+          <ChevronRightIcon size={14} />
+        </Link>
+        <a href={recipe.url} target="_blank" rel="noreferrer" className="text-muted hover:text-text">
+          {t("day.viewOnRema")}
+        </a>
+      </div>
+    </Card>
   );
 }

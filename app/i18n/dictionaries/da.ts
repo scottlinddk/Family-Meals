@@ -141,6 +141,23 @@ export const da = {
   "nav.family": "Familie",
   "nav.primary": "Hovedmenu",
 
+  "suggestions.sortLabel": "Sortering",
+  "suggestions.sort.balanced": "Balanceret",
+  "suggestions.sort.offers": "På tilbud",
+  "suggestions.sort.calories": "Færrest kalorier",
+  "suggestions.vegetarianOnly": "Kun vegetarisk",
+  "suggestions.explain.balanced":
+    "Vejer ugens tilbud, kalorier pr. portion og kødfri retter sammen.",
+  "suggestions.explain.offers": "Flest ingredienser på tilbud først — kalorier afgør ved uafgjort.",
+  "suggestions.explain.calories":
+    "Færrest kalorier pr. portion først. Tallet er et skøn ud fra ingredienslisten — REMA " +
+    "oplyser ikke næringsindhold.",
+  "suggestions.kcalPerServing": "~{{kcal}} kcal/portion (skøn)",
+  "suggestions.vegetarian": "Kødfri",
+  "suggestions.noneVegetarian":
+    "Ingen af de hentede opskrifter er kødfri. Prøv at slå filteret fra, eller hent opskrifterne igen.",
+  "suggestions.loadFailed": "Forslagene kunne ikke hentes.",
+
   "recipesPage.title": "Alle opskrifter",
   "recipesPage.searchLabel": "Søg på navn eller ingrediens",
   "recipesPage.searchPlaceholder": "f.eks. broccoli, laks…",
@@ -162,6 +179,39 @@ export const da = {
 
   "day.viewRecipe": "Se hele opskriften",
   "day.viewOnRema": "Åbn hos REMA 1000 ↗",
+
+  "share.button.week": "Del ugen",
+  "share.button.day": "Del dagen",
+  "share.button.recipe": "Del opskriften",
+  "share.heading.week": "Del ugens madplan",
+  "share.heading.day": "Del dagens ret",
+  "share.heading.recipe": "Del opskriften",
+  "share.description.week":
+    "Send linket til hvem som helst — det kræver ingen konto. De kan se ugens syv middage, " +
+    "men ikke ændre noget, og linket viser altid planen som den er lige nu. Du kan " +
+    "tilbagekalde det når som helst.",
+  "share.description.day":
+    "Send linket til hvem som helst — det kræver ingen konto. De kan se dagens ret med " +
+    "ingredienser, fremgangsmåde og begge tallerkener (voksen og barn), men ikke ændre noget. " +
+    "Bytter I retten senere, følger linket med.",
+  "share.description.recipe":
+    "Send linket til hvem som helst — det kræver ingen konto. De kan se hele opskriften, men " +
+    "ikke resten af jeres madplan.",
+  "share.creating": "Laver link...",
+  "share.failed": "Delelinket kunne ikke laves. Prøv igen.",
+  "share.revoke": "Tilbagekald link",
+  "share.revoking": "Tilbagekalder...",
+  "share.close": "Luk",
+  "share.sharedBy": "Delt fra Family Meals",
+  "share.sharedByFamily": "Delt af {{family}}",
+  "share.loadFailed": "Det delte indhold kunne ikke hentes.",
+  "share.notFound":
+    "Dette delelink virker ikke længere — det er enten tilbagekaldt eller aldrig blevet lavet. " +
+    "Bed om et nyt.",
+  "share.gone.week": "Der er ikke lavet en madplan for denne uge (endnu). Prøv igen senere.",
+  "share.gone.day": "Der er ikke længere planlagt en ret til denne dag.",
+  "share.gone.recipe": "Denne opskrift findes ikke længere.",
+  "share.madeWith": "Lavet med",
 
   "cook.open": "Køkkentilstand",
   "cook.exit": "Afslut køkkentilstand",
