@@ -26,9 +26,11 @@ for the generator, and `app/domain/calendar/icsBuilder.ts` for the ICS feed.
 3. `npm run db:generate && npm run db:migrate` to create the schema (see
    `app/data/db/schema.ts`).
 4. Optionally add `FATSECRET_CLIENT_ID`/`FATSECRET_CLIENT_SECRET` for real
-   nutrition data — see [Nutrition](#nutrition-calories-protein-and-fat-from-fatsecret).
-   Without them the app estimates calories from the ingredient lines and shows
-   no protein or fat.
+   nutrition data, ideally on a key with the `localization` scope so the
+   figures come from FatSecret's Danish food data — see
+   [Nutrition](#nutrition-calories-protein-and-fat-from-fatsecret). Without
+   them the app estimates calories from the ingredient lines and shows no
+   protein or fat.
 5. `npm run dev`
 
 ## Data source for weekly offers
@@ -218,7 +220,9 @@ API](https://platform.fatsecret.com/docs/guides) is that database.
 ```
 "600 g kyllingebryst"
    ├─ estimateLineGrams  → 600 g              (calorieEstimate.ts, unchanged)
-   └─ ingredientTerm     → key "kyllingebryst", query "chicken breast"
+   └─ ingredientTerm     → key      "kyllingebryst"   (Danish, the cache key)
+                           query    "kyllingebryst"   (asked first)
+                           fallback "chicken breast"  (only if that misses)
                               ↓
                          nutrition_facts cache  ── miss ──▶ FatSecret
                               ↓                              foods.search
@@ -237,11 +241,8 @@ Three decisions carry this:
 - **The product vocabulary is the one already in `calorieEstimate.ts`** — the
   ~250 Danish words tuned against the scraped dinners, which know that
   `kyllingebryst` is a kind of `kylling` and that `friske krydderurter` is not
-  rice. `ingredientTerms.ts` adds an English name for each, because FatSecret's
-  database is English unless the key carries the `localization` scope (set
-  `FATSECRET_REGION=DK` and `FATSECRET_LANGUAGE=da` if yours does). The cache
-  key stays Danish either way, so changing the search language doesn't
-  invalidate anything.
+  rice. `ingredientTerms.ts` adds an English name for each, as the fallback
+  described below.
 - **Misses are cached too.** A term FatSecret doesn't know won't start being
   known next week, and without a negative cache every refresh would spend its
   call budget re-asking the same unanswerable questions.
@@ -265,12 +266,34 @@ one, and showing it as a number would be a claim the data doesn't support. The
 UI carries the same distinction: a measured figure is stated plainly, an
 estimated one keeps its `~` and the word *skøn*.
 
+### Localisation: ask in Danish
+
+The recipes are Danish, the shop is Danish and the app is Danish, so every
+request carries `region=DK&language=da` and the token asks for FatSecret's
+`localization` scope alongside `basic`. That is what makes the database answer
+about `rugbrød` rather than about the nearest American loaf, and what makes
+entries come back with the metric servings this normalises to per 100 g. Both
+values are overridable (`FATSECRET_REGION`, `FATSECRET_LANGUAGE`) but neither
+needs setting.
+
+English is the **fallback, not the plan**. A Danish term that finds nothing is
+retried once with the ingredient's English name; the cache records which
+phrasing actually matched, and the key stays Danish either way, so a term never
+moves in the cache because the search language changed.
+
+A key without the `localization` scope is *downgraded*, not broken. The token
+endpoint refuses the scope with a 400 and an API call refuses the region with
+an error mentioning it, so both are caught: localisation is switched off for
+the life of that source, the region and language stop being sent, and lookups
+carry on against the English database on the English names. It costs one retry
+in total, not one per ingredient.
+
 ### Auth, and the one thing that will bite you
 
 OAuth 2.0 client credentials: key and secret as HTTP Basic against
-`https://oauth.fatsecret.com/connect/token`, scope `basic`, then a bearer token
-on `https://platform.fatsecret.com/rest/server.api`. Tokens last a day and are
-held in memory, so a batch of 200 lookups costs one token request.
+`https://oauth.fatsecret.com/connect/token`, scopes `basic localization`, then
+a bearer token on `https://platform.fatsecret.com/rest/server.api`. Tokens last
+a day and are held in memory, so a batch of 200 lookups costs one token request.
 
 **FatSecret only accepts token requests from IP addresses registered against
 the key**, which a serverless deployment does not have a stable set of. This is

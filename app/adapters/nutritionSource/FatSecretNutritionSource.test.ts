@@ -58,25 +58,59 @@ const CHICKEN_FOOD = {
   },
 };
 
+interface StubRoute {
+  match: string;
+  body?: unknown;
+  /** Answered in order, one per matching call — for testing a retry. */
+  bodies?: unknown[];
+  status?: number;
+  /** Applied to the first matching call only, so a downgrade can be tested. */
+  firstStatus?: number;
+}
+
 /** A stub `fetch` that answers by URL, and records what it was asked. */
-function stubFetch(routes: { match: string; body: unknown; status?: number }[]) {
-  const calls: string[] = [];
-  const impl = vi.fn(async (input: Parameters<typeof fetch>[0]) => {
+function stubFetch(routes: StubRoute[]) {
+  const calls: { url: string; body: string }[] = [];
+  const seen = new Map<StubRoute, number>();
+
+  const impl = vi.fn(async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]) => {
     const url = String(input);
-    calls.push(url);
+    calls.push({ url, body: String(init?.body ?? "") });
+
     const route = routes.find((candidate) => url.includes(candidate.match));
     if (!route) throw new Error(`unstubbed request: ${url}`);
-    return new Response(JSON.stringify(route.body), {
-      status: route.status ?? 200,
+
+    const nth = seen.get(route) ?? 0;
+    seen.set(route, nth + 1);
+    const body = route.bodies ? (route.bodies[Math.min(nth, route.bodies.length - 1)] ?? {}) : route.body;
+    const status = nth === 0 && route.firstStatus ? route.firstStatus : (route.status ?? 200);
+
+    return new Response(JSON.stringify(body), {
+      status,
       headers: { "Content-Type": "application/json" },
     });
   });
+
   return { impl: impl as unknown as typeof fetch, calls };
 }
 
+/** Unlocalised: no region or language, the way a plain `basic` key behaves. */
 function source(fetchImpl: typeof fetch) {
   return new FatSecretNutritionSource({ clientId: "id", clientSecret: "secret", fetchImpl });
 }
+
+/** What `fromEnv` builds: Danish region and language, `localization` scope. */
+function danishSource(fetchImpl: typeof fetch) {
+  return new FatSecretNutritionSource({
+    clientId: "id",
+    clientSecret: "secret",
+    region: FatSecretNutritionSource.DEFAULT_REGION,
+    language: FatSecretNutritionSource.DEFAULT_LANGUAGE,
+    fetchImpl,
+  });
+}
+
+const NO_RESULTS = { foods: { total_results: "0" } };
 
 describe("FatSecretNutritionSource.lookup", () => {
   it("resolves a term to per-100 g figures", async () => {
@@ -86,7 +120,7 @@ describe("FatSecretNutritionSource.lookup", () => {
       { match: "food.get.v4", body: CHICKEN_FOOD },
     ]);
 
-    const found = await source(impl).lookup("chicken breast");
+    const found = await source(impl).lookup({ query: "chicken breast" });
 
     expect(found).not.toBeNull();
     expect(found!.foodId).toBe("4881");
@@ -103,10 +137,10 @@ describe("FatSecretNutritionSource.lookup", () => {
     ]);
     const client = source(impl);
 
-    await client.lookup("chicken breast");
-    await client.lookup("chicken breast");
+    await client.lookup({ query: "chicken breast" });
+    await client.lookup({ query: "chicken breast" });
 
-    expect(calls.filter((url) => url.includes("connect/token"))).toHaveLength(1);
+    expect(calls.filter((call) => call.url.includes("connect/token"))).toHaveLength(1);
     const searchCall = (impl as unknown as ReturnType<typeof vi.fn>).mock.calls.find((call) =>
       String(call[0]).includes("foods.search"),
     )!;
@@ -118,10 +152,10 @@ describe("FatSecretNutritionSource.lookup", () => {
   it("is null — not an error — when nothing matches", async () => {
     const { impl } = stubFetch([
       { match: "connect/token", body: TOKEN_RESPONSE },
-      { match: "foods.search", body: { foods: { total_results: "0" } } },
+      { match: "foods.search", body: NO_RESULTS },
     ]);
 
-    await expect(source(impl).lookup("frilandsgris")).resolves.toBeNull();
+    await expect(source(impl).lookup({ query: "frilandsgris" })).resolves.toBeNull();
   });
 
   it("is null when the matched food states no metric serving to scale from", async () => {
@@ -140,7 +174,7 @@ describe("FatSecretNutritionSource.lookup", () => {
       },
     ]);
 
-    await expect(source(impl).lookup("chicken breast")).resolves.toBeNull();
+    await expect(source(impl).lookup({ query: "chicken breast" })).resolves.toBeNull();
   });
 
   it("throws on an error body behind a 200, rather than reading it as a result", async () => {
@@ -152,13 +186,13 @@ describe("FatSecretNutritionSource.lookup", () => {
       },
     ]);
 
-    await expect(source(impl).lookup("chicken")).rejects.toThrow(/error 12/);
+    await expect(source(impl).lookup({ query: "chicken" })).rejects.toThrow(/error 12/);
   });
 
   it("names the IP allowlist when the token request is refused", async () => {
     const { impl } = stubFetch([{ match: "connect/token", body: {}, status: 401 }]);
 
-    await expect(source(impl).lookup("chicken")).rejects.toThrow(/allowlisted/);
+    await expect(source(impl).lookup({ query: "chicken" })).rejects.toThrow(/allowlisted/);
   });
 
   it("accepts FatSecret's bare-object form of a one-element list", async () => {
@@ -176,7 +210,129 @@ describe("FatSecretNutritionSource.lookup", () => {
       { match: "food.get.v4", body: CHICKEN_FOOD },
     ]);
 
-    await expect(source(impl).lookup("chicken breast")).resolves.toMatchObject({ foodId: "4881" });
+    await expect(source(impl).lookup({ query: "chicken breast" })).resolves.toMatchObject({ foodId: "4881" });
+  });
+});
+
+describe("localisation", () => {
+  it("asks in Danish, for Danish food data", async () => {
+    const { impl, calls } = stubFetch([
+      { match: "connect/token", body: TOKEN_RESPONSE },
+      { match: "foods.search", body: CHICKEN_SEARCH },
+      { match: "food.get.v4", body: CHICKEN_FOOD },
+    ]);
+
+    await danishSource(impl).lookup({ query: "kyllingebryst", fallbackQuery: "chicken breast" });
+
+    const token = calls.find((call) => call.url.includes("connect/token"))!;
+    expect(token.body).toContain("scope=basic+localization");
+
+    const search = calls.find((call) => call.url.includes("foods.search"))!;
+    expect(search.url).toContain("region=DK");
+    expect(search.url).toContain("language=da");
+    expect(search.url).toContain("search_expression=kyllingebryst");
+  });
+
+  it("doesn't spend the English retry when the Danish term answers", async () => {
+    const { impl, calls } = stubFetch([
+      { match: "connect/token", body: TOKEN_RESPONSE },
+      { match: "foods.search", body: CHICKEN_SEARCH },
+      { match: "food.get.v4", body: CHICKEN_FOOD },
+    ]);
+
+    const found = await danishSource(impl).lookup({
+      query: "kyllingebryst",
+      fallbackQuery: "chicken breast",
+    });
+
+    expect(found!.query).toBe("kyllingebryst");
+    expect(calls.filter((call) => call.url.includes("foods.search"))).toHaveLength(1);
+  });
+
+  it("retries in English when the Danish term finds nothing", async () => {
+    const { impl, calls } = stubFetch([
+      { match: "connect/token", body: TOKEN_RESPONSE },
+      { match: "foods.search", bodies: [NO_RESULTS, CHICKEN_SEARCH] },
+      { match: "food.get.v4", body: CHICKEN_FOOD },
+    ]);
+
+    const found = await danishSource(impl).lookup({
+      query: "kyllingebryst",
+      fallbackQuery: "chicken breast",
+    });
+
+    expect(found!.foodId).toBe("4881");
+    // Recorded under the phrasing that actually found it, not the one asked first.
+    expect(found!.query).toBe("chicken breast");
+    const searches = calls.filter((call) => call.url.includes("foods.search"));
+    expect(searches).toHaveLength(2);
+    expect(searches[1]!.url).toContain("search_expression=chicken+breast");
+  });
+
+  it("gives up after the English retry rather than looping", async () => {
+    const { impl, calls } = stubFetch([
+      { match: "connect/token", body: TOKEN_RESPONSE },
+      { match: "foods.search", body: NO_RESULTS },
+    ]);
+
+    await expect(
+      danishSource(impl).lookup({ query: "frilandsgris", fallbackQuery: "free range pork" }),
+    ).resolves.toBeNull();
+    expect(calls.filter((call) => call.url.includes("foods.search"))).toHaveLength(2);
+  });
+
+  it("downgrades to the English database when the key has no localization scope", async () => {
+    // FatSecret refuses the scope at the token endpoint with a 400.
+    const { impl, calls } = stubFetch([
+      { match: "connect/token", firstStatus: 400, body: TOKEN_RESPONSE },
+      { match: "foods.search", body: CHICKEN_SEARCH },
+      { match: "food.get.v4", body: CHICKEN_FOOD },
+    ]);
+    const client = danishSource(impl);
+
+    await client.lookup({ query: "kyllingebryst", fallbackQuery: "chicken breast" });
+
+    expect(client.isLocalized).toBe(false);
+    const tokens = calls.filter((call) => call.url.includes("connect/token"));
+    expect(tokens).toHaveLength(2);
+    expect(tokens[1]!.body).toContain("scope=basic");
+    expect(tokens[1]!.body).not.toContain("localization");
+    // …and the region stops being sent, since it's what the key was refused for.
+    expect(calls.find((call) => call.url.includes("foods.search"))!.url).not.toContain("region");
+  });
+
+  it("downgrades when an API call is rejected for carrying the region", async () => {
+    const { impl, calls } = stubFetch([
+      { match: "connect/token", body: TOKEN_RESPONSE },
+      {
+        match: "foods.search",
+        bodies: [
+          { error: { code: 21, message: "Invalid scope: localization is not enabled for this key" } },
+          CHICKEN_SEARCH,
+        ],
+      },
+      { match: "food.get.v4", body: CHICKEN_FOOD },
+    ]);
+    const client = danishSource(impl);
+
+    const found = await client.lookup({ query: "kyllingebryst" });
+
+    expect(found!.foodId).toBe("4881");
+    expect(client.isLocalized).toBe(false);
+    const searches = calls.filter((call) => call.url.includes("foods.search"));
+    expect(searches[0]!.url).toContain("region=DK");
+    expect(searches[1]!.url).not.toContain("region=DK");
+  });
+
+  it("still throws on an error that has nothing to do with localisation", async () => {
+    const { impl } = stubFetch([
+      { match: "connect/token", body: TOKEN_RESPONSE },
+      { match: "foods.search", body: { error: { code: 5, message: "Daily limit exceeded" } } },
+    ]);
+
+    await expect(danishSource(impl).lookup({ query: "kyllingebryst" })).rejects.toThrow(
+      /Daily limit exceeded/,
+    );
   });
 });
 
@@ -194,6 +350,8 @@ describe("FatSecretNutritionSource.fromEnv", () => {
       FATSECRET_CLIENT_SECRET: "secret",
     } satisfies EnvLike);
     expect(configured).toBeInstanceOf(FatSecretNutritionSource);
+    // Danish without being asked: the app has no other locale worth defaulting to.
+    expect(configured!.isLocalized).toBe(true);
   });
 });
 

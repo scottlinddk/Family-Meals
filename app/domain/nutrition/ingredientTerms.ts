@@ -14,12 +14,18 @@ import { lookupProduct, parseUnit, withoutQuantity } from "~/domain/recipes/calo
  * lookup key and the fallback kcal figure agree about what a line names,
  * which they would not if this file parsed Danish a second time.
  *
- * **What language do we ask in?** FatSecret's food database is English unless
- * the key is provisioned for localisation (`region`/`language`, a Premier
- * scope). Asking it about `hakket oksekød` returns nothing useful; asking it
- * about `ground beef` returns the entry we want. So each vocabulary word
- * carries its English name, and the Danish original is used only when the
- * caller says the key is localised for Denmark.
+ * **What do we ask in?** Danish, first — that is what the recipes are written
+ * in, what the family shops in, and what FatSecret's `localization` scope
+ * exists for. Asked with `region=DK&language=da`, FatSecret answers about
+ * Danish foods: `rugbrød` is rye bread as sold here rather than the nearest
+ * American approximation, and the entries come back with metric servings.
+ *
+ * English is the *fallback*, not the plan. A key without the `localization`
+ * scope can only search the English database, and even a localised key has
+ * gaps, so every vocabulary word also carries an English name and the source
+ * retries with it when the Danish term finds nothing. Both queries answer to
+ * the same Danish cache key, so which one matched never changes where the
+ * result is stored.
  *
  * The result is a small, stable set of terms: ~250 vocabulary words cover
  * most of what 350 recipes list, so the whole recipe cache resolves to a few
@@ -27,18 +33,17 @@ import { lookupProduct, parseUnit, withoutQuantity } from "~/domain/recipes/calo
  * makes this affordable against a rate-limited API.
  */
 
-/** Which language the FatSecret key is provisioned to search in. */
-export type NutritionLanguage = "en" | "da";
-
 export interface IngredientTerm {
   /**
    * Stable cache key for this product, in Danish — the vocabulary word when
    * the line names one, otherwise the cleaned line. Danish rather than
-   * English so the cache key doesn't change if the search language does.
+   * English so the cache key doesn't depend on which query matched.
    */
   key: string;
-  /** What to actually send to the nutrition API, in the requested language. */
+  /** What to ask FatSecret first: the Danish product word. */
   query: string;
+  /** The English name to retry with when the Danish term finds nothing. */
+  fallbackQuery?: string;
   /** Whether `key` came from the product vocabulary rather than a fallback. */
   recognised: boolean;
 }
@@ -137,26 +142,23 @@ const MAX_FALLBACK_WORDS = 3;
  * line names nothing to look up ("salt og peber efter smag" reduced to
  * nothing, an empty line).
  */
-export function ingredientTerm(
-  line: string,
-  language: NutritionLanguage = "en",
-): IngredientTerm | null {
+export function ingredientTerm(line: string): IngredientTerm | null {
   const rest = withoutQuantity(line);
   if (!rest) return null;
 
   const key = lookupProduct(rest);
   if (key) {
     // A vocabulary word always has an English name — the two tables are
-    // written together — but fall back to the Danish rather than throwing if
-    // one is ever added to only one of them.
-    return { key, query: language === "da" ? key : (ENGLISH_NAMES[key] ?? key), recognised: true };
+    // written together, and a test holds them to it — but an entry added to
+    // only one of them should lose the retry, not throw.
+    return { key, query: key, fallbackQuery: ENGLISH_NAMES[key], recognised: true };
   }
 
   const fallback = fallbackTerm(rest);
   if (!fallback) return null;
-  // Nothing to translate an unknown word into, so it goes out as written. A
-  // Danish-localised key can still find it; an English one will not, and the
-  // line falls back to the local kcal table (see `recipeNutrition.ts`).
+  // Nothing to translate an unknown word into, so it gets one shot, as
+  // written. A localised key can still find it; otherwise the line falls back
+  // to the local kcal table (see `recipeNutrition.ts`).
   return { key: fallback, query: fallback, recognised: false };
 }
 
@@ -167,13 +169,10 @@ export function ingredientTerm(
  * recipes listing it are still one — which is the difference between a few
  * hundred API calls and tens of thousands.
  */
-export function ingredientTerms(
-  lines: readonly string[],
-  language: NutritionLanguage = "en",
-): IngredientTerm[] {
+export function ingredientTerms(lines: readonly string[]): IngredientTerm[] {
   const seen = new Map<string, IngredientTerm>();
   for (const line of lines) {
-    const term = ingredientTerm(line, language);
+    const term = ingredientTerm(line);
     if (term && !seen.has(term.key)) seen.set(term.key, term);
   }
   return [...seen.values()];

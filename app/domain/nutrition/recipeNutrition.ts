@@ -7,7 +7,7 @@ import {
   lookupProduct,
   withoutQuantity,
 } from "~/domain/recipes/calorieEstimate";
-import { ingredientTerm, type NutritionLanguage } from "~/domain/nutrition/ingredientTerms";
+import { ingredientTerm } from "~/domain/nutrition/ingredientTerms";
 import {
   divideNutrients,
   hasMacros,
@@ -96,8 +96,6 @@ export interface RecipeNutrition {
 export interface NutritionOptions {
   /** Per-100 g figures from FatSecret, keyed by ingredient term. */
   lookup?: NutrientLookup;
-  /** Which language the terms were resolved in — must match how they were cached. */
-  language?: NutritionLanguage;
 }
 
 /**
@@ -113,13 +111,11 @@ export interface NutritionOptions {
  */
 export function computeRecipeNutrition(
   recipe: Pick<ExternalRecipe, "ingredients" | "servings">,
-  { lookup, language = "en" }: NutritionOptions = {},
+  { lookup }: NutritionOptions = {},
 ): RecipeNutrition | null {
   if (recipe.ingredients.length === 0) return null;
 
-  const lines: NutritionLine[] = recipe.ingredients.map((line) =>
-    lineNutrition(line, lookup, language),
-  );
+  const lines: NutritionLine[] = recipe.ingredients.map((line) => lineNutrition(line, lookup));
 
   const total = sumNutrients(lines.map((entry) => entry.nutrients));
   const servingsKnown = typeof recipe.servings === "number" && recipe.servings > 0;
@@ -149,13 +145,9 @@ export function computeRecipeNutrition(
   };
 }
 
-function lineNutrition(
-  line: string,
-  lookup: NutrientLookup | undefined,
-  language: NutritionLanguage,
-): NutritionLine {
+function lineNutrition(line: string, lookup: NutrientLookup | undefined): NutritionLine {
   const grams = estimateLineGrams(line);
-  const term = ingredientTerm(line, language);
+  const term = ingredientTerm(line);
   const measured = term && lookup?.get(term.key);
 
   if (measured) {

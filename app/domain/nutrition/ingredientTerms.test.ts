@@ -3,31 +3,25 @@ import { ENGLISH_NAMES, ingredientTerm, ingredientTerms } from "~/domain/nutriti
 import { KCAL_PER_100G } from "~/domain/recipes/calorieEstimate";
 
 describe("ingredientTerm", () => {
-  it("asks an English database in English, and keys the cache in Danish", () => {
+  it("asks in Danish first, and keeps English in reserve", () => {
     const term = ingredientTerm("500 g hakket oksekød")!;
     expect(term.key).toBe("oksekød");
-    expect(term.query).toBe("ground beef");
+    expect(term.query).toBe("oksekød");
+    expect(term.fallbackQuery).toBe("ground beef");
     expect(term.recognised).toBe(true);
   });
 
-  it("asks in Danish when the key is provisioned for Denmark", () => {
-    expect(ingredientTerm("500 g hakket oksekød", "da")!.query).toBe("oksekød");
-  });
-
-  it("keeps the cache key stable across the two search languages", () => {
-    expect(ingredientTerm("2 dl piskefløde", "en")!.key).toBe(
-      ingredientTerm("2 dl piskefløde", "da")!.key,
-    );
-  });
-
   it("resolves a compound to the product it is a kind of", () => {
-    expect(ingredientTerm("2 stk kyllingebryst")!.query).toBe("chicken breast");
-    expect(ingredientTerm("1 rødløg")!.query).toBe("red onion");
+    expect(ingredientTerm("2 stk kyllingebryst")!.query).toBe("kyllingebryst");
+    expect(ingredientTerm("2 stk kyllingebryst")!.fallbackQuery).toBe("chicken breast");
+    expect(ingredientTerm("1 rødløg")!.query).toBe("rødløg");
   });
 
   it("doesn't send fresh herbs to look up rice", () => {
     // The vocabulary's own trap: "friske" contains the letters of "ris".
-    expect(ingredientTerm("1 bundt friske krydderurter")!.query).toBe("fresh herbs");
+    const term = ingredientTerm("1 bundt friske krydderurter")!;
+    expect(term.query).toBe("krydderurter");
+    expect(term.fallbackQuery).toBe("fresh herbs");
   });
 
   it("falls back to a stable phrase for a product the vocabulary doesn't know", () => {
@@ -37,6 +31,8 @@ describe("ingredientTerm", () => {
     // is kept, so the miss caches under the same key next week.
     expect(term.key).toBe("frilandsgris skiver");
     expect(term.query).toBe(term.key);
+    // Nothing to translate an unknown Danish word into, so there's no retry.
+    expect(term.fallbackQuery).toBeUndefined();
   });
 
   it("is null when a line names nothing to look up", () => {

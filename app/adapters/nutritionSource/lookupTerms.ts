@@ -46,12 +46,13 @@ export async function lookupTerms(
     for (let index = next++; index < terms.length; index = next++) {
       const term = terms[index]!;
       try {
-        const found = await source.lookup(term.query);
+        const found = await source.lookup(term);
         facts.push(
           found
             ? {
                 term: term.key,
-                query: term.query,
+                // The phrasing that found it, which may be the English retry.
+                query: found.query,
                 source: "fatsecret",
                 foodId: found.foodId,
                 foodName: found.foodName,

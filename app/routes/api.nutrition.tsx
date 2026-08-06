@@ -4,7 +4,7 @@ import { externalRecipeRepository } from "~/data/repositories/externalRecipeRepo
 import { nutritionFactRepository } from "~/data/repositories/nutritionFactRepository";
 import { FatSecretNutritionSource } from "~/adapters/nutritionSource/FatSecretNutritionSource";
 import { lookupTerms } from "~/adapters/nutritionSource/lookupTerms";
-import { ingredientTerms, type NutritionLanguage } from "~/domain/nutrition/ingredientTerms";
+import { ingredientTerms } from "~/domain/nutrition/ingredientTerms";
 
 /**
  * How many new terms one refresh looks up.
@@ -29,7 +29,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     nutritionFactRepository.listAll(),
   ]);
 
-  const terms = ingredientTerms(recipes.flatMap((recipe) => recipe.ingredients), language());
+  const terms = ingredientTerms(recipes.flatMap((recipe) => recipe.ingredients));
   const known = new Set(facts.map((fact) => fact.term));
 
   return json(
@@ -81,7 +81,7 @@ export async function action({ request }: Route.ActionArgs) {
     Number.isFinite(requested) && requested > 0 ? Math.min(requested, MAX_LIMIT) : DEFAULT_LIMIT;
 
   const recipes = await externalRecipeRepository.listAll();
-  const terms = ingredientTerms(recipes.flatMap((recipe) => recipe.ingredients), language());
+  const terms = ingredientTerms(recipes.flatMap((recipe) => recipe.ingredients));
   const known = await nutritionFactRepository.listKnownTerms(terms.map((term) => term.key));
   const pending = terms.filter((term) => !known.has(term.key));
 
@@ -105,15 +105,6 @@ export async function action({ request }: Route.ActionArgs) {
     },
     headers,
   );
-}
-
-/**
- * Which language terms are searched in — Danish only when the key is
- * provisioned for it, since an unlocalised key returns nothing for Danish
- * words. Read here so the refresh and the read path agree about cache keys.
- */
-function language(): NutritionLanguage {
-  return process.env.FATSECRET_LANGUAGE?.toLowerCase().startsWith("da") ? "da" : "en";
 }
 
 function json(body: unknown, headers: Headers, status = 200): Response {
