@@ -6,10 +6,14 @@ export function RegenerateDayButton({
   weekStart,
   dayIndex,
   className,
+  size = "sm",
+  block = false,
 }: {
   weekStart: string;
   dayIndex: number;
   className?: string;
+  size?: "sm" | "md";
+  block?: boolean;
 }) {
   const regenerate = useRegenerateDay(weekStart);
 
@@ -17,7 +21,8 @@ export function RegenerateDayButton({
     <Button
       type="button"
       variant="secondary"
-      size="sm"
+      size={size}
+      block={block}
       className={`shrink-0 ${className ?? ""}`}
       onClick={() => regenerate.mutate(dayIndex)}
       disabled={regenerate.isPending}

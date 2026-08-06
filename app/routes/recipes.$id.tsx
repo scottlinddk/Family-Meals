@@ -27,11 +27,13 @@ export default function RecipeDetailPage({ params }: Route.ComponentProps) {
             />
           )}
 
-          <div className="mb-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-3">
-            <h1 className="m-0 text-2xl">{recipe.data.title}</h1>
-            <div className="flex flex-wrap gap-2">
-              <LinkButton to={`/recipes/${params.id}/cook`}>{t("cook.open")}</LinkButton>
-              <ShareButton target={{ kind: "recipe", recipeId: params.id! }} size="md" />
+          <div className="mb-6 flex flex-col gap-4">
+            <h1 className="m-0 text-3xl">{recipe.data.title}</h1>
+            <div className="grid grid-cols-2 gap-3">
+              <LinkButton to={`/recipes/${params.id}/cook`} size="md" block>
+                {t("cook.open")}
+              </LinkButton>
+              <ShareButton target={{ kind: "recipe", recipeId: params.id! }} size="md" block />
             </div>
           </div>
 
