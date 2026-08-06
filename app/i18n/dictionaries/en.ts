@@ -105,6 +105,7 @@ export const en: Record<keyof typeof da, string> = {
   "offers.thisWeek": "On offer this week ({{count}})",
   "offers.nextWeek": "On offer next week ({{count}})",
   "offers.nextWeekEmpty": "Next week's offers haven't been fetched yet.",
+  "offers.weekendOnly": "Weekend only ({{from}}–{{to}})",
   "offers.autoFetchHeading": "Automatic offers",
   "offers.autoFetchDescription":
     "Fetch REMA 1000's current offers automatically from etilbudsavis.dk (a third-party tilbudsavis built on the Tjek platform, not the webshop itself).",

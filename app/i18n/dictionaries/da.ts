@@ -105,6 +105,7 @@ export const da = {
   "offers.thisWeek": "På tilbud denne uge ({{count}})",
   "offers.nextWeek": "På tilbud næste uge ({{count}})",
   "offers.nextWeekEmpty": "Næste uges tilbud er endnu ikke hentet.",
+  "offers.weekendOnly": "Kun i weekenden ({{from}}–{{to}})",
   "offers.autoFetchHeading": "Automatiske tilbud",
   "offers.autoFetchDescription":
     "Hent REMA 1000's aktuelle tilbud automatisk fra etilbudsavis.dk (en tredjeparts tilbudsavis bygget på Tjek-platformen, ikke selve webshoppen).",

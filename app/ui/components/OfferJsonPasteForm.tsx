@@ -4,6 +4,8 @@ import { Button } from "~/ui/components/ui/Button";
 import { Card } from "~/ui/components/ui/Card";
 import { Textarea } from "~/ui/components/ui/Input";
 import { Accordion } from "~/ui/components/ui/Accordion";
+import { Tag } from "~/ui/components/ui/Tag";
+import { isWeekendOnlyOffer } from "~/domain/offers/offerTiming";
 import type { Offer } from "~/domain/types";
 import { t } from "~/i18n/t";
 
@@ -61,14 +63,18 @@ function OfferList({ offers }: { offers: Offer[] }) {
   return (
     <ul className="m-0 mt-1.5 flex max-h-56 list-none flex-col overflow-y-auto p-0">
       {offers.map((offer, i) => (
-        <li
-          key={i}
-          className="flex items-center justify-between gap-3 border-b border-divider py-2.5 text-sm last:border-b-0"
-        >
-          <span className="min-w-0 flex-1">{offer.name}</span>
-          <span className="shrink-0 text-[13px] font-bold text-accent-700">
-            {offer.price} {offer.currencyCode}
-          </span>
+        <li key={i} className="flex flex-col gap-1 border-b border-divider py-2.5 text-sm last:border-b-0">
+          <div className="flex items-center justify-between gap-3">
+            <span className="min-w-0 flex-1">{offer.name}</span>
+            <span className="shrink-0 text-[13px] font-bold text-accent-700">
+              {offer.price} {offer.currencyCode}
+            </span>
+          </div>
+          {isWeekendOnlyOffer(offer) && (
+            <Tag variant="accent-2">
+              {t("offers.weekendOnly", { from: formatDate(offer.validFrom), to: formatDate(offer.validUntil) })}
+            </Tag>
+          )}
         </li>
       ))}
     </ul>
