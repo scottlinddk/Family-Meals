@@ -3,7 +3,9 @@ import { SubscribeCalloutModal } from "~/ui/components/SubscribeCalloutModal";
 import { t } from "~/i18n/t";
 
 /**
- * The mint band across the top of every signed-in page.
+ * The deep-green band across the top of every signed-in page — the same
+ * colour as the app's one accent, so the brand strip and the primary action
+ * always read as a single colour rather than two greens.
  *
  * It carries only what belongs to the whole app rather than to a page: who
  * this is (the brand, which is also the way home) and the calendar
@@ -19,7 +21,7 @@ export function TopNav() {
       <div className="mx-auto flex max-w-3xl items-center gap-2 px-4 py-1.5 sm:px-6">
         <Link
           to="/"
-          className="mr-auto min-w-0 truncate text-base font-bold tracking-[-0.01em] text-accent-700 transition-opacity hover:opacity-80"
+          className="mr-auto min-w-0 truncate text-base font-bold tracking-[-0.01em] text-white transition-opacity hover:opacity-80"
         >
           {t("app.title")}
         </Link>

@@ -29,7 +29,7 @@ export function Layout({ children }: { children: ReactNode }) {
           generated from one definition — see scripts/generateIcons.mjs.
         */}
         <link rel="manifest" href="/manifest.webmanifest" />
-        <meta name="theme-color" content="#dff0dc" />
+        <meta name="theme-color" content="#0e3b27" />
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="icon" href="/favicon.ico" sizes="48x48" />
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
@@ -42,7 +42,7 @@ export function Layout({ children }: { children: ReactNode }) {
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
           rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap"
         />
         <Meta />
         <Links />
