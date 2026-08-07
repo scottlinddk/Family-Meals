@@ -16,6 +16,8 @@ function recipe(id: string, ingredients: string[], tags = ["aftensmad"]): Extern
 
 function offer(name: string): Offer {
   return {
+    storeId: "rema1000",
+    memberOnly: false,
     name,
     unitSizeFrom: 1,
     unitSizeTo: 1,

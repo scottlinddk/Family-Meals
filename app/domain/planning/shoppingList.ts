@@ -1,4 +1,4 @@
-import type { Offer, WeekPlan } from "~/domain/types";
+import { STORE_IDS, type Offer, type StoreId, type WeekPlan } from "~/domain/types";
 import { offersMatchingIngredient, productTokens } from "~/domain/recipes/ingredientOfferScore";
 
 /** One line to buy, with the days that need it. */
@@ -13,12 +13,20 @@ export interface ShoppingListItem {
   recipeTitles: string[];
   /** Offer names covering it this week, if any. */
   offerNames: string[];
+  /** Every store whose offer(s) matched this item, for a "also on offer at X" note. */
+  offerStoreIds: StoreId[];
 }
 
-export interface ShoppingListSection {
-  /** REMA department slug, or `null` for ingredients no offer identified. */
+/** One department within a store's section, or `null` for ingredients no offer identified a department for. */
+export interface ShoppingListDepartmentGroup {
   departmentSlug: string | null;
   items: ShoppingListItem[];
+}
+
+/** One store's items, or `null` for ingredients no offer at any store matched. */
+export interface ShoppingListSection {
+  storeId: StoreId | null;
+  departments: ShoppingListDepartmentGroup[];
 }
 
 export interface ShoppingList {
@@ -48,6 +56,11 @@ function mergeKey(ingredientLine: string): string {
  * first, freezer and dry goods last — so the list reads in the order things
  * are picked up. Unknown departments keep their first-seen order after
  * these, and un-departmented items (no matching offer) come last.
+ *
+ * This is REMA's own department taxonomy; other stores' Tjek `category_ids`
+ * won't line up with it, so within a non-REMA store's section this ordering
+ * is only a reasonable-effort default, not a precise walk of that store's
+ * actual layout.
  */
 const DEPARTMENT_ORDER = [
   "fruit-and-veg",
@@ -66,23 +79,46 @@ function departmentRank(slug: string | null): number {
   return index === -1 ? DEPARTMENT_ORDER.length : index;
 }
 
+function storeRank(storeId: StoreId | null, storeOrder: StoreId[]): number {
+  if (storeId === null) return Number.MAX_SAFE_INTEGER;
+  const index = storeOrder.indexOf(storeId);
+  return index === -1 ? storeOrder.length : index;
+}
+
 /**
  * Aggregates a week's seven recipes into one shopping list: every ingredient
- * line, merged across days, grouped by the REMA department of the offer that
- * covers it, and marked with that offer.
+ * line, merged across days, grouped by the store and department of the offer
+ * that covers it, and marked with that offer.
  *
  * Quantities are deliberately not summed. The source lines are free text
  * from REMA's recipe pages ("1 bakke cherrytomater", "et par kviste timian"),
  * and a wrong total is worse than two honest lines — so a merged item keeps
  * every variant it absorbed and the days that need them.
+ *
+ * `offers` must already be narrowed to what the family can actually use
+ * (selected stores, and member-only offers only for stores they hold
+ * membership at — see `offerIsUsable`) before being passed in; this function
+ * is a pure grouping step and doesn't re-check either.
+ *
+ * `storeOrder` controls which store's section comes first — normally the
+ * family's `FamilyStoreSettings.selectedStores` order — falling back to the
+ * app's declared `STORE_IDS` order when omitted.
  */
-export function buildShoppingList(week: WeekPlan, offers: Offer[]): ShoppingList {
-  const items = new Map<string, ShoppingListItem & { departmentSlug: string | null }>();
+export function buildShoppingList(
+  week: WeekPlan,
+  offers: Offer[],
+  storeOrder: StoreId[] = [...STORE_IDS],
+): ShoppingList {
+  const items = new Map<
+    string,
+    ShoppingListItem & { storeId: StoreId | null; departmentSlug: string | null }
+  >();
 
   for (const day of week.days) {
     for (const line of day.recipeSnapshot.ingredientLines) {
       const key = mergeKey(line);
       const matches = offersMatchingIngredient(line, offers);
+      const matchStoreIds = [...new Set(matches.map((offer) => offer.storeId))];
       const existing = items.get(key);
 
       if (existing) {
@@ -94,6 +130,10 @@ export function buildShoppingList(week: WeekPlan, offers: Offer[]): ShoppingList
         for (const offer of matches) {
           if (!existing.offerNames.includes(offer.name)) existing.offerNames.push(offer.name);
         }
+        for (const storeId of matchStoreIds) {
+          if (!existing.offerStoreIds.includes(storeId)) existing.offerStoreIds.push(storeId);
+        }
+        existing.storeId ??= matches[0]?.storeId ?? null;
         existing.departmentSlug ??= matches[0]?.departmentSlug ?? null;
         continue;
       }
@@ -104,26 +144,38 @@ export function buildShoppingList(week: WeekPlan, offers: Offer[]): ShoppingList
         dates: [day.date],
         recipeTitles: [day.recipeSnapshot.title],
         offerNames: matches.map((offer) => offer.name),
+        offerStoreIds: matchStoreIds,
+        storeId: matches[0]?.storeId ?? null,
         departmentSlug: matches[0]?.departmentSlug ?? null,
       });
     }
   }
 
-  const sections = new Map<string | null, ShoppingListItem[]>();
-  for (const { departmentSlug, ...item } of items.values()) {
-    const section = sections.get(departmentSlug);
+  const storeSections = new Map<StoreId | null, Map<string | null, ShoppingListItem[]>>();
+  for (const { storeId, departmentSlug, ...item } of items.values()) {
+    let departments = storeSections.get(storeId);
+    if (!departments) {
+      departments = new Map();
+      storeSections.set(storeId, departments);
+    }
+    const section = departments.get(departmentSlug);
     if (section) section.push(item);
-    else sections.set(departmentSlug, [item]);
+    else departments.set(departmentSlug, [item]);
   }
 
-  const ordered = [...sections.entries()]
-    .map(([departmentSlug, sectionItems]) => ({
-      departmentSlug,
-      items: sectionItems.sort((a, b) => a.label.localeCompare(b.label, "da")),
+  const ordered = [...storeSections.entries()]
+    .map(([storeId, departments]) => ({
+      storeId,
+      departments: [...departments.entries()]
+        .map(([departmentSlug, sectionItems]) => ({
+          departmentSlug,
+          items: sectionItems.sort((a, b) => a.label.localeCompare(b.label, "da")),
+        }))
+        .sort((a, b) => departmentRank(a.departmentSlug) - departmentRank(b.departmentSlug)),
     }))
-    .sort((a, b) => departmentRank(a.departmentSlug) - departmentRank(b.departmentSlug));
+    .sort((a, b) => storeRank(a.storeId, storeOrder) - storeRank(b.storeId, storeOrder));
 
-  const allItems = ordered.flatMap((section) => section.items);
+  const allItems = ordered.flatMap((section) => section.departments.flatMap((d) => d.items));
 
   return {
     weekStartDate: week.weekStartDate,

@@ -1,5 +1,5 @@
 /**
- * Runs `EtilbudsavisOfferSource` and writes REMA 1000's current offers to
+ * Runs `EtilbudsavisOfferSource` and writes a store's current offers to
  * JSON — the offer-side counterpart of `scrapeRemaRecipes.ts`, and the first
  * end-to-end exercise of that adapter.
  *
@@ -9,24 +9,29 @@
  * their validity window, and a sample — so the pagination loop and the field
  * mappings meet real data before the app depends on them.
  *
- *   npx vite-node --config vitest.config.ts scripts/fetchRemaOffers.ts -- [outfile]
+ *   npx vite-node --config vitest.config.ts scripts/fetchRemaOffers.ts -- [storeId] [outfile]
  */
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import { EtilbudsavisOfferSource } from "~/adapters/offerSource/EtilbudsavisOfferSource";
+import { STORE_IDS, type StoreId } from "~/domain/types";
 
 const args = process.argv.slice(2).filter((arg) => arg !== "--");
-const outFile = args[0] ?? "scrape-output/rema-offers.json";
+const storeArg = args[0];
+const storeId: StoreId = (STORE_IDS as readonly string[]).includes(storeArg ?? "")
+  ? (storeArg as StoreId)
+  : "rema1000";
+const outFile = args[1] ?? `scrape-output/${storeId}-offers.json`;
 
 const startedAt = Date.now();
-const offers = await new EtilbudsavisOfferSource().fetchCurrentOffers();
+const offers = await new EtilbudsavisOfferSource(storeId).fetchCurrentOffers();
 
 await mkdir(dirname(outFile), { recursive: true });
-await writeFile(outFile, JSON.stringify({ fetchedAt: new Date().toISOString(), offers }, null, 2));
+await writeFile(outFile, JSON.stringify({ fetchedAt: new Date().toISOString(), storeId, offers }, null, 2));
 
 const validFrom = offers.map((o) => o.validFrom).sort()[0];
 const validUntil = offers.map((o) => o.validUntil).sort().at(-1);
-console.log(`Fetched ${offers.length} offers in ${((Date.now() - startedAt) / 1000).toFixed(1)}s`);
+console.log(`Fetched ${offers.length} offers for ${storeId} in ${((Date.now() - startedAt) / 1000).toFixed(1)}s`);
 console.log(`Validity: ${validFrom} → ${validUntil}`);
 console.log(`Sample: ${JSON.stringify(offers.slice(0, 5), null, 2)}`);
 console.log(`Wrote ${outFile}`);

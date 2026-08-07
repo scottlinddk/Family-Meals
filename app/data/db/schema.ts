@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   boolean,
   date,
@@ -94,14 +95,18 @@ export const familyInvites = pgTable("family_invites", {
 export const offerSnapshotSource = pgEnum("offer_snapshot_source", ["manual", "etilbudsavis"]);
 
 /**
- * One offer import, owned by the family that made it.
+ * One offer import for one store, owned by the family that made it.
  *
- * Offers are family-scoped rather than global: which REMA offers apply
- * depends on the family's store and when they imported, and a shared table
- * meant one family's import replaced everyone else's. Snapshots are also
- * kept rather than overwritten, so `week_plans.offer_snapshot_id` points at
- * the exact offer set a plan was generated from and stays resolvable after
- * the next import.
+ * Offers are family-scoped rather than global: which offers apply depends on
+ * the family's stores and when they imported, and a shared table meant one
+ * family's import replaced everyone else's. Scoped to a single `storeId`
+ * rather than holding a mixed multi-store batch: `offerRepository.replaceCurrentOffers`
+ * replaces "the latest snapshot for this family+store" wholesale, and keeping
+ * one store per snapshot means refreshing (or failing to refresh) Netto can
+ * never disturb Rema's still-current data. Snapshots are also kept rather
+ * than overwritten, so `week_plans.offer_snapshot_id` points at the exact
+ * offer set a plan was generated from and stays resolvable after the next
+ * import.
  */
 export const offerSnapshots = pgTable(
   "offer_snapshots",
@@ -110,6 +115,8 @@ export const offerSnapshots = pgTable(
     familyId: uuid("family_id")
       .notNull()
       .references(() => families.id, { onDelete: "cascade" }),
+    /** Defaults to "rema1000" so pre-existing snapshots stay valid once this column lands. */
+    storeId: text("store_id").notNull().default("rema1000"),
     source: offerSnapshotSource("source").notNull(),
     offerCount: integer("offer_count").notNull(),
     /** Earliest `validFrom` / latest `validUntil` across the snapshot's offers. */
@@ -117,7 +124,15 @@ export const offerSnapshots = pgTable(
     validUntil: timestamp("valid_until", { withTimezone: true }),
     importedAt: timestamp("imported_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [index("offer_snapshots_family_id_imported_at_idx").on(table.familyId, table.importedAt)],
+  (table) => [
+    index("offer_snapshots_family_id_imported_at_idx").on(table.familyId, table.importedAt),
+    // "Latest snapshot" now resolves per (family, store).
+    index("offer_snapshots_family_id_store_id_imported_at_idx").on(
+      table.familyId,
+      table.storeId,
+      table.importedAt,
+    ),
+  ],
 );
 
 /** Weekly offers belonging to one import (see `offerSnapshots`). */
@@ -128,6 +143,10 @@ export const offers = pgTable(
     snapshotId: uuid("snapshot_id")
       .notNull()
       .references(() => offerSnapshots.id, { onDelete: "cascade" }),
+    /** Defaults to "rema1000" so pre-existing rows stay valid once this column lands. */
+    storeId: text("store_id").notNull().default("rema1000"),
+    /** True for a chain's member-only tier (Netto+, Føtex+) rather than a regular offer. */
+    memberOnly: boolean("member_only").notNull().default(false),
     name: text("name").notNull(),
     unitSizeFrom: doublePrecision("unit_size_from").notNull(),
     unitSizeTo: doublePrecision("unit_size_to").notNull(),
@@ -141,8 +160,31 @@ export const offers = pgTable(
     validUntil: timestamp("valid_until", { withTimezone: true }).notNull(),
     importedAt: timestamp("imported_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [index("offers_snapshot_id_idx").on(table.snapshotId)],
+  (table) => [
+    index("offers_snapshot_id_idx").on(table.snapshotId),
+    index("offers_snapshot_id_store_id_idx").on(table.snapshotId, table.storeId),
+  ],
 );
+
+/**
+ * A family's store preferences: which supermarkets they shop at, and which
+ * of those they hold a paid member tier for (Netto+, Føtex+). Kept as its
+ * own small table, keyed by family rather than by user — like `userPreferences`,
+ * a missing row is the normal state for a family that hasn't changed anything
+ * and reads back as the defaults (all four stores, no memberships).
+ */
+export const familyStoreSettings = pgTable("family_store_settings", {
+  familyId: uuid("family_id")
+    .primaryKey()
+    .references(() => families.id, { onDelete: "cascade" }),
+  /** Store ids this family shops at. */
+  selectedStores: jsonb("selected_stores")
+    .notNull()
+    .default(sql`'["rema1000","netto","foetex","meny"]'::jsonb`),
+  /** Store ids whose member-only tier this family holds. */
+  memberStores: jsonb("member_stores").notNull().default(sql`'[]'::jsonb`),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
 
 /**
  * REMA 1000's own published recipes (madogdrikke.rema1000.dk/opskrifter),

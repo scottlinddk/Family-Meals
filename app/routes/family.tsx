@@ -11,10 +11,14 @@ import {
   useSwitchFamily,
 } from "~/ui/hooks/useFamily";
 import { useIcsUrl } from "~/ui/hooks/useIcsUrl";
+import { useFamilyStoreSettings, useUpdateFamilyStoreSettings } from "~/ui/hooks/useFamilyStoreSettings";
 import { Card, CardTitle } from "~/ui/components/ui/Card";
 import { Button } from "~/ui/components/ui/Button";
 import { Input } from "~/ui/components/ui/Input";
 import { SignOutIcon } from "~/ui/components/Icon";
+import { STORE_HAS_MEMBERSHIP_TIER } from "~/domain/familyStoreSettings";
+import { STORE_NAMES } from "~/domain/stores";
+import { STORE_IDS, type StoreId } from "~/domain/types";
 import { t } from "~/i18n/t";
 
 /**
@@ -105,6 +109,8 @@ export default function FamilyPage() {
         </form>
       </Card>
 
+      <StoreSettingsCard />
+
       <Card className="mb-5">
         <CardTitle>{t("family.membersHeading")}</CardTitle>
         {members.isLoading && <p className="text-muted">{t("week.loading")}</p>}
@@ -172,5 +178,74 @@ export default function FamilyPage() {
         )}
       </Card>
     </>
+  );
+}
+
+/**
+ * Which supermarkets this family shops at, and — for chains that publish one
+ * — whether they hold that store's paid member tier (Netto+, Føtex+). Drives
+ * both which stores the offers page fetches/shows and whether a member-only
+ * offer counts toward shopping-list matching (see `offerIsUsable`).
+ */
+function StoreSettingsCard() {
+  const settings = useFamilyStoreSettings();
+  const update = useUpdateFamilyStoreSettings();
+  const selectedStores = settings.data?.selectedStores ?? [];
+  const memberStores = settings.data?.memberStores ?? [];
+
+  function toggleSelected(storeId: StoreId) {
+    const isSelected = selectedStores.includes(storeId);
+    const nextSelected = isSelected
+      ? selectedStores.filter((id) => id !== storeId)
+      : [...selectedStores, storeId];
+    // Deselecting a store can't leave it flagged as a membership either.
+    const nextMembers = isSelected ? memberStores.filter((id) => id !== storeId) : memberStores;
+    update.mutate({ selectedStores: nextSelected, memberStores: nextMembers });
+  }
+
+  function toggleMember(storeId: StoreId) {
+    const nextMembers = memberStores.includes(storeId)
+      ? memberStores.filter((id) => id !== storeId)
+      : [...memberStores, storeId];
+    update.mutate({ selectedStores, memberStores: nextMembers });
+  }
+
+  return (
+    <Card className="mb-5">
+      <CardTitle>{t("family.storesHeading")}</CardTitle>
+      <p className="m-0 text-sm text-muted">{t("family.storesDescription")}</p>
+      <ul className="m-0 mt-1 list-none p-0 text-sm">
+        {STORE_IDS.map((storeId) => (
+          <li key={storeId} className="flex flex-col gap-1.5 border-b border-divider py-2.5 last:border-0">
+            <label className="flex min-h-11 cursor-pointer items-center gap-3">
+              <input
+                type="checkbox"
+                checked={selectedStores.includes(storeId)}
+                onChange={() => toggleSelected(storeId)}
+                disabled={update.isPending}
+                className="h-5 w-5 shrink-0 accent-accent"
+              />
+              <span>{STORE_NAMES[storeId]}</span>
+            </label>
+            {STORE_HAS_MEMBERSHIP_TIER[storeId] && (
+              <label
+                className={`ml-8 flex min-h-11 items-center gap-3 ${
+                  selectedStores.includes(storeId) ? "cursor-pointer" : "cursor-not-allowed opacity-50"
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={memberStores.includes(storeId)}
+                  onChange={() => toggleMember(storeId)}
+                  disabled={update.isPending || !selectedStores.includes(storeId)}
+                  className="h-5 w-5 shrink-0 accent-accent"
+                />
+                <span className="text-muted">{t("family.hasMembership", { store: STORE_NAMES[storeId] })}</span>
+              </label>
+            )}
+          </li>
+        ))}
+      </ul>
+    </Card>
   );
 }

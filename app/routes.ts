@@ -72,6 +72,7 @@ export default [
   route("api/family/invites", "routes/api.family.invites.tsx"),
   route("api/family/invites/:id/revoke", "routes/api.family.invites.$id.revoke.tsx"),
   route("api/family/invites/:token/accept", "routes/api.family.invites.$token.accept.tsx"),
+  route("api/family/store-settings", "routes/api.family.store-settings.tsx"),
   route("api/calendar-token/rotate", "routes/api.calendar-token.rotate.tsx"),
 
   route("auth/signup", "routes/auth.signup.tsx"),

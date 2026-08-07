@@ -1,8 +1,10 @@
 import type { Route } from "./+types/api.recipes.suggestions";
 import { requireFamily } from "~/lib/auth";
 import { offerRepository } from "~/data/repositories/offerRepository";
+import { familyStoreSettingsRepository } from "~/data/repositories/familyStoreSettingsRepository";
 import { externalRecipeRepository } from "~/data/repositories/externalRecipeRepository";
 import { isSuggestionSort, rankRecipeSuggestions } from "~/domain/recipes/suggestionRanking";
+import { offerIsUsable } from "~/domain/familyStoreSettings";
 
 /**
  * How many suggestions a request gets by default.
@@ -32,12 +34,14 @@ export async function loader({ request }: Route.LoaderArgs) {
   const sort = params.get("sort");
   const limit = Number(params.get("limit"));
 
+  const settings = await familyStoreSettingsRepository.get(family.id);
   const [offers, recipes] = await Promise.all([
-    offerRepository.listCurrentOffers(family.id),
+    offerRepository.listCurrentOffers(family.id, settings.selectedStores),
     externalRecipeRepository.listAll(),
   ]);
+  const usableOffers = offers.filter((offer) => offerIsUsable(offer, settings));
 
-  const ranked = rankRecipeSuggestions(recipes, offers, {
+  const ranked = rankRecipeSuggestions(recipes, usableOffers, {
     sort: isSuggestionSort(sort) ? sort : "balanced",
     vegetarianOnly: params.get("vegetarian") === "1",
     limit: Number.isFinite(limit) && limit > 0 ? Math.min(limit, MAX_LIMIT) : DEFAULT_LIMIT,

@@ -4,6 +4,8 @@ import type { Offer } from "~/domain/types";
 
 function offer(name: string): Offer {
   return {
+    storeId: "rema1000",
+    memberOnly: false,
     name,
     unitSizeFrom: 1,
     unitSizeTo: 1,
