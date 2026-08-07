@@ -87,7 +87,8 @@ export const en: Record<keyof typeof da, string> = {
 
   "day.backToWeek": "Back to week",
   "day.swapLabel": "Swap to a different recipe",
-  "day.choosePlaceholder": "Choose a recipe…",
+  "day.choosePlaceholder": "Search for a recipe…",
+  "day.noRecipesFound": "No recipes match.",
   "day.notFound": "There's no meal planned for this day.",
 
   "dayCard.regenerating": "Regenerating...",

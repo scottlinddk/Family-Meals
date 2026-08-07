@@ -1,14 +1,17 @@
 import { Link, useSearchParams } from "react-router";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useExternalRecipes } from "~/ui/hooks/useExternalRecipes";
 import { Card, CardTitle } from "~/ui/components/ui/Card";
 import { SearchInput } from "~/ui/components/ui/Input";
 import { ThumbPhoto } from "~/ui/components/ui/Photo";
-import { Button } from "~/ui/components/ui/Button";
+import { Button, IconButton } from "~/ui/components/ui/Button";
 import { CalorieMeta } from "~/ui/components/RecipeCalories";
 import { RecipeSuggestions } from "~/ui/components/RecipeSuggestions";
-import { ChevronRightIcon } from "~/ui/components/Icon";
+import { ChevronLeftIcon, ChevronRightIcon } from "~/ui/components/Icon";
 import { t } from "~/i18n/t";
+
+/** How many of the ~350 scraped recipes a page of the list shows at once. */
+const PAGE_SIZE = 20;
 
 export default function RecipesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -25,6 +28,22 @@ export default function RecipesPage() {
         recipe.ingredients.some((ingredient) => ingredient.toLowerCase().includes(needle)),
     );
   }, [recipes.data, q]);
+
+  // A page of a *different* filtered list, not a scroll position within this
+  // one — so a new search starts back at the top. Reset during render (not
+  // an effect) by noticing the query changed since the last render, the same
+  // pattern `RecipeSuggestions` uses for its own paging, so there's no flash
+  // of a stale page of results under the new search.
+  const [page, setPage] = useState(0);
+  const [seenQuery, setSeenQuery] = useState(q);
+  if (seenQuery !== q) {
+    setSeenQuery(q);
+    setPage(0);
+  }
+
+  const pageCount = Math.max(1, Math.ceil(results.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount - 1);
+  const pageItems = results.slice(currentPage * PAGE_SIZE, currentPage * PAGE_SIZE + PAGE_SIZE);
 
   return (
     <>
@@ -75,7 +94,7 @@ export default function RecipesPage() {
       )}
 
       <ul className="m-0 flex list-none flex-col gap-3 p-0">
-        {results.map((recipe) => (
+        {pageItems.map((recipe) => (
           <li key={recipe.id}>
             <Link to={`/recipes/${recipe.id}`} className="block">
               <Card interactive>
@@ -98,6 +117,30 @@ export default function RecipesPage() {
           </li>
         ))}
       </ul>
+
+      {pageCount > 1 && (
+        <div className="mt-4 flex items-center justify-center gap-3">
+          <IconButton
+            type="button"
+            aria-label={t("suggestions.prevPage")}
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            disabled={currentPage === 0}
+          >
+            <ChevronLeftIcon size={18} />
+          </IconButton>
+          <span className="text-sm text-muted">
+            {t("suggestions.page", { page: currentPage + 1, pages: pageCount })}
+          </span>
+          <IconButton
+            type="button"
+            aria-label={t("suggestions.nextPage")}
+            onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
+            disabled={currentPage === pageCount - 1}
+          >
+            <ChevronRightIcon size={18} />
+          </IconButton>
+        </div>
+      )}
     </>
   );
 }

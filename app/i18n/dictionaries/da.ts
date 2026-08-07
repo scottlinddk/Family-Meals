@@ -86,7 +86,8 @@ export const da = {
 
   "day.backToWeek": "Tilbage til ugen",
   "day.swapLabel": "Skift til en anden opskrift",
-  "day.choosePlaceholder": "Vælg en opskrift…",
+  "day.choosePlaceholder": "Søg efter en opskrift…",
+  "day.noRecipesFound": "Ingen opskrifter matcher.",
   "day.notFound": "Der er ingen ret planlagt til denne dag.",
 
   "dayCard.regenerating": "Genererer...",
