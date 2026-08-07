@@ -87,6 +87,14 @@ describe("rankExternalRecipesByOffers", () => {
     expect(ranked[0]?.coverage).toBeCloseTo(2 / 3);
   });
 
+  it("omits an ingredient nothing was ever on offer for, unlike a flagged-away one", () => {
+    // Contrast case for the flagged-pairings tests below: a bare ingredient
+    // with no match at all is still left out of the list entirely, since it
+    // was never a row a family could flag in the first place.
+    const ranked = rankExternalRecipesByOffers([recipe("r", ["1 dl fløde"])], [offer("Broccoli")]);
+    expect(ranked[0]?.matchedIngredients).toEqual([]);
+  });
+
   it("scores 0 when a recipe has no scraped ingredients", () => {
     // Guards the regression that silently disabled offer matching entirely:
     // the whole cache was stored with empty ingredient arrays.
@@ -118,13 +126,18 @@ describe("rankExternalRecipesByOffers with flagged pairings", () => {
     return new Set([offerOverrideKey(ingredientLabel, offerName)]);
   }
 
-  it("drops a flagged pairing from the matches and the score", () => {
+  it("drops the offer but keeps the ingredient's row, at a score of 0", () => {
+    // The ingredient didn't stop being part of the recipe just because this
+    // week's offer for it turned out to be a soft drink — only the wrong
+    // offer name should disappear, not the whole row.
     const ranked = rankExternalRecipesByOffers(
       [recipe("squash", ["1 stk squash"])],
       [softDrink],
       excluding("1 stk squash", softDrink.name),
     );
-    expect(ranked[0]?.matchedIngredients).toEqual([]);
+    expect(ranked[0]?.matchedIngredients).toEqual([
+      { ingredient: "1 stk squash", offerNames: [], weekendOnlyOfferNames: [], price: undefined },
+    ]);
     expect(ranked[0]?.matchedOfferNames).toEqual([]);
     expect(ranked[0]?.score).toBe(0);
   });
@@ -157,6 +170,15 @@ describe("rankExternalRecipesByOffers with flagged pairings", () => {
       [softDrink, broccoli],
       excluding("1 stk squash", softDrink.name),
     );
-    expect(ranked[0]?.matchedIngredients.map((m) => m.ingredient)).toEqual(["1 stk broccoli"]);
+    // Both rows stay — the squash row with no offers, the broccoli row
+    // untouched — but only broccoli counts toward the score.
+    expect(ranked[0]?.matchedIngredients.map((m) => m.ingredient)).toEqual([
+      "1 stk squash",
+      "1 stk broccoli",
+    ]);
+    expect(ranked[0]?.matchedIngredients.find((m) => m.ingredient === "1 stk squash")?.offerNames).toEqual(
+      [],
+    );
+    expect(ranked[0]?.score).toBe(1);
   });
 });

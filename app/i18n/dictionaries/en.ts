@@ -180,6 +180,10 @@ export const en: Record<keyof typeof da, string> = {
   "suggestions.flagWrongMatch": "Wrong match — this item isn't the ingredient",
   "suggestions.unflagWrongMatch": "Undo wrong-match flag",
   "suggestions.flagFailed": "That flag couldn't be saved.",
+  "suggestions.onShoppingList": "On the shopping list",
+  "suggestions.addToShoppingList": "Add to shopping list",
+  "suggestions.addToShoppingListFailed": "Couldn't add it to the shopping list.",
+  "suggestions.unmarkAtHome": "We're out after all",
 
   "recipesPage.heading": "Recipes",
   "recipesPage.title": "All recipes",

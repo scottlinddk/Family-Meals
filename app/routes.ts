@@ -49,6 +49,10 @@ export default [
   route("api/weeks/:weekStart/swap-day", "routes/api.weeks.$weekStart.swap-day.tsx"),
   route("api/weeks/:weekStart/shopping-list", "routes/api.weeks.$weekStart.shopping-list.tsx"),
   route("api/weeks/:weekStart/shopping-list/marks", "routes/api.weeks.$weekStart.shopping-list.marks.tsx"),
+  route(
+    "api/weeks/:weekStart/shopping-list/extra-items",
+    "routes/api.weeks.$weekStart.shopping-list.extra-items.tsx",
+  ),
   route("api/weeks/:weekStart/shopping-list/share", "routes/api.weeks.$weekStart.shopping-list.share.tsx"),
   // Token-authenticated twins of the two routes above, for the share link.
   route("api/shopping-list/:token", "routes/api.shopping-list.$token.tsx"),

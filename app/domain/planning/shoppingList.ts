@@ -45,8 +45,12 @@ export interface ShoppingList {
  * Falls back to the trimmed lowercase line when a line tokenizes to nothing
  * (e.g. "salt og peber"), which keeps unmergeable oddities visible rather
  * than silently grouping them together.
+ *
+ * Exported so callers outside this module can ask "is this ingredient
+ * already a line on the list" without duplicating the merge rule — see
+ * `findShoppingListItem`.
  */
-function mergeKey(ingredientLine: string): string {
+export function shoppingListMergeKey(ingredientLine: string): string {
   const tokens = productTokens(ingredientLine);
   return tokens.length > 0 ? tokens.join(" ") : ingredientLine.trim().toLowerCase();
 }
@@ -103,52 +107,66 @@ function storeRank(storeId: StoreId | null, storeOrder: StoreId[]): number {
  * `storeOrder` controls which store's section comes first — normally the
  * family's `FamilyStoreSettings.selectedStores` order — falling back to the
  * app's declared `STORE_IDS` order when omitted.
+ *
+ * `extraLines` folds in ingredients added by hand (see
+ * `shoppingListExtraItems` in the schema) through the exact same merge —
+ * adding "løg" by hand when a recipe already calls for "2 løg" becomes one
+ * line, not two. They carry no day or recipe, since they aren't tied to
+ * either.
  */
 export function buildShoppingList(
   week: WeekPlan,
   offers: Offer[],
   storeOrder: StoreId[] = [...STORE_IDS],
+  extraLines: string[] = [],
 ): ShoppingList {
   const items = new Map<
     string,
     ShoppingListItem & { storeId: StoreId | null; departmentSlug: string | null }
   >();
 
+  function absorb(line: string, date: string | null, recipeTitle: string | null): void {
+    const key = shoppingListMergeKey(line);
+    const matches = offersMatchingIngredient(line, offers);
+    const matchStoreIds = [...new Set(matches.map((offer) => offer.storeId))];
+    const existing = items.get(key);
+
+    if (existing) {
+      if (!existing.variants.includes(line)) existing.variants.push(line);
+      if (date && !existing.dates.includes(date)) existing.dates.push(date);
+      if (recipeTitle && !existing.recipeTitles.includes(recipeTitle)) {
+        existing.recipeTitles.push(recipeTitle);
+      }
+      for (const offer of matches) {
+        if (!existing.offerNames.includes(offer.name)) existing.offerNames.push(offer.name);
+      }
+      for (const storeId of matchStoreIds) {
+        if (!existing.offerStoreIds.includes(storeId)) existing.offerStoreIds.push(storeId);
+      }
+      existing.storeId ??= matches[0]?.storeId ?? null;
+      existing.departmentSlug ??= matches[0]?.departmentSlug ?? null;
+      return;
+    }
+
+    items.set(key, {
+      label: line,
+      variants: [line],
+      dates: date ? [date] : [],
+      recipeTitles: recipeTitle ? [recipeTitle] : [],
+      offerNames: matches.map((offer) => offer.name),
+      offerStoreIds: matchStoreIds,
+      storeId: matches[0]?.storeId ?? null,
+      departmentSlug: matches[0]?.departmentSlug ?? null,
+    });
+  }
+
   for (const day of week.days) {
     for (const line of day.recipeSnapshot.ingredientLines) {
-      const key = mergeKey(line);
-      const matches = offersMatchingIngredient(line, offers);
-      const matchStoreIds = [...new Set(matches.map((offer) => offer.storeId))];
-      const existing = items.get(key);
-
-      if (existing) {
-        if (!existing.variants.includes(line)) existing.variants.push(line);
-        if (!existing.dates.includes(day.date)) existing.dates.push(day.date);
-        if (!existing.recipeTitles.includes(day.recipeSnapshot.title)) {
-          existing.recipeTitles.push(day.recipeSnapshot.title);
-        }
-        for (const offer of matches) {
-          if (!existing.offerNames.includes(offer.name)) existing.offerNames.push(offer.name);
-        }
-        for (const storeId of matchStoreIds) {
-          if (!existing.offerStoreIds.includes(storeId)) existing.offerStoreIds.push(storeId);
-        }
-        existing.storeId ??= matches[0]?.storeId ?? null;
-        existing.departmentSlug ??= matches[0]?.departmentSlug ?? null;
-        continue;
-      }
-
-      items.set(key, {
-        label: line,
-        variants: [line],
-        dates: [day.date],
-        recipeTitles: [day.recipeSnapshot.title],
-        offerNames: matches.map((offer) => offer.name),
-        offerStoreIds: matchStoreIds,
-        storeId: matches[0]?.storeId ?? null,
-        departmentSlug: matches[0]?.departmentSlug ?? null,
-      });
+      absorb(line, day.date, day.recipeSnapshot.title);
     }
+  }
+  for (const line of extraLines) {
+    absorb(line, null, null);
   }
 
   const storeSections = new Map<StoreId | null, Map<string | null, ShoppingListItem[]>>();
@@ -183,4 +201,26 @@ export function buildShoppingList(
     itemCount: allItems.length,
     onOfferCount: allItems.filter((item) => item.offerNames.length > 0).length,
   };
+}
+
+/**
+ * The list's own line for an ingredient, if it has one — so a view showing an
+ * ingredient from somewhere else (a recipe not on this week's plan, say) can
+ * ask "is this already on the list" instead of guessing from text equality.
+ *
+ * Matches on `shoppingListMergeKey`, the same rule the list was merged with,
+ * so it agrees with the list about which lines are "the same ingredient" —
+ * an ingredient a recipe phrases as "2 løg" is found by a lookup for "1 løg,
+ * finthakket" the way a shopper would expect.
+ */
+export function findShoppingListItem(list: ShoppingList | null, ingredientLine: string): ShoppingListItem | null {
+  if (!list) return null;
+  const key = shoppingListMergeKey(ingredientLine);
+  for (const section of list.sections) {
+    for (const department of section.departments) {
+      const found = department.items.find((item) => shoppingListMergeKey(item.label) === key);
+      if (found) return found;
+    }
+  }
+  return null;
 }

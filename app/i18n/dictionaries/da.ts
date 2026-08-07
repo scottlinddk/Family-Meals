@@ -180,6 +180,10 @@ export const da = {
   "suggestions.flagWrongMatch": "Forkert match — denne vare passer ikke til ingrediensen",
   "suggestions.unflagWrongMatch": "Fjern markering som forkert match",
   "suggestions.flagFailed": "Markeringen kunne ikke gemmes.",
+  "suggestions.onShoppingList": "På indkøbslisten",
+  "suggestions.addToShoppingList": "Tilføj til indkøbsliste",
+  "suggestions.addToShoppingListFailed": "Kunne ikke tilføjes til indkøbslisten.",
+  "suggestions.unmarkAtHome": "Vi mangler den alligevel",
 
   "recipesPage.heading": "Opskrifter",
   "recipesPage.title": "Alle opskrifter",
