@@ -2,8 +2,10 @@ import type { Route } from "./+types/api.weeks.$weekStart";
 import { requireFamily } from "~/lib/auth";
 import { weekPlanRepository } from "~/data/repositories/weekPlanRepository";
 import { offerRepository } from "~/data/repositories/offerRepository";
+import { familyStoreSettingsRepository } from "~/data/repositories/familyStoreSettingsRepository";
 import { externalRecipeRepository } from "~/data/repositories/externalRecipeRepository";
 import { generateWeekPlan } from "~/domain/planning/generateWeekPlan";
+import { offerIsUsable } from "~/domain/familyStoreSettings";
 import { weekWindow } from "~/lib/weekWindow";
 import {
   isMissingSchemaError,
@@ -41,25 +43,38 @@ export async function action({ request, params }: Route.ActionArgs) {
   const jsonHeaders = { ...Object.fromEntries(headers), "Content-Type": "application/json" };
 
   try {
+    const settings = await familyStoreSettingsRepository.get(family.id);
+
     // Rank against the offers that apply during the week being planned, not
     // whatever happens to be valid the moment the button is clicked.
-    const [snapshot, offers, externalRecipes, recentRecipeIds, previousWeek] = await Promise.all([
-      offerRepository.getLatestSnapshot(family.id),
-      offerRepository.listOffersValidDuring(family.id, ...weekWindow(weekStart)),
+    const [offers, externalRecipes, recentRecipeIds, previousWeek] = await Promise.all([
+      offerRepository.listOffersValidDuring(family.id, ...weekWindow(weekStart), settings.selectedStores),
       externalRecipeRepository.listAll(),
       weekPlanRepository.listRecentRecipeIds(family.id, weekStart),
       weekPlanRepository.getWeekPlan(family.id, weekStart),
     ]);
+    const usableOffers = offers.filter((offer) => offerIsUsable(offer, settings));
 
     if (externalRecipes.length === 0) {
       return new Response(JSON.stringify({ error: "no_recipes" }), { status: 409, headers: jsonHeaders });
     }
 
+    // A plan can now draw from several stores' snapshots at once, which
+    // `week_plans.offer_snapshot_id` can't fully represent (it points at one
+    // row). Stamping the first selected store's latest snapshot keeps the
+    // column meaningful for the common "offer-aware at all" check without
+    // claiming full multi-store traceability — a future `week_plan_offer_snapshots`
+    // join table would be needed for that.
+    const primaryStoreId = settings.selectedStores[0];
+    const primarySnapshot = primaryStoreId
+      ? await offerRepository.getLatestSnapshot(family.id, primaryStoreId)
+      : undefined;
+
     const week = generateWeekPlan({
       familyId: family.id,
       weekStartDate: weekStart,
-      offers,
-      offerSnapshotId: offers.length > 0 ? (snapshot?.id ?? null) : null,
+      offers: usableOffers,
+      offerSnapshotId: usableOffers.length > 0 ? (primarySnapshot?.id ?? null) : null,
       externalRecipes,
       recentRecipeIds,
       previousWeek,

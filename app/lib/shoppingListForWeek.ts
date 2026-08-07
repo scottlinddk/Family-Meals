@@ -1,5 +1,7 @@
 import { weekPlanRepository } from "~/data/repositories/weekPlanRepository";
 import { offerRepository } from "~/data/repositories/offerRepository";
+import { familyStoreSettingsRepository } from "~/data/repositories/familyStoreSettingsRepository";
+import { offerIsUsable } from "~/domain/familyStoreSettings";
 import { buildShoppingList, type ShoppingList } from "~/domain/planning/shoppingList";
 
 /**
@@ -13,6 +15,9 @@ import { buildShoppingList, type ShoppingList } from "~/domain/planning/shopping
  *
  * Departments and "on offer" marks come from the offers valid now, not the
  * ones the plan was generated against: you shop with this week's prices.
+ * Only the family's selected stores are fetched, and member-only offers are
+ * dropped unless the family holds that store's membership — see
+ * `offerIsUsable`.
  */
 export async function shoppingListForWeek(
   familyId: string,
@@ -21,6 +26,8 @@ export async function shoppingListForWeek(
   const week = await weekPlanRepository.getWeekPlan(familyId, weekStartDate);
   if (!week) return null;
 
-  const offers = await offerRepository.listCurrentOffers(familyId);
-  return buildShoppingList(week, offers);
+  const settings = await familyStoreSettingsRepository.get(familyId);
+  const offers = await offerRepository.listCurrentOffers(familyId, settings.selectedStores);
+  const usableOffers = offers.filter((offer) => offerIsUsable(offer, settings));
+  return buildShoppingList(week, usableOffers, settings.selectedStores);
 }

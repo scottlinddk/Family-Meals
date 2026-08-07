@@ -18,8 +18,10 @@ const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL;
 
 const DAY_MS = 86_400_000;
 
-function offer(name: string, fromDays: number, toDays: number): OfferInput {
+function offer(name: string, fromDays: number, toDays: number, storeId = "rema1000"): OfferInput {
   return {
+    storeId,
+    memberOnly: false,
     name,
     unitSizeFrom: 400,
     unitSizeTo: 400,
@@ -80,6 +82,7 @@ describe.skipIf(!TEST_DATABASE_URL)("repositories against Postgres", () => {
   let offerRepository: typeof import("~/data/repositories/offerRepository")["offerRepository"];
   let weekPlanRepository: typeof import("~/data/repositories/weekPlanRepository")["weekPlanRepository"];
   let userPreferenceRepository: typeof import("~/data/repositories/userPreferenceRepository")["userPreferenceRepository"];
+  let familyStoreSettingsRepository: typeof import("~/data/repositories/familyStoreSettingsRepository")["familyStoreSettingsRepository"];
   let shoppingListMarkRepository: typeof import("~/data/repositories/shoppingListMarkRepository")["shoppingListMarkRepository"];
   let shoppingListShareRepository: typeof import("~/data/repositories/shoppingListShareRepository")["shoppingListShareRepository"];
   let db: typeof import("~/data/db/client")["db"];
@@ -98,6 +101,9 @@ describe.skipIf(!TEST_DATABASE_URL)("repositories against Postgres", () => {
     ({ offerRepository } = await import("~/data/repositories/offerRepository"));
     ({ weekPlanRepository } = await import("~/data/repositories/weekPlanRepository"));
     ({ userPreferenceRepository } = await import("~/data/repositories/userPreferenceRepository"));
+    ({ familyStoreSettingsRepository } = await import(
+      "~/data/repositories/familyStoreSettingsRepository"
+    ));
     ({ shoppingListMarkRepository } = await import(
       "~/data/repositories/shoppingListMarkRepository"
     ));
@@ -129,24 +135,53 @@ describe.skipIf(!TEST_DATABASE_URL)("repositories against Postgres", () => {
   it("scopes an offer import to the importing family and hides expired offers", async () => {
     const snapshotA = await offerRepository.replaceCurrentOffers(
       familyA,
+      "rema1000",
       [offer("Hakket oksekød", -2, 4), offer("Broccoli", -9, -2)],
       "manual",
     );
-    await offerRepository.replaceCurrentOffers(familyB, [offer("Laks", -1, 5)], "etilbudsavis");
+    await offerRepository.replaceCurrentOffers(familyB, "rema1000", [offer("Laks", -1, 5)], "etilbudsavis");
 
     // Family B importing must not disturb family A's set.
-    expect((await offerRepository.listCurrentOffers(familyA)).map((o) => o.name)).toEqual([
+    expect((await offerRepository.listCurrentOffers(familyA, ["rema1000"])).map((o) => o.name)).toEqual([
       "Hakket oksekød",
     ]);
-    expect((await offerRepository.listCurrentOffers(familyB)).map((o) => o.name)).toEqual(["Laks"]);
+    expect((await offerRepository.listCurrentOffers(familyB, ["rema1000"])).map((o) => o.name)).toEqual([
+      "Laks",
+    ]);
 
     // The expired offer is still part of the import, just not "current".
     expect((await offerRepository.listOffersInSnapshot(snapshotA.id)).length).toBe(2);
 
-    const latest = await offerRepository.getLatestSnapshot(familyA);
+    const latest = await offerRepository.getLatestSnapshot(familyA, "rema1000");
     expect(latest?.id).toBe(snapshotA.id);
     expect(latest?.offerCount).toBe(2);
     expect(latest?.source).toBe("manual");
+  });
+
+  it("keeps a store's refresh from disturbing another store's still-current snapshot", async () => {
+    const remaSnapshot = await offerRepository.replaceCurrentOffers(
+      familyA,
+      "rema1000",
+      [offer("Rema-vare", -1, 5, "rema1000")],
+      "manual",
+    );
+    await offerRepository.replaceCurrentOffers(familyA, "netto", [offer("Netto-vare", -1, 5, "netto")], "manual");
+
+    // Refreshing Netto again must not touch REMA's latest snapshot.
+    await offerRepository.replaceCurrentOffers(
+      familyA,
+      "netto",
+      [offer("Netto-vare-2", -1, 5, "netto")],
+      "etilbudsavis",
+    );
+
+    expect(await offerRepository.getLatestSnapshot(familyA, "rema1000")).toEqual(remaSnapshot);
+    expect((await offerRepository.listCurrentOffers(familyA, ["netto"])).map((o) => o.name)).toEqual([
+      "Netto-vare-2",
+    ]);
+    expect((await offerRepository.listCurrentOffers(familyA, ["rema1000", "netto"])).map((o) => o.name).sort()).toEqual(
+      ["Netto-vare-2", "Rema-vare"],
+    );
   });
 
   it("returns offers whose validity overlaps the requested window", async () => {
@@ -154,19 +189,43 @@ describe.skipIf(!TEST_DATABASE_URL)("repositories against Postgres", () => {
       familyA,
       new Date(Date.now() + 2 * DAY_MS),
       new Date(Date.now() + 3 * DAY_MS),
+      ["rema1000"],
     );
-    expect(during.map((o) => o.name)).toEqual(["Hakket oksekød"]);
+    expect(during.map((o) => o.name)).toEqual(["Rema-vare"]);
 
     const beyondValidity = await offerRepository.listOffersValidDuring(
       familyA,
       new Date(Date.now() + 30 * DAY_MS),
       new Date(Date.now() + 31 * DAY_MS),
+      ["rema1000"],
     );
     expect(beyondValidity).toEqual([]);
   });
 
+  it("defaults a family's store settings, then upserts the same row on every change", async () => {
+    expect(await familyStoreSettingsRepository.get(familyA)).toEqual({
+      selectedStores: ["rema1000", "netto", "foetex", "meny"],
+      memberStores: [],
+    });
+
+    await familyStoreSettingsRepository.set(familyA, {
+      selectedStores: ["rema1000", "netto"],
+      memberStores: ["netto"],
+    });
+    expect(await familyStoreSettingsRepository.get(familyA)).toEqual({
+      selectedStores: ["rema1000", "netto"],
+      memberStores: ["netto"],
+    });
+
+    await familyStoreSettingsRepository.set(familyA, { selectedStores: ["rema1000"], memberStores: [] });
+    expect(await familyStoreSettingsRepository.get(familyA)).toEqual({
+      selectedStores: ["rema1000"],
+      memberStores: [],
+    });
+  });
+
   it("upserts a week in place and reports recipes from other recent weeks", async () => {
-    const snapshot = await offerRepository.getLatestSnapshot(familyB);
+    const snapshot = await offerRepository.getLatestSnapshot(familyB, "rema1000");
 
     await weekPlanRepository.saveWeekPlan(weekPlanFixture(familyB, "2026-07-27", snapshot!.id, "recipe-old", 2));
     await weekPlanRepository.saveWeekPlan(weekPlanFixture(familyB, "2026-08-03", snapshot!.id, "recipe-new", 0));

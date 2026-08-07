@@ -49,7 +49,7 @@ function fakeFetch(): typeof fetch {
 
 describe("EtilbudsavisOfferSource", () => {
   it("resolves REMA 1000's dealer id, current catalog, and maps offers to the reference schema", async () => {
-    const source = new EtilbudsavisOfferSource(fakeFetch());
+    const source = new EtilbudsavisOfferSource("rema1000", fakeFetch());
     const offers = await source.fetchCurrentOffers();
 
     expect(offers).toHaveLength(3);
@@ -64,6 +64,8 @@ describe("EtilbudsavisOfferSource", () => {
     expect(beef.departmentSlug).toBe("groceries_discount");
     expect(beef.currencyCode).toBe("DKK");
     expect(beef.validFrom).toBe("2026-08-01T22:00:00+0000");
+    expect(beef.storeId).toBe("rema1000");
+    expect(beef.memberOnly).toBe(false);
 
     const cola = offers[1]!;
     expect(cola.unitPrice).toBeCloseTo(2.5 / 0.33, 5);
@@ -100,7 +102,7 @@ describe("EtilbudsavisOfferSource", () => {
       return new Response(JSON.stringify(offersByCatalog[catalogId]), { status: 200 });
     }) as typeof fetch;
 
-    const source = new EtilbudsavisOfferSource(fetchImpl);
+    const source = new EtilbudsavisOfferSource("rema1000", fetchImpl);
     const offers = await source.fetchCurrentOffers();
 
     expect(offers).toHaveLength(4);
@@ -110,7 +112,29 @@ describe("EtilbudsavisOfferSource", () => {
 
   it("throws a clear error when the dealer can't be resolved", async () => {
     const emptyFetch = (async () => new Response(JSON.stringify([]), { status: 200 })) as typeof fetch;
-    const source = new EtilbudsavisOfferSource(emptyFetch);
+    const source = new EtilbudsavisOfferSource("rema1000", emptyFetch);
     await expect(source.fetchCurrentOffers()).rejects.toThrow(/could not resolve a REMA 1000 dealer id/);
+  });
+
+  it("resolves a different store's dealer and stamps its storeId onto the mapped offers", async () => {
+    const nettoFetch = (async (input: Parameters<typeof fetch>[0]) => {
+      const url = String(input);
+      if (url.includes("/dealers")) {
+        return new Response(JSON.stringify([{ id: "netto-id", name: "Netto" }]), { status: 200 });
+      }
+      if (url.includes("/catalogs")) return new Response(JSON.stringify(CATALOGS_RESPONSE), { status: 200 });
+      return new Response(JSON.stringify(OFFERS_RESPONSE), { status: 200 });
+    }) as typeof fetch;
+
+    const source = new EtilbudsavisOfferSource("netto", nettoFetch);
+    const offers = await source.fetchCurrentOffers();
+
+    expect(offers.every((o) => o.storeId === "netto")).toBe(true);
+  });
+
+  it("reports the failing store by name when its dealer can't be resolved", async () => {
+    const emptyFetch = (async () => new Response(JSON.stringify([]), { status: 200 })) as typeof fetch;
+    const source = new EtilbudsavisOfferSource("netto", emptyFetch);
+    await expect(source.fetchCurrentOffers()).rejects.toThrow(/could not resolve a Netto dealer id/);
   });
 });

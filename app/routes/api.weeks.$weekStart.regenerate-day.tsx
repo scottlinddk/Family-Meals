@@ -2,8 +2,10 @@ import type { Route } from "./+types/api.weeks.$weekStart.regenerate-day";
 import { requireFamily } from "~/lib/auth";
 import { weekPlanRepository } from "~/data/repositories/weekPlanRepository";
 import { offerRepository } from "~/data/repositories/offerRepository";
+import { familyStoreSettingsRepository } from "~/data/repositories/familyStoreSettingsRepository";
 import { externalRecipeRepository } from "~/data/repositories/externalRecipeRepository";
 import { regenerateDay } from "~/domain/planning/regenerateDay";
+import { offerIsUsable } from "~/domain/familyStoreSettings";
 import { weekWindow } from "~/lib/weekWindow";
 
 /** POST { dayIndex: number }: regenerate a single day, picking a different recipe. */
@@ -26,11 +28,13 @@ export async function action({ request, params }: Route.ActionArgs) {
 
   // Same offer window the whole-week generator uses, so a regenerated day
   // isn't marked against a different set of offers than its siblings.
+  const settings = await familyStoreSettingsRepository.get(family.id);
   const [offers, externalRecipes] = await Promise.all([
-    offerRepository.listOffersValidDuring(family.id, ...weekWindow(params.weekStart!)),
+    offerRepository.listOffersValidDuring(family.id, ...weekWindow(params.weekStart!), settings.selectedStores),
     externalRecipeRepository.listAll(),
   ]);
-  const updated = regenerateDay(week, dayIndex, offers, externalRecipes);
+  const usableOffers = offers.filter((offer) => offerIsUsable(offer, settings));
+  const updated = regenerateDay(week, dayIndex, usableOffers, externalRecipes);
   const saved = await weekPlanRepository.saveWeekPlan(updated);
 
   return new Response(JSON.stringify(saved), {

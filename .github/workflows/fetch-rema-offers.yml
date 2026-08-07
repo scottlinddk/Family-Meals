@@ -2,9 +2,15 @@
 #
 # The API 403s this project's dev sandbox, so `EtilbudsavisOfferSource` has
 # only ever been covered by fixture tests. This exercises it against the live
-# API and commits the result as JSON, which is also how the offer set gets
-# loaded when the app's "Fetch offers now" button can't be reached.
-name: Fetch REMA offers
+# API and commits the result as JSON per store, which is also how the offer
+# set gets loaded when the app's "Fetch offers now" button can't be reached.
+#
+# Runs sequentially through every supported store rather than in parallel
+# jobs, so all four output files land in one commit instead of racing each
+# other's pushes into scrape-output/. One store's fetch failing (e.g. its
+# Tjek dealer name drifting) doesn't stop the others — their output is still
+# committed — but the job itself ends red so a broken store gets noticed.
+name: Fetch supermarket offers
 
 on:
   workflow_dispatch:
@@ -37,17 +43,33 @@ jobs:
           node-version: "22"
           cache: npm
       - run: npm ci
-      - name: Fetch offers
-        run: npx vite-node --config vitest.config.ts scripts/fetchRemaOffers.ts -- scrape-output/rema-offers.json
+      - name: Fetch offers for every store
+        id: fetch
+        run: |
+          failed=""
+          for store in rema1000 netto foetex meny; do
+            echo "::group::Fetching $store"
+            if npx vite-node --config vitest.config.ts scripts/fetchRemaOffers.ts -- "$store" "scrape-output/${store}-offers.json"; then
+              echo "$store: ok"
+            else
+              echo "$store: FAILED"
+              failed="$failed $store"
+            fi
+            echo "::endgroup::"
+          done
+          if [ -n "$failed" ]; then
+            echo "::error::Failed to fetch offers for:$failed"
+            echo "failed=1" >> "$GITHUB_OUTPUT"
+          fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: rema-offers
-          path: scrape-output/rema-offers.json
+          name: store-offers
+          path: scrape-output/*-offers.json
       - name: Commit the offers
         if: ${{ github.event_name == 'push' || inputs.commit }}
         env:
-          MESSAGE: "Fetch REMA 1000's current offers from etilbudsavis [skip ci]"
+          MESSAGE: "Fetch current supermarket offers from etilbudsavis [skip ci]"
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -76,3 +98,6 @@ jobs:
           done
           echo "::error::Could not push the offers after 5 attempts"
           exit 1
+      - name: Fail if any store's fetch failed
+        if: steps.fetch.outputs.failed == '1'
+        run: exit 1

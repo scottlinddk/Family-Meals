@@ -4,6 +4,8 @@ import type { ExternalRecipe, Offer } from "~/domain/types";
 
 function offer(name: string, validity?: { validFrom: string; validUntil: string }): Offer {
   return {
+    storeId: "rema1000",
+    memberOnly: false,
     name,
     unitSizeFrom: 1,
     unitSizeTo: 1,

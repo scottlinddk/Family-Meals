@@ -1,6 +1,7 @@
 import { useMemo } from "react";
-import type { ShoppingList, ShoppingListItem } from "~/domain/planning/shoppingList";
+import type { ShoppingList, ShoppingListItem, ShoppingListSection } from "~/domain/planning/shoppingList";
 import { shoppingListProgress } from "~/domain/planning/shoppingListMarks";
+import { STORE_NAMES } from "~/domain/stores";
 import type { ShoppingListMarks } from "~/ui/hooks/useShoppingListMarks";
 import { Card } from "~/ui/components/ui/Card";
 import { Button } from "~/ui/components/ui/Button";
@@ -33,6 +34,10 @@ function weekdayOf(isoDate: string): string {
   return new Date(`${isoDate}T00:00:00`).toLocaleDateString("da-DK", { weekday: "short" });
 }
 
+function storeLabel(storeId: ShoppingListSection["storeId"]): string {
+  return storeId === null ? t("shoppingList.otherStore") : STORE_NAMES[storeId];
+}
+
 /**
  * The list itself: departments, lines, marks and the running count.
  *
@@ -50,7 +55,8 @@ export function ShoppingListView({
   marks: ShoppingListMarks;
 }) {
   const labels = useMemo(
-    () => list.sections.flatMap((section) => section.items).map((item) => item.label),
+    () =>
+      list.sections.flatMap((section) => section.departments.flatMap((d) => d.items)).map((item) => item.label),
     [list],
   );
   const progress = shoppingListProgress(labels, marks.marks);
@@ -88,18 +94,27 @@ export function ShoppingListView({
         <SyncStatus marks={marks} />
       </div>
 
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-5">
         {list.sections.map((section) => (
-          <Card key={section.departmentSlug ?? "other"} as="section">
-            <h2 className="text-[11px] font-semibold tracking-[0.08em] text-muted uppercase">
-              {departmentLabel(section.departmentSlug)}
+          <div key={section.storeId ?? "other"}>
+            <h2 className="mb-2 text-sm font-bold tracking-[0.02em] text-text uppercase">
+              {storeLabel(section.storeId)}
             </h2>
-            <ul className="m-0 flex list-none flex-col p-0">
-              {section.items.map((item) => (
-                <ShoppingListRow key={item.label} item={item} marks={marks} />
+            <div className="flex flex-col gap-4">
+              {section.departments.map((department) => (
+                <Card key={department.departmentSlug ?? "other"} as="section">
+                  <h3 className="text-[11px] font-semibold tracking-[0.08em] text-muted uppercase">
+                    {departmentLabel(department.departmentSlug)}
+                  </h3>
+                  <ul className="m-0 flex list-none flex-col p-0">
+                    {department.items.map((item) => (
+                      <ShoppingListRow key={item.label} item={item} marks={marks} />
+                    ))}
+                  </ul>
+                </Card>
               ))}
-            </ul>
-          </Card>
+            </div>
+          </div>
         ))}
       </div>
     </>

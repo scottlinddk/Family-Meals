@@ -5,8 +5,15 @@
 
 export type CurrencyCode = "DKK";
 
-/** Mirrors the REMA 1000 weekly-offer reference schema exactly. */
+/** The supermarket chains this app knows how to fetch/import offers for. */
+export const STORE_IDS = ["rema1000", "netto", "foetex", "meny"] as const;
+export type StoreId = (typeof STORE_IDS)[number];
+
+/** Matches the shared Tjek-derived reference schema — one store among several. */
 export interface Offer {
+  storeId: StoreId;
+  /** True for a chain's member-only tier (Netto+, Føtex+) rather than a regular offer. */
+  memberOnly: boolean;
   name: string;
   unitSizeFrom: number;
   unitSizeTo: number;
