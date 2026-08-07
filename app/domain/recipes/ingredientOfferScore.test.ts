@@ -135,10 +135,93 @@ describe("offersMatchingIngredient against real-world false matches", () => {
         offer("MERRILD GOLD INSTANT KAFFE ELLER HELE BØNNER"),
       ]),
     ).toEqual([]);
-    // An ingredient without a colour qualifier stays unconstrained.
+    // Neither side naming a colour is still a match.
     expect(matchedNames("1 dåse bønner", [offer("Hele bønner")])).toEqual(["Hele bønner"]);
     // Matching colours on both sides still match.
     expect(matchedNames("252 g sorte bønner", [offer("Sorte bønner")])).toEqual(["Sorte bønner"]);
+  });
+
+  it("does not match a colour-qualified ingredient to a differently coloured offer", () => {
+    expect(matchedNames("1 dåse hvide bønner", [offer("Grønne bønner")])).toEqual([]);
+    // The mismatch runs the other way too: "grønne citroner" are limes.
+    expect(
+      matchedNames("0.5 stk økologisk citron", [offer("AARSTIDERNE ØKOLOGISKE GRØNNE CITRONER")]),
+    ).toEqual([]);
+  });
+});
+
+/**
+ * The second class the same offer set produced: an offer that names a
+ * *processed form* of the ingredient. These reach the matcher with the
+ * ingredient's own word intact — "chili saucer" really does say chili — so
+ * the compound rules above have nothing to object to and the offer has to be
+ * judged as a whole phrase instead.
+ */
+describe("offersMatchingIngredient on offers naming a processed form", () => {
+  it("does not match a raw ingredient to a condiment made from it", () => {
+    expect(matchedNames("1 stk chili", [offer("Go-Tan chili saucer")])).toEqual([]);
+    expect(matchedNames("1 stk chili", [offer("Sempio Gochujang Chili Paste")])).toEqual([]);
+    expect(
+      matchedNames("1 dåse hakkede tomater", [offer("Beauvais tomat ketchup eller puré")]),
+    ).toEqual([]);
+    expect(matchedNames("2 stk rødløg", [offer("Zelected syltede rødløg, pink perleløg")])).toEqual(
+      [],
+    );
+    expect(matchedNames("100 g salat", [offer("Jensens eller K-Salat sauce")])).toEqual([]);
+  });
+
+  it("still matches an ingredient that asks for the condiment itself", () => {
+    const ketchup = offer("Beauvais tomat ketchup eller puré");
+    expect(matchedNames("2 spsk ketchup", [ketchup])).toEqual([ketchup.name]);
+    // The mustard in this bundle is genuinely on offer, and the ketchup and
+    // mayo alternatives beside it must not disqualify the whole thing.
+    const mustard = offer("Graasten remoulade, ketchup eller sennep, Hellman's mayo eller Maille sennep");
+    expect(matchedNames("1 spsk dijon sennep", [mustard])).toEqual([mustard.name]);
+  });
+
+  it("reads an offer's 'med' clause as flavour rather than as a second product", () => {
+    expect(
+      matchedNames("6 fed hvidløg", [offer("Food and Glory hel kylling med hvidløgsmarinade")]),
+    ).toEqual([]);
+    expect(
+      matchedNames("1 pakke bacon", [
+        offer("REMA 1000 Hakkebøffer med bøgerøget bacon og grønt eller kalve grillsticks med grønt"),
+      ]),
+    ).toEqual([]);
+  });
+
+  it("keeps the sibling products listed after a 'med' clause", () => {
+    // REMA also writes "med" ahead of a list of real alternatives, so cutting
+    // the whole name at its first "med" threw three products away.
+    const mince = offer(
+      "REMA 1000 Hakket dansk oksekød med 35% grønt, kyllingekød, grise- og kalvekød eller Frilandsgris skinkekød",
+    );
+    expect(matchedNames("1 stk hel kylling", [mince])).toEqual([mince.name]);
+    expect(matchedNames("1 pakke kogt skinke i skiver", [mince])).toEqual([mince.name]);
+
+    const patties = offer(
+      "REMA 1000 Hakkebøffer med bøgerøget bacon og grønt eller kalve grillsticks med grønt",
+    );
+    expect(matchedNames("1 kg kalvetykkam, afpudset", [patties])).toEqual([patties.name]);
+  });
+
+  it("treats a word as a processed form only where it is one", () => {
+    // "brød" renames the product as a compound tail — a smørrebrød is not
+    // butter — but as a word of its own it is the bread a recipe asks for.
+    expect(matchedNames("100 g smør", [offer("Frisklavet luksus smørrebrød")])).toEqual([]);
+    expect(matchedNames("4 stk brød", [offer("Schulstad Det Gode brød")])).toEqual([
+      "Schulstad Det Gode brød",
+    ]);
+    expect(matchedNames("1 pakke brødcroutoner", [offer("Schulstad brød")])).toEqual([
+      "Schulstad brød",
+    ]);
+  });
+
+  it("does not match through a compound tail that renames the product", () => {
+    expect(
+      matchedNames("120 ml vand", [offer("Vandskål, aktivitetslegetøj eller fleecetæppe 150x100 cm")]),
+    ).toEqual([]);
+    expect(matchedNames("250 ml creme fraiche", [offer("CREMEFINE")])).toEqual([]);
   });
 
   it("does not match a raw ingredient to a processed version of it", () => {

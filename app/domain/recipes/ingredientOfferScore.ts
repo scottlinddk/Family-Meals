@@ -129,9 +129,10 @@ export function productTokens(text: string): string[] {
  * `COLOR_WORDS`). "sorte bønner" (black beans) and "hele bønner" (whole
  * coffee beans, as sold loose or in an instant-coffee offer) share the bare
  * noun once colour is stripped, which let a coffee offer match a bean
- * ingredient. Kept short and evidence-driven like `DERIVED_PRODUCT_HEADS`.
+ * ingredient; "grønne citroner" are limes, not lemons. Kept short and
+ * evidence-driven like `DERIVED_COMPOUND_TAILS`.
  */
-const GUARDED_NOUN_STEMS = new Set(["bønn"]);
+const GUARDED_NOUN_STEMS = new Set(["bønn", "citron"]);
 
 /**
  * The colour word immediately before an occurrence of `nounStem` in `text`,
@@ -157,60 +158,120 @@ function colorQualifierBefore(text: string, nounStem: string): string | undefine
 }
 
 /**
- * False when `ingredientToken` names a guarded noun, the ingredient text
- * gives it a colour (e.g. "sorte bønner"), and the matched offer alternative
- * either has no colour for that noun or a different one. An ingredient
- * without a colour qualifier is unconstrained, same as before this rule
- * existed.
+ * For a guarded noun, true only when the ingredient and the offer agree about
+ * its colour — both naming the same one, or neither naming any.
+ *
+ * The comparison is symmetric because the mismatch runs both ways: "sorte
+ * bønner" must not reach a plain "bønner" coffee offer, and a recipe's plain
+ * "citron" must not reach "grønne citroner", which are limes.
  */
 function guardedQualifierMatches(ingredientToken: string, ingredientName: string, offerAlternative: string): boolean {
   if (!GUARDED_NOUN_STEMS.has(ingredientToken)) return true;
 
-  const ingredientQualifier = colorQualifierBefore(ingredientName, ingredientToken);
-  if (!ingredientQualifier) return true;
-
-  return colorQualifierBefore(offerAlternative, ingredientToken) === ingredientQualifier;
+  return (
+    colorQualifierBefore(ingredientName, ingredientToken) ===
+    colorQualifierBefore(offerAlternative, ingredientToken)
+  );
 }
 
 /**
- * Heads that turn a raw ingredient into a different product. A compound whose
+ * Tails that turn a compound into a different product. A compound whose
  * *tail* is one of these is not the thing its prefix names: a jar of
  * kyllinge|bouillon is not chicken, bacon|postej is not bacon, smør|e|ost is
  * not butter, and an ingefær|shot is not ginger. Buying the offer would not
  * get you the ingredient.
+ *
+ * Entries are stored stemmed as well as whole where the stemmer changes them
+ * ("marinade" → "marinad", "cremefine" → "cremefin"), since the comparison
+ * runs on already-stemmed tokens.
  *
  * Derived from the mismatches an actual offer set produced — "smør" matched
  * "smøreost" on 117 ingredient lines and "grøntsagsbouillon" matched the
  * "35% grønt" in a mince offer on 52 — rather than from a general theory of
  * Danish compounds, which is also why it stays short.
  */
-const DERIVED_PRODUCT_HEADS = [
+const DERIVED_COMPOUND_TAILS = [
   "bouillon", "bouillion", "fond", "terning", "pulver", "krydderi",
   "postej", "paté", "pate", "pesto", "ost", "shot", "saft", "snacks",
   "sauce", "sauc", "mel", "sukker", "sukk", "bog", "stativ", "glas",
   // "lage" (brine, as in "rejer i lage") is not "lagereddike".
   "eddike", "eddik",
-  // "vand" (water) is not "vandmelon" (watermelon); "hvidløg" (garlic) is not
-  // "hvidløgsmarinade" (a marinade). Both are compound-prefix false matches
-  // against real offer names.
-  // The stemmer turns "marinade" into "marinad" before this list is checked
-  // against it, so both forms are listed.
-  "melon", "marinade", "marinad",
+  // From the reported mismatches: "vand" is not "vandmelon" or a "vandskål"
+  // (a dog's water bowl), "hvidløg" is not "hvidløgsmarinade", "smør" is not
+  // "smørrebrød", and "creme" is not "cremefine".
+  "melon", "marinade", "marinad", "skål", "brød", "fine", "fin",
 ];
 
 /**
- * True when `longer` is `shorter` plus one of the heads above.
+ * Words that, standing as a word of their own in an offer name, say the offer
+ * is a *processed form* of an ingredient rather than the ingredient: "Go-Tan
+ * chili saucer" is not a chili, "Beauvais tomat ketchup" is not a tomato,
+ * "Zelected syltede rødløg" is not an onion.
+ *
+ * Deliberately narrower than the compound tails above, because the two roles
+ * are not the same: "brød" as a tail marks a processed form ("smørre|brød"),
+ * but as a word of its own it names bread, which is exactly what a recipe
+ * asking for bread wants. Only words that are a preparation in their own
+ * right belong here.
+ */
+const PROCESSED_FORM_WORDS = [
+  "sauce", "sauc", "ketchup", "paste", "past", "mayonnaise", "mayo",
+  "dressing", "sylted", "syltede", "pesto", "krydderi", "postej", "paté",
+  "pate", "bouillon", "bouillion", "fond",
+];
+
+/**
+ * True when the offer alternative names a processed form of the ingredient —
+ * "chili saucer" for a fresh chili, "tomat ketchup" for tinned tomatoes.
+ *
+ * The word stands on its own here rather than as a compound tail, so the
+ * ingredient token matches the offer's exactly and `tokensMatch` has nothing
+ * to object to. Rejecting the whole alternative is the point: it is the
+ * *combination* that names the other product.
+ *
+ * An ingredient that asks for the processed form itself is unaffected — "2
+ * spsk ketchup" against a ketchup offer, "1 spsk fiskesauce" against a fish
+ * sauce — since its own tokens carry the same word.
+ */
+function namesProcessedForm(offerTokens: string[], ingredientTokens: string[]): boolean {
+  return offerTokens.some(
+    (offerToken) =>
+      PROCESSED_FORM_WORDS.includes(offerToken) &&
+      !ingredientTokens.some(
+        (ingredientToken) => ingredientToken === offerToken || ingredientToken.endsWith(offerToken),
+      ),
+  );
+}
+
+/**
+ * One alternative up to its "med": what that product *is*, without what it is
+ * flavoured with. "Hel kylling med hvidløgsmarinade" is chicken, not garlic;
+ * "Hakkebøffer med bøgerøget bacon" are patties, not bacon.
+ *
+ * Applied per alternative, *after* the split, which is what makes it safe:
+ * REMA also uses "med" ahead of a list of sibling products ("Hakket oksekød
+ * med 35% grønt, kyllingekød, grise- og kalvekød"), where cutting the whole
+ * name at the first "med" would throw away three real products. Splitting
+ * first leaves each sibling to be judged on its own.
+ */
+function stripFlavourClause(alternative: string): string {
+  return alternative.split(/\s+med\s+/i)[0]!;
+}
+
+/**
+ * True when `longer` is `shorter` plus one of the tails in
+ * `DERIVED_COMPOUND_TAILS`.
  *
  * Danish compounds insert a joining letter ("smør·e·ost", "kylling·e·fond",
  * "grøntsag·s·bouillon"), so the remainder is tested both as-is and with a
  * leading `e`/`s` removed — as-is matters, because stripping it blindly turns
  * "ingefær|shot" into "hot" and lets the ginger shot through.
  */
-function isDerivedProduct(shorter: string, longer: string): boolean {
+function isDerivedCompound(shorter: string, longer: string): boolean {
   const remainder = longer.slice(shorter.length);
   const candidates = [remainder, remainder.replace(/^[es]/, "")];
   return candidates.some((candidate) =>
-    DERIVED_PRODUCT_HEADS.some((head) => candidate === head || candidate.endsWith(head)),
+    DERIVED_COMPOUND_TAILS.some((tail) => candidate === tail || candidate.endsWith(tail)),
   );
 }
 
@@ -228,7 +289,7 @@ function tokensMatch(a: string, b: string): boolean {
   const [shorter, longer] = a.length <= b.length ? [a, b] : [b, a];
 
   // Compound prefix: "kyllingebrystfilet" starts with "kyllingebryst".
-  if (shorter.length >= 4 && longer.startsWith(shorter) && !isDerivedProduct(shorter, longer)) return true;
+  if (shorter.length >= 4 && longer.startsWith(shorter) && !isDerivedCompound(shorter, longer)) return true;
 
   /*
    * There used to be a third rule: any two tokens of 6+ characters sharing
@@ -249,12 +310,22 @@ function tokensMatch(a: string, b: string): boolean {
   return false;
 }
 
-/** True when any product token of the ingredient matches any of the offer name's. */
+/**
+ * True when one of the offer's alternatives names the same product as the
+ * ingredient line.
+ *
+ * Each alternative is judged as a whole before its tokens are compared: an
+ * alternative naming a processed form ("chili saucer") is not the ingredient
+ * however well its individual words line up.
+ */
 function ingredientMatchesOfferName(ingredientTokens: string[], ingredientName: string, offerName: string): boolean {
   if (ingredientTokens.length === 0) return false;
 
-  return splitOfferAlternatives(offerName).some((alternative) => {
+  return splitOfferAlternatives(offerName).some((whole) => {
+    const alternative = stripFlavourClause(whole);
     const offerTokens = productTokens(alternative);
+    if (namesProcessedForm(offerTokens, ingredientTokens)) return false;
+
     return offerTokens.some((offerToken) =>
       ingredientTokens.some(
         (ingredientToken) =>
