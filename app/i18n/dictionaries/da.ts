@@ -39,6 +39,8 @@ export const da = {
   "week.noRecipes": "Der er ingen opskrifter hentet endnu, så der er intet at planlægge med.",
   "week.noRecipesAction": "Hent opskrifter",
   "week.today": "I dag",
+  "week.thisWeek": "Denne uge",
+  "week.nextWeek": "Næste uge",
 
   "shoppingList.title": "Indkøbsliste",
   "shoppingList.open": "Se indkøbsliste",

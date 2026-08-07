@@ -41,6 +41,8 @@ export const en: Record<keyof typeof da, string> = {
   "week.noRecipes": "No recipes have been fetched yet, so there's nothing to plan with.",
   "week.noRecipesAction": "Fetch recipes",
   "week.today": "Today",
+  "week.thisWeek": "This week",
+  "week.nextWeek": "Next week",
 
   "shoppingList.title": "Shopping list",
   "shoppingList.open": "Open shopping list",
