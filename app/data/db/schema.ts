@@ -272,6 +272,45 @@ export const shoppingListMarks = pgTable(
 );
 
 /**
+ * One row per ingredient↔offer pairing a family has flagged as wrong.
+ *
+ * `ingredientOfferScore.ts` matches ingredient lines to offer names with
+ * Danish-compound heuristics, and it will never be perfect — "chili" (the
+ * fresh pepper) and "Go-Tan chili saucer" (a sauce) share a word but aren't
+ * the same product, and no tokenizer rule can know that. Rather than block on
+ * getting every edge case right in code, a family can flag a specific match
+ * as wrong and it's excluded from then on.
+ *
+ * Keyed by free-text `(familyId, ingredientLabel, offerName)`, the same
+ * identity choice as `shoppingListMarks.itemLabel`: neither ingredients nor
+ * offers have a stable id anywhere in the domain, so the label is the only
+ * available key. A row's mere existence is the flag — there is no "force this
+ * match" counterpart, since the report this solves is about false positives.
+ */
+export const ingredientOfferOverrides = pgTable(
+  "ingredient_offer_overrides",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    familyId: uuid("family_id")
+      .notNull()
+      .references(() => families.id, { onDelete: "cascade" }),
+    ingredientLabel: text("ingredient_label").notNull(),
+    offerName: text("offer_name").notNull(),
+    /** Null when the flag came from a share link rather than a signed-in member. */
+    createdByUserId: uuid("created_by_user_id"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    unique("ingredient_offer_overrides_family_ingredient_offer_unique").on(
+      table.familyId,
+      table.ingredientLabel,
+      table.offerName,
+    ),
+    index("ingredient_offer_overrides_family_id_idx").on(table.familyId),
+  ],
+);
+
+/**
  * A `/list/{token}` link handing one week's shopping list to someone without
  * an account — the partner doing the shopping, a parent picking things up on
  * the way over.

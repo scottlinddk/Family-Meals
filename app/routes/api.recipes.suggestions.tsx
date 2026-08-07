@@ -3,8 +3,11 @@ import { requireFamily } from "~/lib/auth";
 import { offerRepository } from "~/data/repositories/offerRepository";
 import { familyStoreSettingsRepository } from "~/data/repositories/familyStoreSettingsRepository";
 import { externalRecipeRepository } from "~/data/repositories/externalRecipeRepository";
+import { ingredientOfferOverrideRepository } from "~/data/repositories/ingredientOfferOverrideRepository";
 import { isSuggestionSort, rankRecipeSuggestions } from "~/domain/recipes/suggestionRanking";
+import { offerOverrideKey } from "~/domain/recipes/externalRecipeMatch";
 import { offerIsUsable } from "~/domain/familyStoreSettings";
+import { isMissingSchemaError } from "~/lib/dbErrors";
 
 /**
  * How many suggestions a request gets by default.
@@ -35,16 +38,27 @@ export async function loader({ request }: Route.LoaderArgs) {
   const limit = Number(params.get("limit"));
 
   const settings = await familyStoreSettingsRepository.get(family.id);
-  const [offers, recipes] = await Promise.all([
+  const [offers, recipes, excludedOverrides] = await Promise.all([
     offerRepository.listCurrentOffers(family.id, settings.selectedStores),
     externalRecipeRepository.listAll(),
+    // A pre-migration database is missing this table on a fresh deploy (see
+    // `isMissingSchemaError`); the suggestion list is the main feature here,
+    // so it degrades to "no flags applied yet" rather than failing outright.
+    ingredientOfferOverrideRepository.listExcluded(family.id).catch((error) => {
+      if (!isMissingSchemaError(error)) throw error;
+      return [];
+    }),
   ]);
   const usableOffers = offers.filter((offer) => offerIsUsable(offer, settings));
+  const excludedPairs = new Set(
+    excludedOverrides.map((override) => offerOverrideKey(override.ingredientLabel, override.offerName)),
+  );
 
   const ranked = rankRecipeSuggestions(recipes, usableOffers, {
     sort: isSuggestionSort(sort) ? sort : "balanced",
     vegetarianOnly: params.get("vegetarian") === "1",
     limit: Number.isFinite(limit) && limit > 0 ? Math.min(limit, MAX_LIMIT) : DEFAULT_LIMIT,
+    excludedPairs,
   });
 
   return new Response(JSON.stringify(ranked), {
