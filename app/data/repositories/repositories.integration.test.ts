@@ -170,7 +170,15 @@ describe.skipIf(!TEST_DATABASE_URL)("repositories against Postgres", () => {
 
     await weekPlanRepository.saveWeekPlan(weekPlanFixture(familyB, "2026-07-27", snapshot!.id, "recipe-old", 2));
     await weekPlanRepository.saveWeekPlan(weekPlanFixture(familyB, "2026-08-03", snapshot!.id, "recipe-new", 0));
-    await weekPlanRepository.saveWeekPlan(weekPlanFixture(familyB, "2026-08-03", snapshot!.id, "recipe-new-2", 1));
+    // The value saveWeekPlan hands back must itself be the just-written state
+    // — a regenerate that returns what it wrote a moment behind is exactly
+    // as broken as one that errors, just silently ("Genskab hele ugen").
+    const saved = await weekPlanRepository.saveWeekPlan(
+      weekPlanFixture(familyB, "2026-08-03", snapshot!.id, "recipe-new-2", 1),
+    );
+    expect(saved.days).toHaveLength(1);
+    expect(saved.days[0]!.baseRecipeId).toBe("recipe-new-2");
+    expect(saved.days[0]!.sequence).toBe(1);
 
     const reread = await weekPlanRepository.getWeekPlan(familyB, "2026-08-03");
     expect(reread?.days).toHaveLength(1);
