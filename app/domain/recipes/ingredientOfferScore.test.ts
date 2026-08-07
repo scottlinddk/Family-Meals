@@ -217,6 +217,16 @@ describe("offersMatchingIngredient on offers naming a processed form", () => {
     ]);
   });
 
+  it("does not match pumpkin to a Greek-yoghurt offer", () => {
+    // "græsk" is provenance, and also a prefix of "græskar" (pumpkin), so
+    // pumpkin seeds and a whole pumpkin both reached a yoghurt offer.
+    const yoghurt = offer("Athena græsk yoghurt");
+    expect(matchedNames("100 g græskarkerner", [yoghurt])).toEqual([]);
+    expect(matchedNames("1 stk græskar", [yoghurt])).toEqual([]);
+    // Dropping it from both sides still leaves them meeting on "yoghurt".
+    expect(matchedNames("3 dl græsk yoghurt", [yoghurt])).toEqual([yoghurt.name]);
+  });
+
   it("does not match through a compound tail that renames the product", () => {
     expect(
       matchedNames("120 ml vand", [offer("Vandskål, aktivitetslegetøj eller fleecetæppe 150x100 cm")]),

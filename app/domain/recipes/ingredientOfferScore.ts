@@ -53,6 +53,11 @@ const STOPWORDS = new Set([
   "rema", "1000", "dansk", "danske", "økologisk", "økologiske", "øko", "frisk",
   "friske", "hel", "hele", "ready", "to", "go", "serve", "mini", "stor", "store",
   "lille", "små", "ny", "nye", "original",
+  // "græsk" is provenance like "dansk", and it is also a prefix of "græskar"
+  // (pumpkin) — which had "græskarkerner" and "1 stk græskar" matching an
+  // "Athena græsk yoghurt" offer. Dropped from both sides, "græsk yoghurt"
+  // still meets the offer on "yoghurt".
+  "græsk", "græske",
   /*
    * Colours, qualities and containers. These are modifiers, not products, and
    * as standalone tokens they were the single largest source of false matches
@@ -111,6 +116,20 @@ function stem(word: string): string {
     }
   }
   return word;
+}
+
+/**
+ * The product identity of an ingredient line, as one comparable string —
+ * "1 stk squash", "2 stk squash" and "140 g squash" all reduce to "squash".
+ *
+ * This is the granularity a match is *made* at, so it is also the granularity
+ * anything recording a decision about a match has to be keyed at. Keying on
+ * the raw line instead means a family flagging "1 stk squash" against a
+ * Coca-Cola "Squash" offer still sees the same wrong pairing on every recipe
+ * that happens to say "2 stk squash".
+ */
+export function ingredientMatchKey(ingredientName: string): string {
+  return productTokens(ingredientName).join(" ");
 }
 
 /** Product-identifying tokens: lowercased, de-quantified, stopword-free, stemmed. */
