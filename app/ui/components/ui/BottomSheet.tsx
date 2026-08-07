@@ -47,7 +47,10 @@ export function BottomSheet({
         role="dialog"
         aria-modal="true"
         aria-labelledby={labelledBy}
-        className="relative flex max-h-[88vh] w-full max-w-md flex-col gap-3 overflow-y-auto rounded-t-lg bg-surface px-5 pt-7 pb-6 shadow-lg sm:rounded-lg"
+        // `pb-6` alone sat the sheet's content flush against an iPhone's home
+        // indicator — `BottomNav` already adds `env(safe-area-inset-bottom)`
+        // for the same reason, this just matches it here.
+        className="relative flex max-h-[88vh] w-full max-w-md flex-col gap-3 overflow-y-auto rounded-t-lg bg-surface px-5 pt-7 pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-lg sm:rounded-lg sm:pb-6"
         onClick={(event) => event.stopPropagation()}
       >
         <span
