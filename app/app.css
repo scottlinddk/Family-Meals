@@ -11,8 +11,9 @@
      anything actionable. Pairs with black ink and grayscale photography. */
   --color-bg: #fbfaf2;
   --color-surface: #ffffff;
-  /* The chartreuse band — the one loud block of colour, always flat. */
-  --color-band: #c3ed65;
+  /* The header band — the same deep green as the app's one accent, so the
+     brand strip and the primary action always read as the same colour. */
+  --color-band: #0e3b27;
   --color-text: #14170f;
   --color-muted: #6b7264;
   --color-muted-2: #9da495;

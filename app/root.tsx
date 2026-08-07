@@ -29,7 +29,7 @@ export function Layout({ children }: { children: ReactNode }) {
           generated from one definition — see scripts/generateIcons.mjs.
         */}
         <link rel="manifest" href="/manifest.webmanifest" />
-        <meta name="theme-color" content="#c3ed65" />
+        <meta name="theme-color" content="#0e3b27" />
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="icon" href="/favicon.ico" sizes="48x48" />
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
