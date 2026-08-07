@@ -21,7 +21,7 @@ export default function WeekPage({ params }: Route.ComponentProps) {
 
   return (
     <>
-      <div className="mb-5 flex items-center justify-center gap-3">
+      <div className="mb-5 flex items-center justify-between gap-3">
         <IconLink to={`/weeks/${prevWeek}`} aria-label={t("week.prev")}>
           <ChevronLeftIcon size={18} />
         </IconLink>

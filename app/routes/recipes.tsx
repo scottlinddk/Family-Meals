@@ -80,7 +80,7 @@ export default function RecipesPage() {
             <Link to={`/recipes/${recipe.id}`} className="block">
               <Card interactive>
                 <div className="flex items-center gap-3">
-                  {recipe.imageUrl && <ThumbPhoto src={recipe.imageUrl} size={64} />}
+                  {recipe.imageUrl && <ThumbPhoto src={recipe.imageUrl} size={86} />}
                   <div className="min-w-0 flex-1">
                     <CardTitle>{recipe.title}</CardTitle>
                     <p className="m-0 mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted">
