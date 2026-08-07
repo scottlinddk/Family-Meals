@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { rankExternalRecipesByOffers } from "~/domain/recipes/externalRecipeMatch";
+import { offerOverrideKey, rankExternalRecipesByOffers } from "~/domain/recipes/externalRecipeMatch";
 import type { ExternalRecipe, Offer } from "~/domain/types";
 
 function offer(name: string, validity?: { validFrom: string; validUntil: string }): Offer {
@@ -93,5 +93,70 @@ describe("rankExternalRecipesByOffers", () => {
     const ranked = rankExternalRecipesByOffers([recipe("empty", [])], [offer("Broccoli")]);
     expect(ranked[0]?.score).toBe(0);
     expect(ranked[0]?.coverage).toBe(0);
+  });
+
+  it("lists a bundled offer once, however many rows carry that name", () => {
+    // The same product is imported once per snapshot and per selected store,
+    // which showed the shopper the same offer name two and three times over.
+    const ranked = rankExternalRecipesByOffers(
+      [recipe("dupes", ["1 stk squash"])],
+      [offer("Squash"), offer("Squash"), offer("Squash")],
+    );
+    expect(ranked[0]?.matchedIngredients[0]?.offerNames).toEqual(["Squash"]);
+  });
+});
+
+/**
+ * Excluding the pairings a family has flagged as wrong. The identity used
+ * here is the whole point of the feature: a flag has to mean "this ingredient
+ * is not this product", not "this exact ingredient line is not this product".
+ */
+describe("rankExternalRecipesByOffers with flagged pairings", () => {
+  const softDrink = offer("COCA-COLA, FANTA, TUBORG SQUASH, SPRITE ELLER SCHWEPPES");
+
+  function excluding(ingredientLabel: string, offerName: string) {
+    return new Set([offerOverrideKey(ingredientLabel, offerName)]);
+  }
+
+  it("drops a flagged pairing from the matches and the score", () => {
+    const ranked = rankExternalRecipesByOffers(
+      [recipe("squash", ["1 stk squash"])],
+      [softDrink],
+      excluding("1 stk squash", softDrink.name),
+    );
+    expect(ranked[0]?.matchedIngredients).toEqual([]);
+    expect(ranked[0]?.matchedOfferNames).toEqual([]);
+    expect(ranked[0]?.score).toBe(0);
+  });
+
+  it("applies a flag to the same ingredient however it is quantified", () => {
+    // The bug this pins: flagging "1 stk squash" left every recipe saying
+    // "2 stk squash" or "140 g squash" showing the same soft-drink offer, so
+    // the flag looked like it had done nothing.
+    const ranked = rankExternalRecipesByOffers(
+      [recipe("two", ["2 stk squash"]), recipe("grams", ["140 g squash"])],
+      [softDrink],
+      excluding("1 stk squash", softDrink.name),
+    );
+    expect(ranked.every((r) => r.score === 0)).toBe(true);
+  });
+
+  it("ignores the offer name's capitalisation, which varies between imports", () => {
+    const ranked = rankExternalRecipesByOffers(
+      [recipe("squash", ["1 stk squash"])],
+      [softDrink],
+      excluding("1 stk squash", softDrink.name.toLowerCase()),
+    );
+    expect(ranked[0]?.score).toBe(0);
+  });
+
+  it("leaves a different ingredient and a different offer alone", () => {
+    const broccoli = offer("Broccoli");
+    const ranked = rankExternalRecipesByOffers(
+      [recipe("mixed", ["1 stk squash", "1 stk broccoli"])],
+      [softDrink, broccoli],
+      excluding("1 stk squash", softDrink.name),
+    );
+    expect(ranked[0]?.matchedIngredients.map((m) => m.ingredient)).toEqual(["1 stk broccoli"]);
   });
 });

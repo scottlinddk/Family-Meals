@@ -179,6 +179,7 @@ export const en: Record<keyof typeof da, string> = {
   "suggestions.page": "Page {{page}} of {{pages}}",
   "suggestions.flagWrongMatch": "Wrong match — this item isn't the ingredient",
   "suggestions.unflagWrongMatch": "Undo wrong-match flag",
+  "suggestions.flagFailed": "That flag couldn't be saved.",
 
   "recipesPage.heading": "Recipes",
   "recipesPage.title": "All recipes",

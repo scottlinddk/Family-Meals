@@ -13,6 +13,7 @@ import { Card, CardTitle } from "~/ui/components/ui/Card";
 import { Tag } from "~/ui/components/ui/Tag";
 import { ThumbPhoto } from "~/ui/components/ui/Photo";
 import { ChevronLeftIcon, ChevronRightIcon, CloseIcon } from "~/ui/components/Icon";
+import { SchemaOutOfDateError } from "~/lib/dbErrors";
 import { t, type TranslationKey } from "~/i18n/t";
 
 /** How many suggestions a page of the panel shows at once. */
@@ -250,7 +251,9 @@ function SuggestionCard({ suggestion }: { suggestion: RankedSuggestion }) {
                       {offerName}
                       <button
                         type="button"
-                        className="text-muted hover:text-fg disabled:opacity-50"
+                        // p-1 rather than a bare glyph: a 12px icon is not a
+                        // hit target, least of all on the phone this is used on.
+                        className="-m-1 inline-flex shrink-0 p-1 text-muted hover:text-red-700 disabled:opacity-50"
                         title={t("suggestions.flagWrongMatch")}
                         aria-label={t("suggestions.flagWrongMatch")}
                         disabled={flagMismatch.isPending}
@@ -283,6 +286,16 @@ function SuggestionCard({ suggestion }: { suggestion: RankedSuggestion }) {
       {matchedOfferNames.length > 0 && (
         <p className="m-0 text-xs text-muted">
           {t("recipeDetail.onOfferCount", { count: matchedIngredients.length })}
+        </p>
+      )}
+
+      {/* A flag that didn't save has to say so — the offer reappearing on the
+          next refetch is otherwise the only sign, which reads as a dead button. */}
+      {flagMismatch.isError && (
+        <p className="m-0 text-xs text-red-700">
+          {flagMismatch.error instanceof SchemaOutOfDateError
+            ? t("week.schemaOutOfDate")
+            : t("suggestions.flagFailed")}
         </p>
       )}
 
