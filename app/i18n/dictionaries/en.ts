@@ -177,6 +177,8 @@ export const en: Record<keyof typeof da, string> = {
   "suggestions.prevPage": "Previous page",
   "suggestions.nextPage": "Next page",
   "suggestions.page": "Page {{page}} of {{pages}}",
+  "suggestions.flagWrongMatch": "Wrong match — this item isn't the ingredient",
+  "suggestions.unflagWrongMatch": "Undo wrong-match flag",
 
   "recipesPage.heading": "Recipes",
   "recipesPage.title": "All recipes",

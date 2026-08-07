@@ -21,6 +21,18 @@ import type { Offer } from "~/domain/types";
  */
 
 /**
+ * Colours, dropped as stopwords below because as standalone tokens they were
+ * the single largest source of false matches (see the comment on `STOPWORDS`)
+ * — but named separately so `guardedQualifierBefore` can still look them up
+ * for the small set of nouns where the colour *does* name a different product
+ * (`GUARDED_NOUN_STEMS`).
+ */
+const COLOR_WORDS = new Set([
+  "hvid", "hvide", "rød", "røde", "grøn", "grønne", "grønt", "gul", "gule", "brun",
+  "brune", "sort", "sorte",
+]);
+
+/**
  * Words that carry no product identity on either side. Removing them from
  * *both* the ingredient and the offer keeps the comparison symmetric — e.g.
  * "hakket" drops out of both "500 g hakket oksekød" and "Friland Hakket
@@ -50,8 +62,8 @@ const STOPWORDS = new Set([
    * offer) matched every "1 flaske øl". Dropping them from both sides leaves
    * the noun that actually names the product.
    */
-  "hvid", "hvide", "rød", "røde", "grøn", "grønne", "grønt", "gul", "gule", "brun",
-  "brune", "sort", "sorte", "blandet", "blandede", "flydende", "spicy", "sød",
+  ...COLOR_WORDS,
+  "blandet", "blandede", "flydende", "spicy", "sød",
   "søde", "mager", "magre", "let", "lette", "kold", "kolde", "varm", "varme",
   "fin", "fint", "fine", "grov", "groft", "grove",
   "flaske", "flasker", "krukke", "potte", "spand", "rulle",
@@ -112,6 +124,55 @@ export function productTokens(text: string): string[] {
 }
 
 /**
+ * Stemmed nouns whose colour names a different product, not a variant of the
+ * same one — unlike most food words, where colour is safely dropped (see
+ * `COLOR_WORDS`). "sorte bønner" (black beans) and "hele bønner" (whole
+ * coffee beans, as sold loose or in an instant-coffee offer) share the bare
+ * noun once colour is stripped, which let a coffee offer match a bean
+ * ingredient. Kept short and evidence-driven like `DERIVED_PRODUCT_HEADS`.
+ */
+const GUARDED_NOUN_STEMS = new Set(["bønn"]);
+
+/**
+ * The colour word immediately before an occurrence of `nounStem` in `text`,
+ * if any — e.g. `colorQualifierBefore("252 g sorte bønner", "bønn")` is
+ * `"sort"`. Scans the raw word sequence (quantities stripped, but *before*
+ * colours are dropped as stopwords) since `productTokens` has already thrown
+ * that information away by the time matching runs.
+ */
+function colorQualifierBefore(text: string, nounStem: string): string | undefined {
+  const words = stripQuantities(text.toLowerCase())
+    .split(/[^a-zà-ÿæøå0-9]+/i)
+    .map((word) => word.trim())
+    .filter((word) => word.length > 1);
+
+  for (let i = 1; i < words.length; i++) {
+    const word = words[i]!;
+    const previous = words[i - 1]!;
+    if (stem(word) === nounStem && COLOR_WORDS.has(previous)) {
+      return stem(previous);
+    }
+  }
+  return undefined;
+}
+
+/**
+ * False when `ingredientToken` names a guarded noun, the ingredient text
+ * gives it a colour (e.g. "sorte bønner"), and the matched offer alternative
+ * either has no colour for that noun or a different one. An ingredient
+ * without a colour qualifier is unconstrained, same as before this rule
+ * existed.
+ */
+function guardedQualifierMatches(ingredientToken: string, ingredientName: string, offerAlternative: string): boolean {
+  if (!GUARDED_NOUN_STEMS.has(ingredientToken)) return true;
+
+  const ingredientQualifier = colorQualifierBefore(ingredientName, ingredientToken);
+  if (!ingredientQualifier) return true;
+
+  return colorQualifierBefore(offerAlternative, ingredientToken) === ingredientQualifier;
+}
+
+/**
  * Heads that turn a raw ingredient into a different product. A compound whose
  * *tail* is one of these is not the thing its prefix names: a jar of
  * kyllinge|bouillon is not chicken, bacon|postej is not bacon, smør|e|ost is
@@ -129,6 +190,12 @@ const DERIVED_PRODUCT_HEADS = [
   "sauce", "sauc", "mel", "sukker", "sukk", "bog", "stativ", "glas",
   // "lage" (brine, as in "rejer i lage") is not "lagereddike".
   "eddike", "eddik",
+  // "vand" (water) is not "vandmelon" (watermelon); "hvidløg" (garlic) is not
+  // "hvidløgsmarinade" (a marinade). Both are compound-prefix false matches
+  // against real offer names.
+  // The stemmer turns "marinade" into "marinad" before this list is checked
+  // against it, so both forms are listed.
+  "melon", "marinade", "marinad",
 ];
 
 /**
@@ -183,13 +250,17 @@ function tokensMatch(a: string, b: string): boolean {
 }
 
 /** True when any product token of the ingredient matches any of the offer name's. */
-function ingredientMatchesOfferName(ingredientTokens: string[], offerName: string): boolean {
+function ingredientMatchesOfferName(ingredientTokens: string[], ingredientName: string, offerName: string): boolean {
   if (ingredientTokens.length === 0) return false;
 
   return splitOfferAlternatives(offerName).some((alternative) => {
     const offerTokens = productTokens(alternative);
     return offerTokens.some((offerToken) =>
-      ingredientTokens.some((ingredientToken) => tokensMatch(ingredientToken, offerToken)),
+      ingredientTokens.some(
+        (ingredientToken) =>
+          tokensMatch(ingredientToken, offerToken) &&
+          guardedQualifierMatches(ingredientToken, ingredientName, alternative),
+      ),
     );
   });
 }
@@ -201,5 +272,5 @@ function ingredientMatchesOfferName(ingredientTokens: string[], offerName: strin
  */
 export function offersMatchingIngredient(ingredientName: string, offers: Offer[]): Offer[] {
   const ingredientTokens = productTokens(ingredientName);
-  return offers.filter((offer) => ingredientMatchesOfferName(ingredientTokens, offer.name));
+  return offers.filter((offer) => ingredientMatchesOfferName(ingredientTokens, ingredientName, offer.name));
 }

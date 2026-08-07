@@ -177,6 +177,8 @@ export const da = {
   "suggestions.prevPage": "Forrige side",
   "suggestions.nextPage": "Næste side",
   "suggestions.page": "Side {{page}} af {{pages}}",
+  "suggestions.flagWrongMatch": "Forkert match — denne vare passer ikke til ingrediensen",
+  "suggestions.unflagWrongMatch": "Fjern markering som forkert match",
 
   "recipesPage.heading": "Opskrifter",
   "recipesPage.title": "Alle opskrifter",

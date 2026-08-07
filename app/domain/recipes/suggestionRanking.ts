@@ -78,6 +78,8 @@ export interface SuggestionOptions {
   vegetarianOnly?: boolean;
   /** How many suggestions to return. The full 350 is a scroll, not a suggestion. */
   limit?: number;
+  /** Ingredient↔offer pairs the family has flagged as wrong (see `offerOverrideKey`). */
+  excludedPairs?: ReadonlySet<string>;
 }
 
 /**
@@ -117,9 +119,9 @@ function caloriePercentiles(perServing: (number | null)[]): number[] {
 export function rankRecipeSuggestions(
   recipes: ExternalRecipe[],
   offers: Offer[],
-  { sort = "balanced", vegetarianOnly = false, limit }: SuggestionOptions = {},
+  { sort = "balanced", vegetarianOnly = false, limit, excludedPairs }: SuggestionOptions = {},
 ): RankedSuggestion[] {
-  const byOffers = rankExternalRecipesByOffers(recipes, offers);
+  const byOffers = rankExternalRecipesByOffers(recipes, offers, excludedPairs);
 
   const candidates = byOffers
     .map((ranked) => ({

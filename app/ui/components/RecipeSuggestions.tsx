@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router";
 import { useRecipeSuggestions, useRefreshRecipes } from "~/ui/hooks/useRecipeSuggestions";
 import { useSuggestionPreferences } from "~/ui/hooks/useSuggestionPreferences";
+import { useFlagOfferMismatch } from "~/ui/hooks/useIngredientOfferOverrides";
 import {
   SUGGESTION_SORTS,
   type RankedSuggestion,
@@ -11,7 +12,7 @@ import { Button, IconButton } from "~/ui/components/ui/Button";
 import { Card, CardTitle } from "~/ui/components/ui/Card";
 import { Tag } from "~/ui/components/ui/Tag";
 import { ThumbPhoto } from "~/ui/components/ui/Photo";
-import { ChevronLeftIcon, ChevronRightIcon } from "~/ui/components/Icon";
+import { ChevronLeftIcon, ChevronRightIcon, CloseIcon } from "~/ui/components/Icon";
 import { t, type TranslationKey } from "~/i18n/t";
 
 /** How many suggestions a page of the panel shows at once. */
@@ -201,6 +202,7 @@ export function RecipeSuggestions() {
 
 function SuggestionCard({ suggestion }: { suggestion: RankedSuggestion }) {
   const { recipe, matchedIngredients, matchedOfferNames, calories, vegetarian } = suggestion;
+  const flagMismatch = useFlagOfferMismatch();
 
   return (
     <Card as="li">
@@ -242,7 +244,25 @@ function SuggestionCard({ suggestion }: { suggestion: RankedSuggestion }) {
             <li key={ingredient} className="flex flex-col gap-1">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-medium">{ingredient}</span>
-                <span className="text-xs text-muted">{offerNames.join(", ")}</span>
+                <span className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-muted">
+                  {offerNames.map((offerName) => (
+                    <span key={offerName} className="inline-flex items-center gap-0.5">
+                      {offerName}
+                      <button
+                        type="button"
+                        className="text-muted hover:text-fg disabled:opacity-50"
+                        title={t("suggestions.flagWrongMatch")}
+                        aria-label={t("suggestions.flagWrongMatch")}
+                        disabled={flagMismatch.isPending}
+                        onClick={() =>
+                          flagMismatch.mutate({ ingredientLabel: ingredient, offerName, flagged: true })
+                        }
+                      >
+                        <CloseIcon size={12} />
+                      </button>
+                    </span>
+                  ))}
+                </span>
               </div>
               {weekendOnlyOfferNames.length > 0 && (
                 <Tag variant="accent-2">

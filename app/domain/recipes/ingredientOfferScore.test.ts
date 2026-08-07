@@ -121,6 +121,26 @@ describe("offersMatchingIngredient against real-world false matches", () => {
     expect(matchedNames("syltede rødbeder", [offer("Frøken Jensens syltebog")])).toEqual([]);
   });
 
+  it("does not match water to watermelon, nor garlic to a garlic marinade", () => {
+    expect(matchedNames("120 ml vand", [offer("Vandmelon")])).toEqual([]);
+    expect(
+      matchedNames("6 fed hvidløg", [offer("Food and Glory hel kylling med hvidløgsmarinade")]),
+    ).toEqual([]);
+  });
+
+  it("does not match black beans to coffee beans sold loose", () => {
+    expect(matchedNames("252 g sorte bønner", [offer("LAVAZZA HELE BØNNER")])).toEqual([]);
+    expect(
+      matchedNames("252 g sorte bønner", [
+        offer("MERRILD GOLD INSTANT KAFFE ELLER HELE BØNNER"),
+      ]),
+    ).toEqual([]);
+    // An ingredient without a colour qualifier stays unconstrained.
+    expect(matchedNames("1 dåse bønner", [offer("Hele bønner")])).toEqual(["Hele bønner"]);
+    // Matching colours on both sides still match.
+    expect(matchedNames("252 g sorte bønner", [offer("Sorte bønner")])).toEqual(["Sorte bønner"]);
+  });
+
   it("does not match a raw ingredient to a processed version of it", () => {
     // Buying the offer would not get you the ingredient.
     expect(matchedNames("50 g smør", [offer("BUKO smøreost eller friskost")])).toEqual([]);
