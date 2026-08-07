@@ -311,6 +311,52 @@ export const ingredientOfferOverrides = pgTable(
 );
 
 /**
+ * One row per ingredient a family added to the shopping list by hand, rather
+ * than it being on the list because a recipe on the week's plan calls for it.
+ *
+ * The recipe suggestions panel shows meals that aren't necessarily part of
+ * this week's plan, so "buy this" for one of their ingredients has nowhere
+ * generated to land — `buildShoppingList` only ever walks `week.days`. This
+ * table is that missing source: `shoppingListForWeek` merges its rows in
+ * alongside the plan's ingredient lines, through the same per-product
+ * merging `buildShoppingList` already does, so an item added here that a
+ * recipe also calls for becomes one line, not two.
+ *
+ * Keyed and scoped exactly like `shoppingListMarks` — by family and week, on
+ * the free-text label, since neither ingredients nor shopping list items have
+ * a stable id anywhere in this app — for the same reason: a regenerated week
+ * leaves rows whose label no longer matters, and that's fine, they simply
+ * stop contributing a line rather than needing to be cleaned up.
+ */
+export const shoppingListExtraItems = pgTable(
+  "shopping_list_extra_items",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    familyId: uuid("family_id")
+      .notNull()
+      .references(() => families.id, { onDelete: "cascade" }),
+    weekStartDate: date("week_start_date").notNull(),
+    itemLabel: text("item_label").notNull(),
+    /** Null when the item came from a share link rather than a signed-in member. */
+    addedByUserId: uuid("added_by_user_id"),
+    addedAt: timestamp("added_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    // Adding is an idempotent upsert on this key: tapping "add to list" twice
+    // for the same ingredient must not produce two rows.
+    unique("shopping_list_extra_items_family_week_label_unique").on(
+      table.familyId,
+      table.weekStartDate,
+      table.itemLabel,
+    ),
+    index("shopping_list_extra_items_family_id_week_start_date_idx").on(
+      table.familyId,
+      table.weekStartDate,
+    ),
+  ],
+);
+
+/**
  * A `/list/{token}` link handing one week's shopping list to someone without
  * an account — the partner doing the shopping, a parent picking things up on
  * the way over.

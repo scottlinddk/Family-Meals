@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { DayPlan, Offer, StoreId, WeekPlan } from "~/domain/types";
-import { buildShoppingList } from "~/domain/planning/shoppingList";
+import { buildShoppingList, findShoppingListItem } from "~/domain/planning/shoppingList";
 
 function day(date: string, title: string, ingredientLines: string[]): DayPlan {
   return {
@@ -168,5 +168,43 @@ describe("buildShoppingList", () => {
     expect(list.sections).toEqual([]);
     expect(list.itemCount).toBe(0);
     expect(list.onOfferCount).toBe(0);
+  });
+
+  it("folds hand-added items in as their own line, with no day or recipe", () => {
+    const list = buildShoppingList(week([day("2026-08-03", "Pasta", ["500 g hakket oksekød"])]), [], undefined, [
+      "1 squash",
+    ]);
+
+    const squash = allItems(list).find((item) => item.label === "1 squash")!;
+    expect(squash).toBeDefined();
+    expect(squash.dates).toEqual([]);
+    expect(squash.recipeTitles).toEqual([]);
+    expect(list.itemCount).toBe(2);
+  });
+
+  it("merges a hand-added item into a matching recipe line instead of duplicating it", () => {
+    const list = buildShoppingList(week([day("2026-08-03", "Ret", ["2 løg"])]), [], undefined, [
+      "1 løg, finthakket",
+    ]);
+
+    expect(list.itemCount).toBe(1);
+    const onions = allItems(list)[0]!;
+    expect(onions.variants).toEqual(["2 løg", "1 løg, finthakket"]);
+    expect(onions.dates).toEqual(["2026-08-03"]);
+  });
+});
+
+describe("findShoppingListItem", () => {
+  it("finds a list item by product identity, not exact text", () => {
+    const list = buildShoppingList(week([day("2026-08-03", "Ret", ["2 løg, finthakket"])]), []);
+
+    expect(findShoppingListItem(list, "1 løg")?.label).toBe("2 løg, finthakket");
+  });
+
+  it("returns null when the ingredient isn't on the list, or there is no list", () => {
+    const list = buildShoppingList(week([day("2026-08-03", "Ret", ["2 løg"])]), []);
+
+    expect(findShoppingListItem(list, "1 squash")).toBeNull();
+    expect(findShoppingListItem(null, "2 løg")).toBeNull();
   });
 });

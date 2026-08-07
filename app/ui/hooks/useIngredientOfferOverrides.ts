@@ -17,26 +17,32 @@ export interface OfferMismatch {
  * round trip later, and keyed the same way the server excludes it — by
  * product identity — so it also vanishes from the other recipes naming the
  * same ingredient, which is what the refetch will come back with.
+ *
+ * The ingredient's own row is left in place even once its `offerNames` empty
+ * out — flagging one wrong offer says nothing about the ingredient, and the
+ * server's next response agrees (see `rankExternalRecipesByOffers`).
  */
 function withoutPair(suggestions: RankedSuggestion[], flagged: OfferMismatch): RankedSuggestion[] {
   const flaggedKey = offerOverrideKey(flagged.ingredientLabel, flagged.offerName);
+  const isFlagged = (ingredient: string, offerName: string) =>
+    offerOverrideKey(ingredient, offerName) === flaggedKey;
 
   return suggestions.map((suggestion) => {
-    const matchedIngredients = suggestion.matchedIngredients
-      .map((match) => ({
-        ...match,
-        offerNames: match.offerNames.filter(
-          (offerName) => offerOverrideKey(match.ingredient, offerName) !== flaggedKey,
-        ),
-      }))
-      .filter((match) => match.offerNames.length > 0);
+    const matchedIngredients = suggestion.matchedIngredients.map((match) => ({
+      ...match,
+      offerNames: match.offerNames.filter((offerName) => !isFlagged(match.ingredient, offerName)),
+      weekendOnlyOfferNames: match.weekendOnlyOfferNames.filter(
+        (offerName) => !isFlagged(match.ingredient, offerName),
+      ),
+    }));
 
     const kept = new Set(matchedIngredients.flatMap((match) => match.offerNames));
+    const onOfferCount = matchedIngredients.filter((match) => match.offerNames.length > 0).length;
     return {
       ...suggestion,
       matchedIngredients,
       matchedOfferNames: suggestion.matchedOfferNames.filter((name) => kept.has(name)),
-      offerScore: matchedIngredients.length,
+      offerScore: onOfferCount,
     };
   });
 }

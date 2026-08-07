@@ -19,6 +19,34 @@ export function useShoppingList(weekStart: string) {
   });
 }
 
+/**
+ * Adds (or removes) an ingredient on `weekStart`'s shopping list by hand —
+ * see `shoppingListExtraItems` in the schema. Used from views that show an
+ * ingredient without it necessarily being part of that week's plan, like the
+ * recipe suggestions panel.
+ *
+ * A plain mutation rather than the marks hook's offline queue: adding an item
+ * happens while browsing recipes, not standing in a shop with patchy signal,
+ * so there's no reason to carry that complexity here.
+ */
+export function useAddShoppingListItem(weekStart: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ label, added }: { label: string; added: boolean }) => {
+      const res = await fetch(`/api/weeks/${weekStart}/shopping-list/extra-items`, {
+        method: added ? "POST" : "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ label }),
+      });
+      if (res.status === SCHEMA_OUT_OF_DATE_STATUS) throw new SchemaOutOfDateError();
+      if (!res.ok) throw new Error("Failed to update the shopping list");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: shoppingListQueryKey(weekStart) });
+    },
+  });
+}
+
 export interface SharedShoppingList {
   weekStartDate: string;
   familyName: string | null;
