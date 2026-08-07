@@ -7,14 +7,18 @@ import { normalizeRecipeSnapshot } from "~/domain/recipes/recipeSnapshot";
 /** How many previously-planned weeks the variety rule looks back over. */
 const RECENT_WEEK_COUNT = 3;
 
+/** Whatever `db` or a `db.transaction` callback's `tx` can do — the two share this shape. */
+type DbClient = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
+
 function toIsoDate(value: string | Date): string {
   return typeof value === "string" ? value : value.toISOString().slice(0, 10);
 }
 
 async function loadWeekPlan(
+  client: DbClient,
   weekPlanRow: typeof weekPlans.$inferSelect,
 ): Promise<WeekPlan> {
-  const dayRows = await db
+  const dayRows = await client
     .select()
     .from(dayPlans)
     .where(eq(dayPlans.weekPlanId, weekPlanRow.id));
@@ -54,7 +58,7 @@ export const weekPlanRepository = {
       .select()
       .from(weekPlans)
       .where(and(eq(weekPlans.familyId, familyId), eq(weekPlans.weekStartDate, weekStartDate)));
-    return row ? loadWeekPlan(row) : undefined;
+    return row ? loadWeekPlan(db, row) : undefined;
   },
 
   /**
@@ -146,7 +150,7 @@ export const weekPlanRepository = {
         })),
       );
 
-      return loadWeekPlan(weekPlanRow);
+      return loadWeekPlan(tx, weekPlanRow);
     });
   },
 };
