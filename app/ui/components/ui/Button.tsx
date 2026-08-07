@@ -33,7 +33,7 @@ function buttonClasses({
   block = false,
   className = "",
 }: ButtonStyleProps): string {
-  return `inline-flex items-center justify-center gap-2 rounded-md border font-semibold leading-tight transition-colors disabled:cursor-not-allowed disabled:opacity-45 ${variantClasses[variant]} ${sizeClasses[size]} ${block ? "w-full" : ""} ${className}`;
+  return `inline-flex items-center justify-center gap-2 rounded-full border font-semibold leading-tight transition-colors disabled:cursor-not-allowed disabled:opacity-45 ${variantClasses[variant]} ${sizeClasses[size]} ${block ? "w-full" : ""} ${className}`;
 }
 
 export function Button({
@@ -63,7 +63,7 @@ export function LinkButton({
 }
 
 const iconButtonClasses =
-  "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-divider bg-surface text-text transition-colors hover:bg-neutral-100 disabled:pointer-events-none disabled:opacity-40";
+  "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-divider bg-surface text-text transition-colors hover:bg-neutral-100 disabled:pointer-events-none disabled:opacity-40";
 
 /**
  * A square icon-only control — the header's subscribe button, the week's

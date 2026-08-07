@@ -1,68 +1,69 @@
 @import "tailwindcss";
 
 @theme {
-  /* One family throughout — Inter, the rounded grotesk the design system
-     names. Headings differ from body by weight, not by typeface. */
-  --font-heading: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  /* A warm serif for display type, a plain grotesk for everything that has
+     to be read fast — ingredient lines, prices, form labels. */
+  --font-heading: "Fraunces", Georgia, "Times New Roman", serif;
   --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
-  /* Fresh Table: white pages, one soft mint band at the top of a screen, and
-     a single deep green doing all the work anything actionable needs. */
-  --color-bg: #ffffff;
+  /* Good Harvest: cream pages, a chartreuse band doing the colour work a
+     charity site would spend on hope, and a near-black forest green for
+     anything actionable. Pairs with black ink and grayscale photography. */
+  --color-bg: #fbfaf2;
   --color-surface: #ffffff;
-  /* The mint band. The only block of colour in the app, and always flat. */
-  --color-band: #dff0dc;
-  --color-text: #151a14;
-  --color-muted: #7c857a;
-  --color-muted-2: #a6aea3;
-  --color-divider: #e4e8e2;
-  --color-accent: #1f4d2c;
-  /* Warm second accent, kept for offer/price highlights so they read as
-     "worth noticing" without competing with the green. */
-  --color-accent-2: #f5a623;
+  /* The chartreuse band — the one loud block of colour, always flat. */
+  --color-band: #c3ed65;
+  --color-text: #14170f;
+  --color-muted: #6b7264;
+  --color-muted-2: #9da495;
+  --color-divider: #e6e8dc;
+  --color-accent: #0e3b27;
+  /* Second accent: the same chartreuse as the band, dialed down a step so
+     it still reads on white — badges, prices, anything "worth noticing". */
+  --color-accent-2: #a8cc55;
 
   /* Tonal ramps — same shared lightness scale, so the same step of any
      role matches the others in visual value. */
-  --color-neutral-100: #f6f8f5;
-  --color-neutral-200: #e9ece7;
-  --color-neutral-300: #d5dad2;
-  --color-neutral-400: #b7beb3;
-  --color-neutral-500: #98a094;
-  --color-neutral-600: #7c857a;
-  --color-neutral-700: #5f675d;
-  --color-neutral-800: #414841;
-  --color-neutral-900: #262c25;
+  --color-neutral-100: #faf9f1;
+  --color-neutral-200: #f1f0e4;
+  --color-neutral-300: #e3e2d2;
+  --color-neutral-400: #c9c8b4;
+  --color-neutral-500: #acab94;
+  --color-neutral-600: #8b8a74;
+  --color-neutral-700: #696855;
+  --color-neutral-800: #46453a;
+  --color-neutral-900: #23231d;
 
-  --color-accent-100: #eaf5e8;
-  --color-accent-200: #d3e9cf;
-  --color-accent-300: #b0d5aa;
-  --color-accent-400: #85bb7d;
-  --color-accent-500: #549a4c;
-  --color-accent-600: #327a35;
-  --color-accent-700: #153a21;
-  --color-accent-800: #123018;
-  --color-accent-900: #0c2011;
+  --color-accent-100: #e6f0e8;
+  --color-accent-200: #c3dbc9;
+  --color-accent-300: #93be9f;
+  --color-accent-400: #5c9a6e;
+  --color-accent-500: #2e7449;
+  --color-accent-600: #145a33;
+  --color-accent-700: #0e3b27;
+  --color-accent-800: #0a2c1d;
+  --color-accent-900: #061d13;
 
-  --color-accent-2-100: #fdf1dd;
-  --color-accent-2-200: #fbe0b4;
-  --color-accent-2-300: #f8c97f;
-  --color-accent-2-400: #f5a623;
-  --color-accent-2-500: #d98c13;
-  --color-accent-2-600: #b3710f;
-  --color-accent-2-700: #8c580c;
-  --color-accent-2-800: #6a4209;
-  --color-accent-2-900: #472c06;
+  --color-accent-2-100: #f6fae6;
+  --color-accent-2-200: #e9f4c4;
+  --color-accent-2-300: #d6ea93;
+  --color-accent-2-400: #c3ed65;
+  --color-accent-2-500: #a8cc55;
+  --color-accent-2-600: #8aae3e;
+  --color-accent-2-700: #6b8a2e;
+  --color-accent-2-800: #4d6620;
+  --color-accent-2-900: #304012;
 
-  /* Softened corners, not round ones: badges and tags at `sm`, buttons,
-     fields and cards at `md`, sheets and full-bleed photos at `lg`. Nothing
-     in the app is a full pill except a couple of 3px indicator bars. */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 14px;
+  /* Generously rounded, pill-first: badges and tags at `sm`, fields and
+     cards at `md`, sheets and full-bleed photos at `lg`. Buttons go all
+     the way to `rounded-full`. */
+  --radius-sm: 12px;
+  --radius-md: 20px;
+  --radius-lg: 28px;
 
-  --shadow-sm: 0 4px 14px rgb(20 26 15 / 0.05);
-  --shadow-md: 0 10px 24px rgb(20 26 15 / 0.08);
-  --shadow-lg: 0 18px 40px rgb(20 26 15 / 0.12);
+  --shadow-sm: 0 4px 14px rgb(20 23 15 / 0.05);
+  --shadow-md: 0 10px 24px rgb(20 23 15 / 0.08);
+  --shadow-lg: 0 18px 40px rgb(20 23 15 / 0.12);
 }
 
 body {
@@ -84,7 +85,7 @@ h2,
 h3,
 h4 {
   font-family: var(--font-heading);
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: -0.01em;
 }
 
