@@ -172,6 +172,14 @@ export interface ExternalRecipe {
   /** Stable id derived from the source URL slug. */
   id: string;
   title: string;
+  /**
+   * Where this recipe came from: `"rema1000"` for `RemaRecipeSource`, or the
+   * hostname of a user-pasted URL import (e.g. `"valdemarsro.dk"`). Used to
+   * scope a cache refresh to one source (`externalRecipeRepository.replaceForSource`)
+   * without touching recipes from any other source, and to attribute
+   * URL-imported recipes in the UI.
+   */
+  source: string;
   /** Canonical URL on madogdrikke.rema1000.dk. */
   url: string;
   imageUrl?: string;

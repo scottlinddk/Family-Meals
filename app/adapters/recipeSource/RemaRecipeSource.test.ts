@@ -50,6 +50,7 @@ describe("parseRecipeDetail", () => {
     expect(recipe).toEqual({
       id: "kylling-i-karry",
       title: "Kylling i karry",
+      source: "rema1000",
       url: "https://madogdrikke.rema1000.dk/opskrifter/kylling-i-karry",
       imageUrl: "https://cdn.example/kylling.jpg",
       description: undefined,
@@ -133,6 +134,7 @@ describe("parseRecipeDetail via schema.org JSON-LD", () => {
     expect(recipe).toEqual({
       id: "kylling-i-karry",
       title: "Kylling i karry",
+      source: "rema1000",
       url: "https://madogdrikke.rema1000.dk/opskrifter/kylling-i-karry",
       imageUrl: "https://cdn.example/kylling.jpg",
       description: "En hurtig karryret.",
@@ -328,7 +330,7 @@ describe("parseRecipeDetail against component-style markup", () => {
 
 describe("summarizeExtraction", () => {
   it("counts how many recipes actually yielded ingredients and instructions", () => {
-    const base = { url: "https://x", title: "t" };
+    const base = { url: "https://x", title: "t", source: "rema1000" };
     const summary = summarizeExtraction([
       { ...base, id: "a", ingredients: ["x"], instructions: ["y"] },
       { ...base, id: "b", ingredients: ["x"], instructions: [] },

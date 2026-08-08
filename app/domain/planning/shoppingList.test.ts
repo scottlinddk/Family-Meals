@@ -194,6 +194,45 @@ describe("buildShoppingList", () => {
   });
 });
 
+describe("buildShoppingList prices", () => {
+  it("carries the matched offer's price onto the item, and a per-store subtotal onto the list", () => {
+    const offers = [offer("Broccoli", "fruit-and-veg")];
+    const list = buildShoppingList(week([day("2026-08-03", "Ret", ["1 broccoli", "salt"])]), offers);
+
+    const broccoli = allItems(list).find((item) => item.label === "1 broccoli")!;
+    expect(broccoli.prices).toEqual([{ storeId: "rema1000", price: 30, unitPrice: 75, baseUnit: "kilogram", currencyCode: "DKK" }]);
+
+    const salt = allItems(list).find((item) => item.label === "salt")!;
+    expect(salt.prices).toEqual([]);
+
+    expect(list.storeTotals).toEqual([{ storeId: "rema1000", total: 30, itemCount: 1, currencyCode: "DKK" }]);
+  });
+
+  it("sums an item's price at each store it matched into, without inventing a combined basket total", () => {
+    const offers = [
+      offer("Kyllingebryst", "meat-and-fish", "rema1000"),
+      offer("Kyllingebryst", "meat-and-fish", "netto"),
+    ];
+    const list = buildShoppingList(week([day("2026-08-03", "Ret", ["500 g kyllingebryst"])]), offers, [
+      "rema1000",
+      "netto",
+      "foetex",
+      "meny",
+    ]);
+
+    const item = allItems(list)[0]!;
+    expect(item.prices.map((p) => p.storeId).sort()).toEqual(["netto", "rema1000"]);
+    expect(list.storeTotals.map((t) => t.storeId).sort()).toEqual(["netto", "rema1000"]);
+    expect(list.storeTotals.every((t) => t.total === 30 && t.itemCount === 1)).toBe(true);
+  });
+
+  it("has no store totals when nothing on the list matched an offer", () => {
+    const list = buildShoppingList(week([day("2026-08-03", "Ret", ["salt"])]), []);
+
+    expect(list.storeTotals).toEqual([]);
+  });
+});
+
 describe("findShoppingListItem", () => {
   it("finds a list item by product identity, not exact text", () => {
     const list = buildShoppingList(week([day("2026-08-03", "Ret", ["2 løg, finthakket"])]), []);

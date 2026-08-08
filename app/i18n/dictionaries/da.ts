@@ -55,6 +55,8 @@ export const da = {
   "shoppingList.atHome": "Har vi",
   "shoppingList.atHomeAria": "Vi har allerede {{item}} hjemme",
   "shoppingList.atHomeSummary": "{{count}} har I allerede hjemme og skal ikke købes.",
+  "shoppingList.storeTotal": "{{store}}: {{total}} for {{count}} varer på tilbud",
+  "shoppingList.priceFrom": "fra {{price}}",
   "shoppingList.sharedWithFamily": "Markeringer deles med resten af familien.",
   "shoppingList.syncPending": "{{count}} markering(er) venter på forbindelse — de sendes automatisk.",
   "shoppingList.syncFailed": "En markering blev ikke gemt, så listen kan se anderledes ud hos de andre.",
@@ -194,6 +196,15 @@ export const da = {
   "recipesPage.resultCount": "{{count}} opskrift(er)",
   "recipesPage.none": "Ingen opskrifter matcher disse filtre.",
 
+  "recipeImport.formHeading": "Importér opskrift fra link",
+  "recipeImport.formDescription":
+    "Indsæt et link til en opskrift på en hvilken som helst hjemmeside. Fungerer for sider der bruger det gængse opskriftsformat (schema.org/Recipe) til Googles søgeresultater.",
+  "recipeImport.urlPlaceholder": "https://…",
+  "recipeImport.importing": "Importerer...",
+  "recipeImport.import": "Importér",
+  "recipeImport.success": "Importeret: {{title}}",
+  "recipeImport.genericError": "Kunne ikke importere opskriften.",
+
   "recipeDetail.backToRecipes": "Tilbage til opskrifter",
   "recipeDetail.notFound": "Denne opskrift findes ikke.",
   "recipeDetail.ingredientsHeading": "Ingredienser",
@@ -207,6 +218,8 @@ export const da = {
   "recipeDetail.kcalPerServing": "~{{kcal}} kcal/portion (skøn)",
   "recipeDetail.onOfferBadge": "På tilbud",
   "recipeDetail.onOfferCount": "{{count}} ingrediens(er) på tilbud",
+  "recipeDetail.onOfferPrice": "{{price}} hos {{store}}",
+  "recipeDetail.importedFrom": "Importeret fra {{source}}",
   "recipeDetail.noIngredients":
     "Der blev ikke fundet en ingrediensliste til denne opskrift — åbn den hos REMA 1000 nedenfor.",
 

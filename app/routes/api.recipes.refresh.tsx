@@ -14,7 +14,7 @@ export async function action({ request }: Route.ActionArgs) {
   try {
     await requireFamily(request, headers);
     const { recipes, stats } = await new RemaRecipeSource().crawl();
-    await externalRecipeRepository.replaceAll(recipes);
+    await externalRecipeRepository.replaceForSource("rema1000", recipes);
 
     // Report extraction health, not just a row count: a scrape that stores
     // recipes with no ingredients silently disables offer matching, and

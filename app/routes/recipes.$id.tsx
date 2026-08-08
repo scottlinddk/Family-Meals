@@ -1,5 +1,6 @@
 import type { Route } from "./+types/recipes.$id";
 import { useExternalRecipe } from "~/ui/hooks/useExternalRecipes";
+import { useOffers } from "~/ui/hooks/useOffers";
 import { RecipeBody } from "~/ui/components/RecipeBody";
 import { ShareButton } from "~/ui/components/ShareButton";
 import { LinkButton } from "~/ui/components/ui/Button";
@@ -9,6 +10,8 @@ import { t } from "~/i18n/t";
 
 export default function RecipeDetailPage({ params }: Route.ComponentProps) {
   const recipe = useExternalRecipe(params.id);
+  const offers = useOffers();
+  const currentOffers = Object.values(offers.data?.stores ?? {}).flatMap((store) => store?.offers ?? []);
 
   return (
     <>
@@ -43,6 +46,8 @@ export default function RecipeDetailPage({ params }: Route.ComponentProps) {
             totalTimeMinutes={recipe.data.totalTimeMinutes}
             ingredientLines={recipe.data.ingredients}
             instructionLines={recipe.data.instructions}
+            offers={currentOffers}
+            source={recipe.data.source}
             url={recipe.data.url}
           />
         </>

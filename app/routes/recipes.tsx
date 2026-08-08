@@ -7,6 +7,7 @@ import { ThumbPhoto } from "~/ui/components/ui/Photo";
 import { Button, IconButton } from "~/ui/components/ui/Button";
 import { CalorieMeta } from "~/ui/components/RecipeCalories";
 import { RecipeSuggestions } from "~/ui/components/RecipeSuggestions";
+import { RecipeUrlImportForm } from "~/ui/components/RecipeUrlImportForm";
 import { ChevronLeftIcon, ChevronRightIcon } from "~/ui/components/Icon";
 import { t } from "~/i18n/t";
 
@@ -50,6 +51,8 @@ export default function RecipesPage() {
       <h1 className="mb-4 text-2xl">{t("recipesPage.heading")}</h1>
 
       <RecipeSuggestions />
+
+      <RecipeUrlImportForm />
 
       <h2 className="mt-8 mb-4 text-lg">{t("recipesPage.title")}</h2>
 

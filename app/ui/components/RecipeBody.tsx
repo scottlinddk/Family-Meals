@@ -1,18 +1,39 @@
 import { Accordion } from "~/ui/components/ui/Accordion";
 import { Tag } from "~/ui/components/ui/Tag";
 import { CalorieMeta } from "~/ui/components/RecipeCalories";
+import { offerPricesMatchingIngredient, type IngredientOfferPrice } from "~/domain/recipes/ingredientOfferScore";
+import { STORE_NAMES } from "~/domain/stores";
+import type { Offer } from "~/domain/types";
 import { t } from "~/i18n/t";
 
 export interface RecipeBodyProps {
   ingredientLines: string[];
   instructionLines: string[];
+  /**
+   * Where this recipe came from (`ExternalRecipe.source`) — shown as a short
+   * attribution line for anything other than the curated `"rema1000"` scrape,
+   * so a URL-imported recipe is visibly not part of the app's own catalog.
+   */
+  source?: string;
   /** Ingredient lines that are on offer, highlighted in the list. */
   offerIngredientLines?: string[];
+  /**
+   * This week's offers, for a per-ingredient price badge. Independent of
+   * `offerIngredientLines` (a precomputed snapshot some callers pass instead)
+   * — when both are given, a line can be highlighted by one and priced by
+   * the other.
+   */
+  offers?: Offer[];
   servings?: number;
   totalTimeMinutes?: number;
   description?: string;
   /** Original source page. Always rendered when present — never the only way in. */
   url?: string;
+}
+
+/** The cheapest of an ingredient's per-store prices, for the at-a-glance badge. */
+function cheapest(prices: IngredientOfferPrice[]): IngredientOfferPrice {
+  return prices.reduce((min, p) => (p.price < min.price ? p : min), prices[0]!);
 }
 
 /**
@@ -26,7 +47,9 @@ export interface RecipeBodyProps {
 export function RecipeBody({
   ingredientLines,
   instructionLines,
+  source,
   offerIngredientLines = [],
+  offers = [],
   servings,
   totalTimeMinutes,
   description,
@@ -61,15 +84,31 @@ export function RecipeBody({
               meta={onOffer.size > 0 ? t("recipeDetail.onOfferCount", { count: onOffer.size }) : undefined}
             >
               <ul className="m-0 flex list-none flex-col p-0 text-sm">
-                {ingredientLines.map((line, i) => (
-                  <li
-                    key={i}
-                    className="flex flex-wrap items-center justify-between gap-2 border-b border-divider py-2.5 last:border-b-0 last:pb-0"
-                  >
-                    <span className={`min-w-0 ${onOffer.has(line) ? "font-medium" : ""}`}>{line}</span>
-                    {onOffer.has(line) && <Tag variant="accent">{t("recipeDetail.onOfferBadge")}</Tag>}
-                  </li>
-                ))}
+                {ingredientLines.map((line, i) => {
+                  const prices = offers.length > 0 ? offerPricesMatchingIngredient(line, offers) : [];
+                  const highlighted = onOffer.has(line) || prices.length > 0;
+                  return (
+                    <li
+                      key={i}
+                      className="flex flex-wrap items-center justify-between gap-2 border-b border-divider py-2.5 last:border-b-0 last:pb-0"
+                    >
+                      <span className={`min-w-0 ${highlighted ? "font-medium" : ""}`}>{line}</span>
+                      {highlighted && (
+                        <span>
+                          <Tag variant="accent">{t("recipeDetail.onOfferBadge")}</Tag>
+                          {prices.length > 0 && (
+                            <span className="ml-1 text-xs text-muted">
+                              {t("recipeDetail.onOfferPrice", {
+                                price: `${cheapest(prices).price} ${cheapest(prices).currencyCode}`,
+                                store: STORE_NAMES[cheapest(prices).storeId],
+                              })}
+                            </span>
+                          )}
+                        </span>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             </Accordion>
           )}
@@ -103,6 +142,10 @@ export function RecipeBody({
         >
           {t("recipeDetail.viewOriginal")}
         </a>
+      )}
+
+      {source && source !== "rema1000" && (
+        <p className="m-0 mt-1 text-xs text-muted">{t("recipeDetail.importedFrom", { source })}</p>
       )}
     </>
   );

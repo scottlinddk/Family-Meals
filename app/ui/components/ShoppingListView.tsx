@@ -1,5 +1,11 @@
 import { useMemo } from "react";
-import type { ShoppingList, ShoppingListItem, ShoppingListSection } from "~/domain/planning/shoppingList";
+import type {
+  ShoppingList,
+  ShoppingListItem,
+  ShoppingListItemPrice,
+  ShoppingListSection,
+  ShoppingListStoreTotal,
+} from "~/domain/planning/shoppingList";
 import { shoppingListProgress } from "~/domain/planning/shoppingListMarks";
 import { STORE_NAMES } from "~/domain/stores";
 import type { ShoppingListMarks } from "~/ui/hooks/useShoppingListMarks";
@@ -91,6 +97,8 @@ export function ShoppingListView({
           </p>
         )}
 
+        {list.storeTotals.length > 0 && <StoreTotals totals={list.storeTotals} />}
+
         <SyncStatus marks={marks} />
       </div>
 
@@ -118,6 +126,46 @@ export function ShoppingListView({
         ))}
       </div>
     </>
+  );
+}
+
+/**
+ * Per-store subtotal of the priced (on-offer) items only — explicitly not a
+ * basket total, since most items on the list have no matched offer at all.
+ * Each store gets its own line rather than one combined figure, since the
+ * same item can price differently (or not at all) at each.
+ */
+function StoreTotals({ totals }: { totals: ShoppingListStoreTotal[] }) {
+  return (
+    <ul className="m-0 flex list-none flex-col gap-0.5 p-0 text-xs text-muted">
+      {totals.map((storeTotal) => (
+        <li key={storeTotal.storeId}>
+          {t("shoppingList.storeTotal", {
+            store: STORE_NAMES[storeTotal.storeId],
+            total: `${storeTotal.total} ${storeTotal.currencyCode}`,
+            count: storeTotal.itemCount,
+          })}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/**
+ * The matched offer's price, next to the "on offer" tag — the cheapest of
+ * the item's per-store prices, since that's the store-agnostic figure most
+ * useful at a glance. When more than one store has it, that's flagged
+ * rather than silently picking one store's price and implying it's the only
+ * option (the per-store breakdown lives in `StoreTotals`).
+ */
+function PriceBadge({ prices }: { prices: ShoppingListItemPrice[] }) {
+  const cheapest = prices.reduce((min, p) => (p.price < min.price ? p : min), prices[0]!);
+  return (
+    <span className="ml-1 text-xs text-muted">
+      {prices.length > 1
+        ? t("shoppingList.priceFrom", { price: `${cheapest.price} ${cheapest.currencyCode}` })
+        : `${cheapest.price} ${cheapest.currencyCode}`}
+    </span>
   );
 }
 
@@ -168,6 +216,7 @@ function ShoppingListRow({ item, marks }: { item: ShoppingListItem; marks: Shopp
               <>
                 {" "}
                 <Tag variant="accent">{t("recipeDetail.onOfferBadge")}</Tag>
+                {item.prices.length > 0 && <PriceBadge prices={item.prices} />}
               </>
             )}
           </span>

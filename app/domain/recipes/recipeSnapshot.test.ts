@@ -23,6 +23,7 @@ function offer(name: string): Offer {
 const recipe: ExternalRecipe = {
   id: "kylling-i-karry",
   title: "Kylling i karry",
+  source: "rema1000",
   url: "https://madogdrikke.rema1000.dk/opskrifter/kylling-i-karry",
   description: "En hurtig karryret.",
   ingredients: ["500 g kyllingebryst", "1 dl fløde", "2 spsk karry"],

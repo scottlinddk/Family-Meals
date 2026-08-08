@@ -57,6 +57,8 @@ export const en: Record<keyof typeof da, string> = {
   "shoppingList.atHome": "Have it",
   "shoppingList.atHomeAria": "We already have {{item}} at home",
   "shoppingList.atHomeSummary": "{{count}} you already have at home, so don't buy them.",
+  "shoppingList.storeTotal": "{{store}}: {{total}} for {{count}} items on offer",
+  "shoppingList.priceFrom": "from {{price}}",
   "shoppingList.sharedWithFamily": "Marks are shared with the rest of the family.",
   "shoppingList.syncPending": "{{count}} mark(s) waiting for a connection — they'll send themselves.",
   "shoppingList.syncFailed": "A mark wasn't saved, so the others may be seeing a different list.",
@@ -194,6 +196,15 @@ export const en: Record<keyof typeof da, string> = {
   "recipesPage.resultCount": "{{count}} recipe(s)",
   "recipesPage.none": "No recipes match these filters.",
 
+  "recipeImport.formHeading": "Import recipe from link",
+  "recipeImport.formDescription":
+    "Paste a link to a recipe on any website. Works for sites that use the common recipe markup (schema.org/Recipe) for Google search results.",
+  "recipeImport.urlPlaceholder": "https://…",
+  "recipeImport.importing": "Importing...",
+  "recipeImport.import": "Import",
+  "recipeImport.success": "Imported: {{title}}",
+  "recipeImport.genericError": "Could not import that recipe.",
+
   "recipeDetail.backToRecipes": "Back to recipes",
   "recipeDetail.notFound": "This recipe doesn't exist.",
   "recipeDetail.ingredientsHeading": "Ingredients",
@@ -207,6 +218,8 @@ export const en: Record<keyof typeof da, string> = {
   "recipeDetail.kcalPerServing": "~{{kcal}} kcal/serving (estimate)",
   "recipeDetail.onOfferBadge": "On offer",
   "recipeDetail.onOfferCount": "{{count}} ingredient(s) on offer",
+  "recipeDetail.onOfferPrice": "{{price}} at {{store}}",
+  "recipeDetail.importedFrom": "Imported from {{source}}",
   "recipeDetail.noIngredients":
     "No ingredient list was found for this recipe — open it on REMA 1000 below.",
 

@@ -1,5 +1,19 @@
-import { STORE_IDS, type Offer, type StoreId, type WeekPlan } from "~/domain/types";
-import { offersMatchingIngredient, productTokens } from "~/domain/recipes/ingredientOfferScore";
+import { STORE_IDS, type CurrencyCode, type Offer, type StoreId, type WeekPlan } from "~/domain/types";
+import {
+  offerPricesMatchingIngredient,
+  offersMatchingIngredient,
+  productTokens,
+  type IngredientOfferPrice,
+} from "~/domain/recipes/ingredientOfferScore";
+
+/**
+ * A matched offer's price for this item, at one store. Kept per store rather
+ * than collapsed to a single number — the same ingredient line can be on
+ * offer at more than one of the family's selected stores, at different
+ * prices, and picking one to show would misrepresent the others as "no
+ * offer."
+ */
+export type ShoppingListItemPrice = IngredientOfferPrice;
 
 /** One line to buy, with the days that need it. */
 export interface ShoppingListItem {
@@ -15,6 +29,13 @@ export interface ShoppingListItem {
   offerNames: string[];
   /** Every store whose offer(s) matched this item, for a "also on offer at X" note. */
   offerStoreIds: StoreId[];
+  /**
+   * The matched offer's price at each store in `offerStoreIds`, one entry
+   * per store. Deliberately not a quantity-scaled cost — the ingredient line
+   * is free text ("1 bakke cherrytomater"), so this is "what the matched
+   * offer costs," not "what buying this ingredient costs."
+   */
+  prices: ShoppingListItemPrice[];
 }
 
 /** One department within a store's section, or `null` for ingredients no offer identified a department for. */
@@ -29,12 +50,28 @@ export interface ShoppingListSection {
   departments: ShoppingListDepartmentGroup[];
 }
 
+/**
+ * What the matched-offer items would cost at one store — not the basket
+ * total, since `itemCount` of the list's `itemCount` items have no matched
+ * offer at all and aren't included. `itemCount` here counts only the items
+ * priced at this particular store, so a UI can say "163 kr for 8 of 12
+ * items on offer at REMA 1000."
+ */
+export interface ShoppingListStoreTotal {
+  storeId: StoreId;
+  total: number;
+  itemCount: number;
+  currencyCode: CurrencyCode;
+}
+
 export interface ShoppingList {
   weekStartDate: string;
   sections: ShoppingListSection[];
   itemCount: number;
   /** How many items are covered by an offer this week. */
   onOfferCount: number;
+  /** Per-store subtotal of the priced (on-offer) items only, one entry per store with at least one priced item. */
+  storeTotals: ShoppingListStoreTotal[];
 }
 
 /**
@@ -129,6 +166,7 @@ export function buildShoppingList(
     const key = shoppingListMergeKey(line);
     const matches = offersMatchingIngredient(line, offers);
     const matchStoreIds = [...new Set(matches.map((offer) => offer.storeId))];
+    const matchPrices = offerPricesMatchingIngredient(line, offers);
     const existing = items.get(key);
 
     if (existing) {
@@ -143,6 +181,9 @@ export function buildShoppingList(
       for (const storeId of matchStoreIds) {
         if (!existing.offerStoreIds.includes(storeId)) existing.offerStoreIds.push(storeId);
       }
+      for (const price of matchPrices) {
+        if (!existing.prices.some((p) => p.storeId === price.storeId)) existing.prices.push(price);
+      }
       existing.storeId ??= matches[0]?.storeId ?? null;
       existing.departmentSlug ??= matches[0]?.departmentSlug ?? null;
       return;
@@ -155,6 +196,7 @@ export function buildShoppingList(
       recipeTitles: recipeTitle ? [recipeTitle] : [],
       offerNames: matches.map((offer) => offer.name),
       offerStoreIds: matchStoreIds,
+      prices: matchPrices,
       storeId: matches[0]?.storeId ?? null,
       departmentSlug: matches[0]?.departmentSlug ?? null,
     });
@@ -195,11 +237,28 @@ export function buildShoppingList(
 
   const allItems = ordered.flatMap((section) => section.departments.flatMap((d) => d.items));
 
+  const totalsByStore = new Map<StoreId, { total: number; itemCount: number; currencyCode: CurrencyCode }>();
+  for (const item of allItems) {
+    for (const price of item.prices) {
+      const existing = totalsByStore.get(price.storeId);
+      if (existing) {
+        existing.total += price.price;
+        existing.itemCount += 1;
+      } else {
+        totalsByStore.set(price.storeId, { total: price.price, itemCount: 1, currencyCode: price.currencyCode });
+      }
+    }
+  }
+  const storeTotals: ShoppingListStoreTotal[] = [...totalsByStore.entries()]
+    .map(([storeId, totals]) => ({ storeId, ...totals }))
+    .sort((a, b) => storeRank(a.storeId, storeOrder) - storeRank(b.storeId, storeOrder));
+
   return {
     weekStartDate: week.weekStartDate,
     sections: ordered,
     itemCount: allItems.length,
     onOfferCount: allItems.filter((item) => item.offerNames.length > 0).length,
+    storeTotals,
   };
 }
 
