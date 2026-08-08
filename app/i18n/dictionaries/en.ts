@@ -222,6 +222,9 @@ export const en: Record<keyof typeof da, string> = {
   "recipeDetail.importedFrom": "Imported from {{source}}",
   "recipeDetail.noIngredients":
     "No ingredient list was found for this recipe — open it on REMA 1000 below.",
+  "recipeDetail.delete": "Delete imported recipe",
+  "recipeDetail.deleting": "Deleting…",
+  "recipeDetail.deleteConfirm": "Delete this imported recipe? This can't be undone.",
 
   "day.viewRecipe": "See the full recipe",
   "day.viewOnRema": "Open on REMA 1000 ↗",

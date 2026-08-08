@@ -45,3 +45,19 @@ export function useImportRecipeFromUrl() {
     },
   });
 }
+
+/** Deletes a URL-imported recipe by id. Refused server-side for REMA's own scraped catalog. */
+export function useDeleteRecipe() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string): Promise<void> => {
+      const res = await fetch(`/api/recipes/${encodeURIComponent(id)}`, { method: "DELETE" });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.message ?? "Failed to delete recipe");
+    },
+    onSuccess: (_data, id) => {
+      queryClient.invalidateQueries({ queryKey: ["external-recipes"] });
+      queryClient.removeQueries({ queryKey: ["external-recipes", id] });
+    },
+  });
+}

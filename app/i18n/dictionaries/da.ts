@@ -222,6 +222,9 @@ export const da = {
   "recipeDetail.importedFrom": "Importeret fra {{source}}",
   "recipeDetail.noIngredients":
     "Der blev ikke fundet en ingrediensliste til denne opskrift — åbn den hos REMA 1000 nedenfor.",
+  "recipeDetail.delete": "Slet importeret opskrift",
+  "recipeDetail.deleting": "Sletter…",
+  "recipeDetail.deleteConfirm": "Slet denne importerede opskrift? Det kan ikke fortrydes.",
 
   "day.viewRecipe": "Se hele opskriften",
   "day.viewOnRema": "Åbn hos REMA 1000 ↗",
