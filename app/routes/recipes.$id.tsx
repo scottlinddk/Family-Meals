@@ -1,9 +1,10 @@
+import { useNavigate } from "react-router";
 import type { Route } from "./+types/recipes.$id";
-import { useExternalRecipe } from "~/ui/hooks/useExternalRecipes";
+import { useExternalRecipe, useDeleteRecipe } from "~/ui/hooks/useExternalRecipes";
 import { useOffers } from "~/ui/hooks/useOffers";
 import { RecipeBody } from "~/ui/components/RecipeBody";
 import { ShareButton } from "~/ui/components/ShareButton";
-import { LinkButton } from "~/ui/components/ui/Button";
+import { Button, LinkButton } from "~/ui/components/ui/Button";
 import { BackLink } from "~/ui/components/ui/BackLink";
 import { HeroPhoto } from "~/ui/components/ui/Photo";
 import { t } from "~/i18n/t";
@@ -12,6 +13,13 @@ export default function RecipeDetailPage({ params }: Route.ComponentProps) {
   const recipe = useExternalRecipe(params.id);
   const offers = useOffers();
   const currentOffers = Object.values(offers.data?.stores ?? {}).flatMap((store) => store?.offers ?? []);
+  const deleteRecipe = useDeleteRecipe();
+  const navigate = useNavigate();
+
+  function handleDelete() {
+    if (!window.confirm(t("recipeDetail.deleteConfirm"))) return;
+    deleteRecipe.mutate(params.id!, { onSuccess: () => navigate("/recipes") });
+  }
 
   return (
     <>
@@ -50,6 +58,26 @@ export default function RecipeDetailPage({ params }: Route.ComponentProps) {
             source={recipe.data.source}
             url={recipe.data.url}
           />
+
+          {recipe.data.source !== "rema1000" && (
+            <div className="mt-6">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-red-700 hover:bg-red-50"
+                onClick={handleDelete}
+                disabled={deleteRecipe.isPending}
+              >
+                {deleteRecipe.isPending ? t("recipeDetail.deleting") : t("recipeDetail.delete")}
+              </Button>
+              {deleteRecipe.isError && (
+                <p className="mt-2 text-sm text-red-700">
+                  {deleteRecipe.error instanceof Error ? deleteRecipe.error.message : t("recipeImport.genericError")}
+                </p>
+              )}
+            </div>
+          )}
         </>
       )}
     </>

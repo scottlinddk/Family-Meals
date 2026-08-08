@@ -63,7 +63,8 @@ describe("fetchRecipeFromUrl", () => {
     );
     expect(recipe.title).toBe("Suppe med søde kartofler");
     expect(recipe.ingredients).toEqual(["4 søde kartofler", "1 l grøntsagsbouillon"]);
-    expect(recipe.id).toBe(recipeIdForUrl(`http://${PUBLIC_HOST}/opskrift`));
+    expect(recipe.id).toBe(recipeIdForUrl(PUBLIC_HOST, recipe.title, `http://${PUBLIC_HOST}/opskrift`));
+    expect(recipe.id).toMatch(/^93-184-216-34-suppe-med-sode-kartofler-[a-z0-9]+$/);
   });
 
   it("keys the recipe by the final (redirected-to) URL, not the pasted one", async () => {
@@ -72,7 +73,12 @@ describe("fetchRecipeFromUrl", () => {
       fakeFetch({ ok: true, text: RECIPE_HTML, url: `http://${PUBLIC_HOST}/opskrift/rigtig-side` }),
     );
     expect(recipe.url).toBe(`http://${PUBLIC_HOST}/opskrift/rigtig-side`);
-    expect(recipe.id).toBe(`http://${PUBLIC_HOST}/opskrift/rigtig-side`);
+    expect(recipe.id).toBe(
+      recipeIdForUrl(PUBLIC_HOST, recipe.title, `http://${PUBLIC_HOST}/opskrift/rigtig-side`),
+    );
+    // Same title from the same source, but a different URL, must not collide.
+    const other = recipeIdForUrl(PUBLIC_HOST, recipe.title, `http://${PUBLIC_HOST}/opskrift/another-side`);
+    expect(other).not.toBe(recipe.id);
   });
 
   it("rejects when the page has no recipe markup", async () => {

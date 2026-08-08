@@ -71,6 +71,11 @@ export const externalRecipeRepository = {
       });
   },
 
+  /** Deletes a single recipe by id — used to remove a URL-imported recipe. */
+  async remove(id: string): Promise<void> {
+    await db.delete(externalRecipesTable).where(eq(externalRecipesTable.id, id));
+  },
+
   /**
    * Replaces one source's recipes with a fresh scrape, leaving every other
    * source's rows untouched — unlike the old `replaceAll`, which cleared the

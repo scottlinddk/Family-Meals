@@ -60,9 +60,41 @@ async function assertPublicHost(hostname: string): Promise<void> {
   }
 }
 
-/** Stable id for a URL-imported recipe: the URL itself, matching `parseRecipeDetail`'s fallback for non-REMA URLs. */
-export function recipeIdForUrl(url: string): string {
-  return url;
+/** A short, stable digest of a string — enough to disambiguate two recipes that slugify to the same text. */
+function shortHash(value: string): string {
+  let hash = 0;
+  for (let i = 0; i < value.length; i++) {
+    hash = (Math.imul(31, hash) + value.charCodeAt(i)) | 0;
+  }
+  return (hash >>> 0).toString(36);
+}
+
+// Danish letters that don't decompose under NFKD (they're not "letter + combining accent"),
+// so they'd otherwise fall through to a bare hyphen like any other non-ASCII character.
+const DANISH_LETTERS: Record<string, string> = { æ: "ae", ø: "o", å: "aa" };
+
+function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[æøå]/g, (letter) => DANISH_LETTERS[letter]!)
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60);
+}
+
+/**
+ * Stable id for a URL-imported recipe, built from its source (the page's
+ * hostname) and title rather than the raw URL — the URL can contain slashes
+ * and query strings that don't survive as a single `/recipes/:id` route
+ * segment. The hash of the final URL disambiguates two recipes that would
+ * otherwise slugify to the same text, and keeps re-importing the same URL
+ * idempotent (matches `externalRecipeRepository.upsert`'s conflict target).
+ */
+export function recipeIdForUrl(source: string, title: string, url: string): string {
+  const base = [slugify(source), slugify(title)].filter(Boolean).join("-") || "imported-recipe";
+  return `${base}-${shortHash(url)}`;
 }
 
 export async function fetchRecipeFromUrl(
@@ -123,5 +155,5 @@ export async function fetchRecipeFromUrl(
     throw new UrlImportError("A title was found, but no ingredient list.", "no_recipe_found");
   }
 
-  return { ...recipe, id: recipeIdForUrl(finalUrl) };
+  return { ...recipe, id: recipeIdForUrl(recipe.source, recipe.title, finalUrl) };
 }
