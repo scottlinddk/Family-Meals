@@ -1,5 +1,6 @@
 import { useId, useMemo, useState, type KeyboardEvent } from "react";
 import type { ExternalRecipe } from "~/domain/types";
+import { fitsTimeBudget, totalPrepCookMinutes } from "~/domain/recipes/recipeTime";
 import { SearchInput } from "~/ui/components/ui/Input";
 import { t } from "~/i18n/t";
 
@@ -23,6 +24,11 @@ function matchesQuery(recipe: ExternalRecipe, needle: string): boolean {
  * Deliberately not a form field with a persisted value: picking a recipe is
  * an action (swap to this one), not a value the field should keep showing
  * afterwards, so selecting clears the search back to empty.
+ *
+ * When `maxTimeMinutes` is given (the day's time budget), matches that fit
+ * it sort first — the swap picker still shows every recipe, since this is a
+ * manual override where the user's own choice should win, but a recipe that
+ * fits tonight's budget belongs above one that doesn't.
  */
 export function RecipeSearchPicker({
   id,
@@ -30,12 +36,15 @@ export function RecipeSearchPicker({
   placeholder,
   onSelect,
   disabled,
+  maxTimeMinutes,
 }: {
   id: string;
   recipes: ExternalRecipe[];
   placeholder: string;
   onSelect: (recipe: ExternalRecipe) => void;
   disabled?: boolean;
+  /** The day's time budget, if any — used to sort fitting recipes first and badge the rest. */
+  maxTimeMinutes?: number;
 }) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
@@ -45,8 +54,12 @@ export function RecipeSearchPicker({
   const suggestions = useMemo(() => {
     const needle = query.trim().toLowerCase();
     const matches = needle ? recipes.filter((recipe) => matchesQuery(recipe, needle)) : recipes;
-    return matches.slice(0, MAX_SUGGESTIONS);
-  }, [recipes, query]);
+    const ordered =
+      maxTimeMinutes === undefined
+        ? matches
+        : [...matches].sort((a, b) => Number(!fitsTimeBudget(a, maxTimeMinutes)) - Number(!fitsTimeBudget(b, maxTimeMinutes)));
+    return ordered.slice(0, MAX_SUGGESTIONS);
+  }, [recipes, query, maxTimeMinutes]);
 
   function select(recipe: ExternalRecipe) {
     onSelect(recipe);
@@ -106,23 +119,32 @@ export function RecipeSearchPicker({
           role="listbox"
           className="absolute z-10 mt-1 max-h-64 w-full overflow-y-auto rounded-md border border-divider bg-surface py-1 shadow-lg"
         >
-          {suggestions.map((recipe, index) => (
-            <li key={recipe.id} role="option" aria-selected={index === highlighted}>
-              <button
-                type="button"
-                className={`block w-full truncate px-3 py-2 text-left text-sm text-text ${
-                  index === highlighted ? "bg-neutral-100" : ""
-                }`}
-                // Keeps focus on the input so `onBlur` above doesn't fire
-                // before the click is registered.
-                onMouseDown={(event) => event.preventDefault()}
-                onClick={() => select(recipe)}
-                onMouseEnter={() => setHighlighted(index)}
-              >
-                {recipe.title}
-              </button>
-            </li>
-          ))}
+          {suggestions.map((recipe, index) => {
+            const minutes = totalPrepCookMinutes(recipe);
+            const overBudget = maxTimeMinutes !== undefined && !fitsTimeBudget(recipe, maxTimeMinutes);
+            return (
+              <li key={recipe.id} role="option" aria-selected={index === highlighted}>
+                <button
+                  type="button"
+                  className={`flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm text-text ${
+                    index === highlighted ? "bg-neutral-100" : ""
+                  }`}
+                  // Keeps focus on the input so `onBlur` above doesn't fire
+                  // before the click is registered.
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => select(recipe)}
+                  onMouseEnter={() => setHighlighted(index)}
+                >
+                  <span className="min-w-0 truncate">{recipe.title}</span>
+                  {minutes !== undefined && (
+                    <span className={`shrink-0 text-xs ${overBudget ? "text-red-700" : "text-muted"}`}>
+                      {t("recipeDetail.totalTime", { minutes })}
+                    </span>
+                  )}
+                </button>
+              </li>
+            );
+          })}
         </ul>
       )}
 

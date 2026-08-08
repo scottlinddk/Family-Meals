@@ -35,6 +35,7 @@ async function loadWeekPlan(
         isManualOverride: row.isManualOverride,
         editedAt: row.editedAt.toISOString(),
         sequence: row.sequence,
+        maxTimeMinutes: row.maxTimeMinutes ?? undefined,
       }),
     )
     .sort((a, b) => a.date.localeCompare(b.date));
@@ -147,6 +148,7 @@ export const weekPlanRepository = {
           isManualOverride: day.isManualOverride,
           editedAt: new Date(day.editedAt),
           sequence: day.sequence,
+          maxTimeMinutes: day.maxTimeMinutes,
         })),
       );
 

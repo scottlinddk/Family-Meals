@@ -22,6 +22,8 @@ export interface JsonLdRecipe {
   instructions: string[];
   servings?: number;
   totalTimeMinutes?: number;
+  prepTimeMinutes?: number;
+  cookTimeMinutes?: number;
 }
 
 function asArray(value: unknown): unknown[] {
@@ -189,6 +191,8 @@ function toRecipe(node: Record<string, unknown>): JsonLdRecipe {
     instructions: extractInstructions(node.recipeInstructions),
     servings: extractServings(node.recipeYield),
     totalTimeMinutes: extractTotalTime(node),
+    prepTimeMinutes: parseDurationMinutes(node.prepTime),
+    cookTimeMinutes: parseDurationMinutes(node.cookTime),
   };
 }
 

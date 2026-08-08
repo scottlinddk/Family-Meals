@@ -231,10 +231,16 @@ function SuggestionCard({ suggestion }: { suggestion: RankedSuggestion }) {
         <div>
           <CardTitle>{recipe.title}</CardTitle>
           {(recipe.servings || recipe.totalTimeMinutes) && (
-            <p className="m-0 flex gap-x-3 text-xs text-muted">
+            <p className="m-0 flex flex-wrap gap-x-3 text-xs text-muted">
               {recipe.servings && <span>{t("recipeDetail.servings", { count: recipe.servings })}</span>}
               {recipe.totalTimeMinutes && (
                 <span>{t("recipeDetail.totalTime", { minutes: recipe.totalTimeMinutes })}</span>
+              )}
+              {recipe.prepTimeMinutes && (
+                <span>{t("recipeDetail.prepTime", { minutes: recipe.prepTimeMinutes })}</span>
+              )}
+              {recipe.cookTimeMinutes && (
+                <span>{t("recipeDetail.cookTime", { minutes: recipe.cookTimeMinutes })}</span>
               )}
             </p>
           )}

@@ -3,6 +3,8 @@ import type { AdultVariant, ChildVariant, WeekPlan } from "~/domain/types";
 export interface DayPlanEdit {
   adultVariant?: Partial<Pick<AdultVariant, "substitutions" | "portioningNotes">>;
   childVariant?: Partial<Pick<ChildVariant, "additions" | "textureNotes" | "saltSugarNotes">>;
+  /** Minutes the family has to prep and cook this day's dinner. `null` clears a previously-set budget. */
+  maxTimeMinutes?: number | null;
 }
 
 /**
@@ -32,6 +34,8 @@ export function editDayPlan(week: WeekPlan, dayIndex: number, edit: DayPlanEdit)
       ...day,
       adultVariant: { ...day.adultVariant, ...edit.adultVariant },
       childVariant: { ...day.childVariant, ...edit.childVariant },
+      maxTimeMinutes:
+        edit.maxTimeMinutes === undefined ? day.maxTimeMinutes : (edit.maxTimeMinutes ?? undefined),
       isManualOverride: true,
       editedAt: now,
       sequence: day.sequence + 1,

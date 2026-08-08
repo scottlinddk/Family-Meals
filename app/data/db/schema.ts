@@ -205,6 +205,10 @@ export const externalRecipes = pgTable("external_recipes", {
   instructions: jsonb("instructions").notNull().default([]),
   servings: integer("servings"),
   totalTimeMinutes: integer("total_time_minutes"),
+  /** Active prep time, separate from cooking, when the source states it that way. */
+  prepTimeMinutes: integer("prep_time_minutes"),
+  /** Cooking/baking time, separate from prep, when the source states it that way. */
+  cookTimeMinutes: integer("cook_time_minutes"),
   /** Meal-theme slugs from the source site, e.g. `["aftensmad", "frokost"]`. */
   tags: jsonb("tags").notNull().default([]),
   fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull().defaultNow(),
@@ -494,6 +498,8 @@ export const dayPlans = pgTable(
     editedAt: timestamp("edited_at", { withTimezone: true }).notNull().defaultNow(),
     /** Bumped on every write; drives ICS SEQUENCE for this day's VEVENT. */
     sequence: integer("sequence").notNull().default(0),
+    /** Family-set cap on prep+cook minutes for this day; regenerating it only offers recipes that fit. */
+    maxTimeMinutes: integer("max_time_minutes"),
   },
   (table) => [index("day_plans_week_plan_id_idx").on(table.weekPlanId)],
 );
