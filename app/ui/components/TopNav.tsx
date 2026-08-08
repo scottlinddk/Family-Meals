@@ -21,6 +21,7 @@ export function TopNav() {
       <div className="mx-auto flex max-w-3xl items-center gap-2 px-4 py-1.5 sm:px-6">
         <Link
           to="/"
+          viewTransition
           className="mr-auto min-w-0 truncate text-base font-bold tracking-[-0.01em] text-white transition-opacity hover:opacity-80"
         >
           {t("app.title")}

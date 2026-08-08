@@ -57,9 +57,16 @@ export function LinkButton({
   size,
   block,
   className,
+  viewTransition = true,
   ...props
 }: LinkProps & ButtonStyleProps) {
-  return <Link className={buttonClasses({ variant, size, block, className })} {...props} />;
+  return (
+    <Link
+      viewTransition={viewTransition}
+      className={buttonClasses({ variant, size, block, className })}
+      {...props}
+    />
+  );
 }
 
 const iconButtonClasses =
@@ -75,6 +82,6 @@ export function IconButton({ className = "", ...props }: ButtonHTMLAttributes<HT
 }
 
 /** The same circle, when the control is a link rather than a button. */
-export function IconLink({ className = "", ...props }: LinkProps) {
-  return <Link className={`${iconButtonClasses} ${className}`} {...props} />;
+export function IconLink({ className = "", viewTransition = true, ...props }: LinkProps) {
+  return <Link viewTransition={viewTransition} className={`${iconButtonClasses} ${className}`} {...props} />;
 }

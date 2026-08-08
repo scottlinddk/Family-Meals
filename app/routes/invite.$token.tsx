@@ -59,12 +59,14 @@ export default function InvitePage({ loaderData, params }: Route.ComponentProps)
             <p className="text-sm text-muted">{t("invite.signInPrompt")}</p>
             <Link
               to={`/auth/signup?redirectTo=${encodeURIComponent(redirectTo)}`}
+              viewTransition
               className="text-accent hover:text-accent-700"
             >
               {t("auth.signup.submit")}
             </Link>
             <Link
               to={`/auth/login?redirectTo=${encodeURIComponent(redirectTo)}`}
+              viewTransition
               className="text-accent hover:text-accent-700"
             >
               {t("auth.login.submit")}

@@ -81,6 +81,7 @@ export function DayCard({
                 <h3 className="mt-1 text-[17px] leading-snug">
                   <Link
                     to={`/weeks/${weekStart}/day/${dayIndex}`}
+                    viewTransition
                     className="hover:text-accent"
                   >
                     {snapshot.title}

@@ -99,7 +99,7 @@ export default function RecipesPage() {
       <ul className="m-0 flex list-none flex-col gap-3 p-0">
         {pageItems.map((recipe) => (
           <li key={recipe.id}>
-            <Link to={`/recipes/${recipe.id}`} className="block">
+            <Link to={`/recipes/${recipe.id}`} viewTransition className="block">
               <Card interactive>
                 <div className="flex items-center gap-3">
                   {recipe.imageUrl && <ThumbPhoto src={recipe.imageUrl} size={86} />}

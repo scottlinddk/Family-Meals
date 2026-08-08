@@ -66,7 +66,7 @@ export default function WeekPage({ params }: Route.ComponentProps) {
           {generate.error instanceof NoRecipesError ? (
             <>
               {t("week.noRecipes")}{" "}
-              <Link to="/offers" className="font-semibold text-accent underline hover:text-accent-700">
+              <Link to="/offers" viewTransition className="font-semibold text-accent underline hover:text-accent-700">
                 {t("week.noRecipesAction")}
               </Link>
             </>
