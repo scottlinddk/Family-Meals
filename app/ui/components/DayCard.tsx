@@ -5,6 +5,7 @@ import {
   VariantGuidanceNote,
 } from "~/ui/components/VariantPanel";
 import { RegenerateDayButton } from "~/ui/components/RegenerateDayButton";
+import { DayTimeBudgetControl } from "~/ui/components/DayTimeBudgetControl";
 import { RecipeBody } from "~/ui/components/RecipeBody";
 import { ShareButton } from "~/ui/components/ShareButton";
 import { CalorieMeta } from "~/ui/components/RecipeCalories";
@@ -189,6 +190,15 @@ export function DayCard({
               weekStart={weekStart}
               dayIndex={dayIndex}
               block
+            />
+            {/* Setting the budget here, right by "regenerate", is what makes
+                  it useful without opening the day page: change it, then
+                  regenerate to get a pick that fits it. */}
+            <DayTimeBudgetControl
+              weekStart={weekStart}
+              dayIndex={dayIndex}
+              maxTimeMinutes={day.maxTimeMinutes}
+              compact
             />
             {/* A plain text link, not another button — this is a way off
                   the app rather than a thing to do in it, so it stays
