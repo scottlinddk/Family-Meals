@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { OfferInput } from "~/adapters/offerSource/offerSchema";
-import type { WeekPlan } from "~/domain/types";
+import type { ExternalRecipe, WeekPlan } from "~/domain/types";
 
 /**
  * Integration coverage for the repository layer against a real Postgres.
@@ -80,6 +80,7 @@ function weekPlanFixture(
 
 describe.skipIf(!TEST_DATABASE_URL)("repositories against Postgres", () => {
   let offerRepository: typeof import("~/data/repositories/offerRepository")["offerRepository"];
+  let externalRecipeRepository: typeof import("~/data/repositories/externalRecipeRepository")["externalRecipeRepository"];
   let weekPlanRepository: typeof import("~/data/repositories/weekPlanRepository")["weekPlanRepository"];
   let userPreferenceRepository: typeof import("~/data/repositories/userPreferenceRepository")["userPreferenceRepository"];
   let familyStoreSettingsRepository: typeof import("~/data/repositories/familyStoreSettingsRepository")["familyStoreSettingsRepository"];
@@ -99,6 +100,7 @@ describe.skipIf(!TEST_DATABASE_URL)("repositories against Postgres", () => {
     // DATABASE_URL once, at module load.
     process.env.DATABASE_URL = TEST_DATABASE_URL;
     ({ offerRepository } = await import("~/data/repositories/offerRepository"));
+    ({ externalRecipeRepository } = await import("~/data/repositories/externalRecipeRepository"));
     ({ weekPlanRepository } = await import("~/data/repositories/weekPlanRepository"));
     ({ userPreferenceRepository } = await import("~/data/repositories/userPreferenceRepository"));
     ({ familyStoreSettingsRepository } = await import(
@@ -335,5 +337,36 @@ describe.skipIf(!TEST_DATABASE_URL)("repositories against Postgres", () => {
     const reissued = await shoppingListShareRepository.getOrCreate(familyA, week, creator);
     expect(reissued.token).not.toBe(first.token);
     expect(await shoppingListShareRepository.getActiveByToken(first.token)).toBeUndefined();
+  });
+
+  it("scopes replaceForSource to one source, leaving other sources' recipes untouched", async () => {
+    const externalRecipe = (id: string, source: string): ExternalRecipe => ({
+      id,
+      title: id,
+      source,
+      url: `https://x/${id}`,
+      ingredients: [`ingredient for ${id}`],
+      instructions: [],
+    });
+
+    await externalRecipeRepository.replaceForSource("test-source-a", [
+      externalRecipe("test-a-1", "test-source-a"),
+      externalRecipe("test-a-2", "test-source-a"),
+    ]);
+    await externalRecipeRepository.replaceForSource("test-source-b", [externalRecipe("test-b-1", "test-source-b")]);
+
+    // A fresh scrape from source A must not disturb source B's recipes —
+    // the whole point of replaceForSource over the old table-wide replaceAll.
+    await externalRecipeRepository.replaceForSource("test-source-a", [externalRecipe("test-a-3", "test-source-a")]);
+
+    const all = await externalRecipeRepository.listAll();
+    expect(all.find((r) => r.id === "test-a-1")).toBeUndefined();
+    expect(all.find((r) => r.id === "test-a-2")).toBeUndefined();
+    expect(all.find((r) => r.id === "test-a-3")).toBeDefined();
+    expect(all.find((r) => r.id === "test-b-1")).toBeDefined();
+
+    // Clean up: emptying both sources removes every row this test added.
+    await externalRecipeRepository.replaceForSource("test-source-a", []);
+    await externalRecipeRepository.replaceForSource("test-source-b", []);
   });
 });

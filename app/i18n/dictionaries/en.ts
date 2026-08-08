@@ -219,6 +219,7 @@ export const en: Record<keyof typeof da, string> = {
   "recipeDetail.onOfferBadge": "On offer",
   "recipeDetail.onOfferCount": "{{count}} ingredient(s) on offer",
   "recipeDetail.onOfferPrice": "{{price}} at {{store}}",
+  "recipeDetail.importedFrom": "Imported from {{source}}",
   "recipeDetail.noIngredients":
     "No ingredient list was found for this recipe — open it on REMA 1000 below.",
 

@@ -307,9 +307,11 @@ function microdataValues(root: HTMLElement, prop: string): string[] {
  * more durable source but letting a weaker one fill a gap the stronger one
  * left empty (e.g. JSON-LD that omits `description` but has full ingredients).
  *
- * Used by the fallback crawl and by `/api/recipes/diagnose`.
+ * Used by the fallback crawl, by `/api/recipes/diagnose`, and (with a
+ * non-REMA `source`) by the URL-paste import — the extraction itself doesn't
+ * know or care which site it's reading.
  */
-export function parseRecipeDetail(html: string, url: string): ExternalRecipe | null {
+export function parseRecipeDetail(html: string, url: string, source = "rema1000"): ExternalRecipe | null {
   const root = parse(html);
   const jsonLd = extractRecipeFromJsonLd(root);
   const embedded = extractRecipeFromEmbeddedState(root);
@@ -357,6 +359,7 @@ export function parseRecipeDetail(html: string, url: string): ExternalRecipe | n
   return {
     id,
     title,
+    source,
     url,
     imageUrl,
     description: description || undefined,

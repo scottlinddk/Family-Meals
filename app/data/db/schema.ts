@@ -196,6 +196,8 @@ export const familyStoreSettings = pgTable("family_store_settings", {
 export const externalRecipes = pgTable("external_recipes", {
   id: text("id").primaryKey(),
   title: text("title").notNull(),
+  /** `"rema1000"` for `RemaRecipeSource`, or a URL import's hostname. Scopes `replaceForSource`. */
+  source: text("source").notNull(),
   url: text("url").notNull(),
   imageUrl: text("image_url"),
   description: text("description"),

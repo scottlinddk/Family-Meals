@@ -47,6 +47,7 @@ export default function RecipeDetailPage({ params }: Route.ComponentProps) {
             ingredientLines={recipe.data.ingredients}
             instructionLines={recipe.data.instructions}
             offers={currentOffers}
+            source={recipe.data.source}
             url={recipe.data.url}
           />
         </>

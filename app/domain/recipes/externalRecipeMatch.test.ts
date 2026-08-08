@@ -21,7 +21,7 @@ function offer(name: string, validity?: { validFrom: string; validUntil: string 
 }
 
 function recipe(id: string, ingredients: string[]): ExternalRecipe {
-  return { id, title: id, url: `https://x/opskrifter/${id}`, ingredients, instructions: [] };
+  return { id, title: id, source: "rema1000", url: `https://x/opskrifter/${id}`, ingredients, instructions: [] };
 }
 
 describe("rankExternalRecipesByOffers", () => {

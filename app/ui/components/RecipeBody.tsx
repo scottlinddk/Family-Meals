@@ -9,6 +9,12 @@ import { t } from "~/i18n/t";
 export interface RecipeBodyProps {
   ingredientLines: string[];
   instructionLines: string[];
+  /**
+   * Where this recipe came from (`ExternalRecipe.source`) — shown as a short
+   * attribution line for anything other than the curated `"rema1000"` scrape,
+   * so a URL-imported recipe is visibly not part of the app's own catalog.
+   */
+  source?: string;
   /** Ingredient lines that are on offer, highlighted in the list. */
   offerIngredientLines?: string[];
   /**
@@ -41,6 +47,7 @@ function cheapest(prices: IngredientOfferPrice[]): IngredientOfferPrice {
 export function RecipeBody({
   ingredientLines,
   instructionLines,
+  source,
   offerIngredientLines = [],
   offers = [],
   servings,
@@ -135,6 +142,10 @@ export function RecipeBody({
         >
           {t("recipeDetail.viewOriginal")}
         </a>
+      )}
+
+      {source && source !== "rema1000" && (
+        <p className="m-0 mt-1 text-xs text-muted">{t("recipeDetail.importedFrom", { source })}</p>
       )}
     </>
   );

@@ -7,7 +7,9 @@ import { fetchRecipeFromUrl, UrlImportError } from "~/adapters/recipeSource/urlI
  * POST: import one recipe from a URL the user pasted, fetched server-side and
  * run through the same schema.org/Recipe extraction pipeline as REMA's own
  * recipe cache. Stored with `externalRecipeRepository.upsert`, which touches
- * only this one row — unlike the REMA refresh action's `replaceAll`.
+ * only this one row — unlike the REMA refresh action's `replaceForSource`,
+ * which is scoped to REMA's own `"rema1000"` source and leaves this one
+ * alone regardless.
  */
 export async function action({ request }: Route.ActionArgs) {
   if (request.method !== "POST") {

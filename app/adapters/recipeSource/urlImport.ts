@@ -112,7 +112,10 @@ export async function fetchRecipeFromUrl(
   // Follow-through URL, not the input URL, so redirects (AMP pages, tracking
   // links) end up pointing at the page actually parsed.
   const finalUrl = res.url || url.toString();
-  const recipe = parseRecipeDetail(html, finalUrl);
+  // Source is the page's own hostname, not REMA's default — so a future
+  // per-site crawler and a user's manual import of the same site coexist
+  // under one source scope (`externalRecipeRepository.replaceForSource`).
+  const recipe = parseRecipeDetail(html, finalUrl, new URL(finalUrl).hostname);
   if (!recipe) {
     throw new UrlImportError("No recipe could be found on that page.", "no_recipe_found");
   }

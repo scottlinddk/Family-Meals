@@ -219,6 +219,7 @@ export const da = {
   "recipeDetail.onOfferBadge": "På tilbud",
   "recipeDetail.onOfferCount": "{{count}} ingrediens(er) på tilbud",
   "recipeDetail.onOfferPrice": "{{price}} hos {{store}}",
+  "recipeDetail.importedFrom": "Importeret fra {{source}}",
   "recipeDetail.noIngredients":
     "Der blev ikke fundet en ingrediensliste til denne opskrift — åbn den hos REMA 1000 nedenfor.",
 

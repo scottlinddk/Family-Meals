@@ -6,6 +6,7 @@ function recipe(id: string, ingredients: string[], tags = ["aftensmad"]): Extern
   return {
     id,
     title: id,
+    source: "rema1000",
     url: `https://madogdrikke.rema1000.dk/opskrifter/${id}`,
     ingredients,
     instructions: [],
