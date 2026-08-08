@@ -30,6 +30,45 @@ export const externalRecipeRepository = {
     return row ? toDomain(row) : undefined;
   },
 
+  /**
+   * Inserts or updates a single recipe, keyed by its own `id`, without
+   * touching any other row — unlike `replaceAll`, which clears the whole
+   * table first. Used by the URL-paste import (one user-chosen page at a
+   * time), where wiping REMA's cached recipes on every import would be
+   * wrong.
+   */
+  async upsert(recipe: ExternalRecipe): Promise<void> {
+    await db
+      .insert(externalRecipesTable)
+      .values({
+        id: recipe.id,
+        title: recipe.title,
+        url: recipe.url,
+        imageUrl: recipe.imageUrl,
+        description: recipe.description,
+        ingredients: recipe.ingredients,
+        instructions: recipe.instructions,
+        servings: recipe.servings,
+        totalTimeMinutes: recipe.totalTimeMinutes,
+        tags: recipe.tags ?? [],
+      })
+      .onConflictDoUpdate({
+        target: externalRecipesTable.id,
+        set: {
+          title: recipe.title,
+          url: recipe.url,
+          imageUrl: recipe.imageUrl,
+          description: recipe.description,
+          ingredients: recipe.ingredients,
+          instructions: recipe.instructions,
+          servings: recipe.servings,
+          totalTimeMinutes: recipe.totalTimeMinutes,
+          tags: recipe.tags ?? [],
+          fetchedAt: new Date(),
+        },
+      });
+  },
+
   /** Replaces the whole cached recipe set with a fresh scrape. */
   async replaceAll(recipes: ExternalRecipe[]): Promise<void> {
     await db.transaction(async (tx) => {

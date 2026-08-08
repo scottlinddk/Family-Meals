@@ -1,4 +1,4 @@
-import type { Offer } from "~/domain/types";
+import type { CurrencyCode, Offer, StoreId } from "~/domain/types";
 
 /**
  * Matching between recipe ingredient lines and REMA 1000 offer names.
@@ -363,4 +363,35 @@ function ingredientMatchesOfferName(ingredientTokens: string[], ingredientName: 
 export function offersMatchingIngredient(ingredientName: string, offers: Offer[]): Offer[] {
   const ingredientTokens = productTokens(ingredientName);
   return offers.filter((offer) => ingredientMatchesOfferName(ingredientTokens, ingredientName, offer.name));
+}
+
+/** A matched offer's price at one store — the unit's price, not scaled to the recipe's quantity. */
+export interface IngredientOfferPrice {
+  storeId: StoreId;
+  price: number;
+  unitPrice: number;
+  baseUnit: string;
+  currencyCode: CurrencyCode;
+}
+
+/**
+ * `offersMatchingIngredient`'s price, one entry per store that has a
+ * matching offer. Shared by the shopping list (`buildShoppingList`) and the
+ * recipe detail page, so "what would this cost" agrees wherever it's shown.
+ */
+export function offerPricesMatchingIngredient(ingredientName: string, offers: Offer[]): IngredientOfferPrice[] {
+  const seen = new Set<StoreId>();
+  const prices: IngredientOfferPrice[] = [];
+  for (const offer of offersMatchingIngredient(ingredientName, offers)) {
+    if (seen.has(offer.storeId)) continue;
+    seen.add(offer.storeId);
+    prices.push({
+      storeId: offer.storeId,
+      price: offer.price,
+      unitPrice: offer.unitPrice,
+      baseUnit: offer.baseUnit,
+      currencyCode: offer.currencyCode,
+    });
+  }
+  return prices;
 }
