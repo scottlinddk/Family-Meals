@@ -4,6 +4,7 @@ import { useSwapDayRecipe } from "~/ui/hooks/useRegenerateDay";
 import { DayCard } from "~/ui/components/DayCard";
 import { useExternalRecipes } from "~/ui/hooks/useExternalRecipes";
 import { RecipeSearchPicker } from "~/ui/components/RecipeSearchPicker";
+import { DayTimeBudgetControl } from "~/ui/components/DayTimeBudgetControl";
 import { Card } from "~/ui/components/ui/Card";
 import { BackLink } from "~/ui/components/ui/BackLink";
 import { FieldLabel } from "~/ui/components/ui/Input";
@@ -29,6 +30,10 @@ export default function DayPage({ params }: Route.ComponentProps) {
           <DayCard day={day} weekStart={weekStart} dayIndex={dayIndex} expanded />
 
           <Card className="mt-4">
+            <DayTimeBudgetControl weekStart={weekStart} dayIndex={dayIndex} maxTimeMinutes={day.maxTimeMinutes} />
+          </Card>
+
+          <Card className="mt-4">
             <div>
               <FieldLabel htmlFor="swap-recipe">{t("day.swapLabel")}</FieldLabel>
               <RecipeSearchPicker
@@ -36,6 +41,7 @@ export default function DayPage({ params }: Route.ComponentProps) {
                 recipes={recipes.data ?? []}
                 placeholder={t("day.choosePlaceholder")}
                 disabled={recipes.isLoading}
+                maxTimeMinutes={day.maxTimeMinutes}
                 onSelect={(recipe) => swap.mutate({ dayIndex, recipeId: recipe.id })}
               />
             </div>

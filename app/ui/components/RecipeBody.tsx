@@ -26,6 +26,10 @@ export interface RecipeBodyProps {
   offers?: Offer[];
   servings?: number;
   totalTimeMinutes?: number;
+  /** Active prep time, shown alongside cook time when the source states them separately. */
+  prepTimeMinutes?: number;
+  /** Cook time, shown alongside prep time when the source states them separately. */
+  cookTimeMinutes?: number;
   description?: string;
   /** Original source page. Always rendered when present — never the only way in. */
   url?: string;
@@ -52,6 +56,8 @@ export function RecipeBody({
   offers = [],
   servings,
   totalTimeMinutes,
+  prepTimeMinutes,
+  cookTimeMinutes,
   description,
   url,
 }: RecipeBodyProps) {
@@ -68,6 +74,10 @@ export function RecipeBody({
         <p className="mb-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted">
           {servings && <span>{t("recipeDetail.servings", { count: servings })}</span>}
           {totalTimeMinutes && <span>{t("recipeDetail.totalTime", { minutes: totalTimeMinutes })}</span>}
+          {/* Prep/cook are a breakdown of the total above, not a replacement
+              for it — some recipes state only one or the other. */}
+          {prepTimeMinutes && <span>{t("recipeDetail.prepTime", { minutes: prepTimeMinutes })}</span>}
+          {cookTimeMinutes && <span>{t("recipeDetail.cookTime", { minutes: cookTimeMinutes })}</span>}
           <CalorieMeta ingredientLines={ingredientLines} servings={servings} />
         </p>
       )}

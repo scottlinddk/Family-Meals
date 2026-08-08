@@ -87,6 +87,10 @@ export const da = {
   "shoppingList.otherStore": "Ingen butik fundet",
 
   "day.backToWeek": "Tilbage til ugen",
+  "day.maxTimeLabel": "Maks. tid til forberedelse & tilberedning i dag",
+  "day.maxTimeNoLimit": "Ingen grænse",
+  "day.maxTimeBadge": "Maks. {{minutes}} min",
+  "day.maxTimeSaveFailed": "Kunne ikke gemme — prøv igen.",
   "day.swapLabel": "Skift til en anden opskrift",
   "day.choosePlaceholder": "Søg efter en opskrift…",
   "day.noRecipesFound": "Ingen opskrifter matcher.",
@@ -209,9 +213,11 @@ export const da = {
   "recipeDetail.notFound": "Denne opskrift findes ikke.",
   "recipeDetail.ingredientsHeading": "Ingredienser",
   "recipeDetail.instructionsHeading": "Fremgangsmåde",
-  "recipeDetail.viewOriginal": "Se den originale opskrift på REMA 1000 →",
+  "recipeDetail.viewOriginal": "Se den originale opskrift →",
   "recipeDetail.servings": "{{count}} portioner",
   "recipeDetail.totalTime": "{{minutes}} min",
+  "recipeDetail.prepTime": "{{minutes}} min forberedelse",
+  "recipeDetail.cookTime": "{{minutes}} min tilberedning",
   // Shown wherever a recipe is — the "~" and "(skøn)" are not decoration:
   // REMA publishes no nutrition data, so this is computed from the
   // ingredient lines and must never read as a measured figure.
@@ -227,7 +233,7 @@ export const da = {
   "recipeDetail.deleteConfirm": "Slet denne importerede opskrift? Det kan ikke fortrydes.",
 
   "day.viewRecipe": "Se hele opskriften",
-  "day.viewOnRema": "Åbn hos REMA 1000 ↗",
+  "day.viewOnRema": "Se den oprindelige opskrift ↗",
 
   "share.button.week": "Del ugen",
   "share.button.day": "Del dagen",

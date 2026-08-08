@@ -88,6 +88,10 @@ export const en: Record<keyof typeof da, string> = {
   "shoppingList.otherStore": "No store found",
 
   "day.backToWeek": "Back to week",
+  "day.maxTimeLabel": "Max time to prep & cook today",
+  "day.maxTimeNoLimit": "No limit",
+  "day.maxTimeBadge": "Max {{minutes}} min",
+  "day.maxTimeSaveFailed": "Couldn't save that — try again.",
   "day.swapLabel": "Swap to a different recipe",
   "day.choosePlaceholder": "Search for a recipe…",
   "day.noRecipesFound": "No recipes match.",
@@ -209,9 +213,11 @@ export const en: Record<keyof typeof da, string> = {
   "recipeDetail.notFound": "This recipe doesn't exist.",
   "recipeDetail.ingredientsHeading": "Ingredients",
   "recipeDetail.instructionsHeading": "Instructions",
-  "recipeDetail.viewOriginal": "View original recipe on REMA 1000 →",
+  "recipeDetail.viewOriginal": "View original recipe →",
   "recipeDetail.servings": "{{count}} servings",
   "recipeDetail.totalTime": "{{minutes}} min",
+  "recipeDetail.prepTime": "{{minutes}} min prep",
+  "recipeDetail.cookTime": "{{minutes}} min cook",
   // Shown wherever a recipe is — the "~" and "(estimate)" are not decoration:
   // REMA publishes no nutrition data, so this is computed from the
   // ingredient lines and must never read as a measured figure.
@@ -227,7 +233,7 @@ export const en: Record<keyof typeof da, string> = {
   "recipeDetail.deleteConfirm": "Delete this imported recipe? This can't be undone.",
 
   "day.viewRecipe": "See the full recipe",
-  "day.viewOnRema": "Open on REMA 1000 ↗",
+  "day.viewOnRema": "View original recipe ↗",
 
   "share.button.week": "Share week",
   "share.button.day": "Share day",

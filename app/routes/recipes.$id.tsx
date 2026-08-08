@@ -52,6 +52,8 @@ export default function RecipeDetailPage({ params }: Route.ComponentProps) {
             description={recipe.data.description}
             servings={recipe.data.servings}
             totalTimeMinutes={recipe.data.totalTimeMinutes}
+            prepTimeMinutes={recipe.data.prepTimeMinutes}
+            cookTimeMinutes={recipe.data.cookTimeMinutes}
             ingredientLines={recipe.data.ingredients}
             instructionLines={recipe.data.instructions}
             offers={currentOffers}

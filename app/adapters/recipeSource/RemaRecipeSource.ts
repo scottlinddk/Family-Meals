@@ -353,6 +353,14 @@ export function parseRecipeDetail(html: string, url: string, source = "rema1000"
     parseDurationMinutes(microdataValues(root, "totalTime")[0]) ??
     extractTotalTimeMinutes(root);
 
+  // No class-name heuristic fallback for these two — only schema.org/Recipe
+  // JSON-LD and microdata publish prep/cook as separate figures; a page that
+  // states only a bare total time has no split to extract.
+  const prepTimeMinutes =
+    jsonLd?.prepTimeMinutes ?? parseDurationMinutes(microdataValues(root, "prepTime")[0]);
+  const cookTimeMinutes =
+    jsonLd?.cookTimeMinutes ?? parseDurationMinutes(microdataValues(root, "cookTime")[0]);
+
   const slugMatch = url.match(/\/opskrifter\/([^/?#]+)/);
   const id = slugMatch?.[1] ?? url;
 
@@ -367,6 +375,8 @@ export function parseRecipeDetail(html: string, url: string, source = "rema1000"
     instructions,
     servings,
     totalTimeMinutes,
+    prepTimeMinutes,
+    cookTimeMinutes,
   };
 }
 

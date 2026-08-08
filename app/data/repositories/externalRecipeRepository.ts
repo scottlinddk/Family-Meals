@@ -15,6 +15,8 @@ function toDomain(row: typeof externalRecipesTable.$inferSelect): ExternalRecipe
     instructions: row.instructions as string[],
     servings: row.servings ?? undefined,
     totalTimeMinutes: row.totalTimeMinutes ?? undefined,
+    prepTimeMinutes: row.prepTimeMinutes ?? undefined,
+    cookTimeMinutes: row.cookTimeMinutes ?? undefined,
     tags: (row.tags as string[] | null) ?? [],
   };
 }
@@ -51,6 +53,8 @@ export const externalRecipeRepository = {
         instructions: recipe.instructions,
         servings: recipe.servings,
         totalTimeMinutes: recipe.totalTimeMinutes,
+        prepTimeMinutes: recipe.prepTimeMinutes,
+        cookTimeMinutes: recipe.cookTimeMinutes,
         tags: recipe.tags ?? [],
       })
       .onConflictDoUpdate({
@@ -65,6 +69,8 @@ export const externalRecipeRepository = {
           instructions: recipe.instructions,
           servings: recipe.servings,
           totalTimeMinutes: recipe.totalTimeMinutes,
+          prepTimeMinutes: recipe.prepTimeMinutes,
+          cookTimeMinutes: recipe.cookTimeMinutes,
           tags: recipe.tags ?? [],
           fetchedAt: new Date(),
         },
@@ -98,6 +104,8 @@ export const externalRecipeRepository = {
           instructions: r.instructions,
           servings: r.servings,
           totalTimeMinutes: r.totalTimeMinutes,
+          prepTimeMinutes: r.prepTimeMinutes,
+          cookTimeMinutes: r.cookTimeMinutes,
           tags: r.tags ?? [],
         })),
       );

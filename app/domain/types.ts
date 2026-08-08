@@ -119,6 +119,12 @@ export interface RecipeSnapshot {
   servings?: number;
   /** Total time to make the dish, in minutes, if stated. */
   totalTimeMinutes?: number;
+  /** Active preparation time (chopping, mixing, etc.), in minutes, if the source states it separately from cooking. */
+  prepTimeMinutes?: number;
+  /** Cooking/baking time, in minutes, if the source states it separately from preparation. */
+  cookTimeMinutes?: number;
+  /** `ExternalRecipe.source` — `"rema1000"` or a URL import's hostname — kept for attribution, distinct from the coarser `source` field above. */
+  sourceLabel?: string;
   tags: string[];
   /** Ingredients as display lines (already formatted, no separate qty/unit). */
   ingredientLines: string[];
@@ -144,6 +150,13 @@ export interface DayPlan {
   editedAt: string; // ISO 8601
   /** Bumped on every edit/swap/regenerate; drives ICS SEQUENCE. */
   sequence: number;
+  /**
+   * How many minutes the family has, at most, to prep and cook this day's
+   * dinner — set by the family, not derived from any recipe. When set,
+   * regenerating this day only offers recipes whose combined prep+cook (or
+   * total) time fits the budget.
+   */
+  maxTimeMinutes?: number;
 }
 
 export interface WeekPlan {
@@ -192,6 +205,10 @@ export interface ExternalRecipe {
   servings?: number;
   /** Total time to make the dish, in minutes, if stated. */
   totalTimeMinutes?: number;
+  /** Active preparation time, in minutes, if the source states it separately from cooking. */
+  prepTimeMinutes?: number;
+  /** Cooking/baking time, in minutes, if the source states it separately from preparation. */
+  cookTimeMinutes?: number;
   /**
    * Meal-theme slugs from the source site, e.g. `["aftensmad", "frokost"]`.
    * A recipe carries several: REMA files "Poke bowl med ørredfilet" under

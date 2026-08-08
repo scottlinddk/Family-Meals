@@ -58,6 +58,8 @@ describe("parseRecipeDetail", () => {
       instructions: [],
       servings: undefined,
       totalTimeMinutes: undefined,
+      prepTimeMinutes: undefined,
+      cookTimeMinutes: undefined,
     });
   });
 
@@ -181,6 +183,8 @@ describe("parseRecipeDetail via schema.org JSON-LD", () => {
     const recipe = parseRecipeDetail(html, "https://x/opskrifter/gryderet");
     expect(recipe?.instructions).toEqual(["Snit løgene.", "Lad simre en time."]);
     expect(recipe?.totalTimeMinutes).toBe(75);
+    expect(recipe?.prepTimeMinutes).toBe(15);
+    expect(recipe?.cookTimeMinutes).toBe(60);
   });
 
   it("falls back to the DOM when JSON-LD is malformed", () => {

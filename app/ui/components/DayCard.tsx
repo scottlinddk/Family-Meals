@@ -114,6 +114,11 @@ export function DayCard({
                     {t("recipeDetail.onOfferCount", { count: offerCount })}
                   </Tag>
                 )}
+                {day.maxTimeMinutes && (
+                  <Tag variant="neutral">
+                    {t("day.maxTimeBadge", { minutes: day.maxTimeMinutes })}
+                  </Tag>
+                )}
               </p>
             </div>
           </div>
@@ -150,9 +155,13 @@ export function DayCard({
             <RecipeBody
               description={snapshot.description}
               servings={snapshot.servings}
+              totalTimeMinutes={snapshot.totalTimeMinutes}
+              prepTimeMinutes={snapshot.prepTimeMinutes}
+              cookTimeMinutes={snapshot.cookTimeMinutes}
               ingredientLines={snapshot.ingredientLines}
               instructionLines={snapshot.instructionLines}
               offerIngredientLines={snapshot.offerIngredientLines}
+              source={snapshot.sourceLabel}
               url={snapshot.url}
             />
           </>
