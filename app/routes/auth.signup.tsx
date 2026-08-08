@@ -51,6 +51,7 @@ export default function SignupPage() {
         {t("auth.signup.hasAccount")}{" "}
         <Link
           to={`/auth/login${redirectTo !== "/" ? `?redirectTo=${encodeURIComponent(redirectTo)}` : ""}`}
+          viewTransition
           className="text-accent hover:text-accent-700"
         >
           {t("auth.signup.link")}

@@ -64,6 +64,7 @@ export function BottomNav() {
             <NavLink
               key={to}
               to={to}
+              viewTransition
               aria-current={active ? "page" : undefined}
               className={`flex min-w-0 flex-1 flex-col items-center gap-0.5 pt-2 pb-1.5 text-[10px] leading-tight font-semibold transition-colors ${
                 active ? "text-accent" : "text-muted hover:text-text"

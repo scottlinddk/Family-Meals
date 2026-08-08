@@ -151,6 +151,7 @@ export function CookMode({
         <div className="mx-auto flex w-full max-w-2xl items-center gap-2 px-3 py-2">
           <Link
             to={exitTo}
+            viewTransition
             aria-label={t("cook.exit")}
             className="-ml-1 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-muted transition-colors hover:bg-neutral-100 hover:text-text"
           >
@@ -271,6 +272,7 @@ export function CookModeFallback({ exitTo, loading }: { exitTo: string; loading:
         <div className="mx-auto flex w-full max-w-2xl items-center gap-2 px-3 py-2">
           <Link
             to={exitTo}
+            viewTransition
             aria-label={t("cook.exit")}
             className="-ml-1 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-muted transition-colors hover:bg-neutral-100 hover:text-text"
           >

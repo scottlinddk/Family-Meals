@@ -9,6 +9,7 @@ export function BackLink({ to, children }: { to: string; children: string }) {
   return (
     <Link
       to={to}
+      viewTransition
       className="-ml-1 inline-flex min-h-11 items-center gap-1 pr-2 pl-1 text-[13px] font-semibold text-muted transition-colors hover:text-accent"
     >
       <ChevronLeftIcon size={16} />

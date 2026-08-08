@@ -13,6 +13,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "./app.css";
 import { t } from "~/i18n/t";
 import { DEFAULT_LOCALE } from "~/i18n/locale";
+import { RouteProgress } from "~/ui/components/RouteProgress";
 
 export function Layout({ children }: { children: ReactNode }) {
   return (
@@ -108,6 +109,7 @@ export default function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <RouteProgress />
       <Outlet />
     </QueryClientProvider>
   );

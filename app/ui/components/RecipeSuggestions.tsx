@@ -365,6 +365,7 @@ function SuggestionCard({ suggestion }: { suggestion: RankedSuggestion }) {
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] font-semibold">
         <Link
           to={`/recipes/${recipe.id}`}
+          viewTransition
           className="inline-flex items-center gap-1 text-accent hover:text-accent-700"
         >
           {t("recipes.viewRecipe")}
