@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import type {
   ShoppingList,
   ShoppingListItem,
@@ -9,6 +9,7 @@ import type {
 import { shoppingListProgress } from "~/domain/planning/shoppingListMarks";
 import { STORE_NAMES } from "~/domain/stores";
 import type { ShoppingListMarks } from "~/ui/hooks/useShoppingListMarks";
+import { useAddShoppingListItem } from "~/ui/hooks/useShoppingList";
 import { Card } from "~/ui/components/ui/Card";
 import { Button } from "~/ui/components/ui/Button";
 import { Tag } from "~/ui/components/ui/Tag";
@@ -102,6 +103,8 @@ export function ShoppingListView({
         <SyncStatus marks={marks} />
       </div>
 
+      <AddItemForm weekStartDate={list.weekStartDate} />
+
       <div className="flex flex-col gap-5">
         {list.sections.map((section) => (
           <div key={section.storeId ?? "other"}>
@@ -116,7 +119,12 @@ export function ShoppingListView({
                   </h3>
                   <ul className="m-0 flex list-none flex-col p-0">
                     {department.items.map((item) => (
-                      <ShoppingListRow key={item.label} item={item} marks={marks} />
+                      <ShoppingListRow
+                        key={item.label}
+                        item={item}
+                        marks={marks}
+                        weekStartDate={list.weekStartDate}
+                      />
                     ))}
                   </ul>
                 </Card>
@@ -126,6 +134,43 @@ export function ShoppingListView({
         ))}
       </div>
     </>
+  );
+}
+
+/**
+ * Types a label and adds it as a hand-added line — e.g. "dish soap", not tied
+ * to any recipe. Backed by the same `shoppingListExtraItems` merge every
+ * ingredient line goes through (see `buildShoppingList`'s `extraLines`), so a
+ * hand-added "onion" collapses into an existing "2 onions" line rather than
+ * duplicating it.
+ */
+function AddItemForm({ weekStartDate }: { weekStartDate: string }) {
+  const [label, setLabel] = useState("");
+  const addItem = useAddShoppingListItem(weekStartDate);
+
+  function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    const trimmed = label.trim();
+    if (!trimmed) return;
+    addItem.mutate(
+      { label: trimmed, added: true },
+      { onSuccess: () => setLabel("") },
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="mb-5 flex items-center gap-2">
+      <input
+        type="text"
+        value={label}
+        onChange={(event) => setLabel(event.target.value)}
+        placeholder={t("shoppingList.addItemPlaceholder")}
+        className="min-h-11 min-w-0 flex-1 rounded-md border border-divider px-3 text-sm"
+      />
+      <Button type="submit" variant="secondary" size="sm" disabled={!label.trim() || addItem.isPending}>
+        {addItem.isPending ? t("shoppingList.addItemAdding") : t("shoppingList.addItem")}
+      </Button>
+    </form>
   );
 }
 
@@ -182,10 +227,25 @@ function PriceBadge({ prices }: { prices: ShoppingListItemPrice[] }) {
  * The toggle sits outside the `<label>`, not inside it: a button nested in a
  * label would also toggle the checkbox it belongs to.
  */
-function ShoppingListRow({ item, marks }: { item: ShoppingListItem; marks: ShoppingListMarks }) {
+function ShoppingListRow({
+  item,
+  marks,
+  weekStartDate,
+}: {
+  item: ShoppingListItem;
+  marks: ShoppingListMarks;
+  weekStartDate: string;
+}) {
   const status = marks.marks.get(item.label);
   const inTrolley = status === "checked";
   const atHome = status === "at_home";
+  // A line with no day and no recipe was never on the week's plan — it can
+  // only have gotten here by hand (see `buildShoppingList`'s `extraLines`),
+  // so it's the one kind of row safe to remove outright rather than just
+  // marked. A plan-derived line can't be "removed": it'll just come back
+  // next time the plan is read.
+  const isFreeform = item.dates.length === 0 && item.recipeTitles.length === 0;
+  const removeItem = useAddShoppingListItem(weekStartDate);
 
   return (
     <li className="flex items-start gap-2 border-b border-divider last:border-0">
@@ -240,6 +300,18 @@ function ShoppingListRow({ item, marks }: { item: ShoppingListItem; marks: Shopp
       >
         {t("shoppingList.atHome")}
       </button>
+
+      {isFreeform && (
+        <button
+          type="button"
+          aria-label={t("shoppingList.removeItemAria", { item: item.label })}
+          onClick={() => removeItem.mutate({ label: item.label, added: false })}
+          disabled={removeItem.isPending}
+          className="my-1 min-h-11 shrink-0 self-start rounded-md border border-divider px-3.5 text-xs font-semibold text-muted transition-colors hover:bg-neutral-100"
+        >
+          {t("shoppingList.removeItem")}
+        </button>
+      )}
     </li>
   );
 }
