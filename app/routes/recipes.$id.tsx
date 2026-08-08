@@ -3,6 +3,7 @@ import type { Route } from "./+types/recipes.$id";
 import { useExternalRecipe, useDeleteRecipe } from "~/ui/hooks/useExternalRecipes";
 import { useOffers } from "~/ui/hooks/useOffers";
 import { RecipeBody } from "~/ui/components/RecipeBody";
+import { NutritionPanel } from "~/ui/components/NutritionPanel";
 import { ShareButton } from "~/ui/components/ShareButton";
 import { Button, LinkButton } from "~/ui/components/ui/Button";
 import { BackLink } from "~/ui/components/ui/BackLink";
@@ -47,6 +48,8 @@ export default function RecipeDetailPage({ params }: Route.ComponentProps) {
               <ShareButton target={{ kind: "recipe", recipeId: params.id! }} size="md" block />
             </div>
           </div>
+
+          {recipe.data.nutrition && <NutritionPanel nutrition={recipe.data.nutrition} />}
 
           <RecipeBody
             description={recipe.data.description}

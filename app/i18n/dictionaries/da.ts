@@ -174,8 +174,12 @@ export const da = {
     "Vejer ugens tilbud, kalorier pr. portion og kødfri retter sammen.",
   "suggestions.explain.offers": "Flest ingredienser på tilbud først — kalorier afgør ved uafgjort.",
   "suggestions.explain.calories":
-    "Færrest kalorier pr. portion først. Tallet er et skøn ud fra ingredienslisten — REMA " +
-    "oplyser ikke næringsindhold.",
+    "Færrest kalorier pr. portion først. REMA oplyser ikke næringsindhold, så tallet kommer fra " +
+    "FatSecrets fødevaredatabase, når en ingrediens kan slås op der, og ellers fra et skøn ud fra " +
+    "ingredienslisten.",
+  "suggestions.kcalPerServing": "~{{kcal}} kcal/portion (skøn)",
+  "suggestions.kcalPerServingMeasured": "{{kcal}} kcal/portion",
+  "suggestions.proteinPerServing": "{{grams}} g protein/portion",
   "suggestions.vegetarian": "Kødfri",
   "suggestions.weekendOnly": "Kun i weekenden: {{offers}}",
   "suggestions.noneVegetarian":
@@ -191,6 +195,39 @@ export const da = {
   "suggestions.addToShoppingList": "Tilføj til indkøbsliste",
   "suggestions.addToShoppingListFailed": "Kunne ikke tilføjes til indkøbslisten.",
   "suggestions.unmarkAtHome": "Vi mangler den alligevel",
+
+  // Næringsindhold, fra FatSecrets fødevaredatabase — se app/domain/nutrition.
+  // Ordvalget bærer den skelnen, panelet findes for: et målt tal står som et
+  // tal, et skønnet tal må aldrig komme til at ligne et.
+  "nutrition.heading": "Næringsindhold pr. portion",
+  "nutrition.energy": "Energi",
+  "nutrition.protein": "Protein",
+  "nutrition.fat": "Fedt",
+  "nutrition.carbs": "Kulhydrat",
+  "nutrition.kcal": "{{value}} kcal",
+  "nutrition.kcalApprox": "~{{value}} kcal",
+  "nutrition.grams": "{{value}} g",
+  "nutrition.measured":
+    "Fra FatSecrets fødevaredatabase, som dækker {{percent}}% af ingredienslinjerne.",
+  "nutrition.partial":
+    "Kun kalorier: FatSecret dækker {{percent}}% af ingredienslinjerne, og protein og fedt siger " +
+    "først noget fra to tredjedele. Resten er skønnet ud fra ingredienslisten.",
+  "nutrition.estimated":
+    "Skønnet ud fra ingredienslisten — REMA oplyser ikke næringsindhold, og der er endnu ikke " +
+    "hentet data fra FatSecret.",
+  "nutrition.servingsAssumed": "Antal portioner er ikke oplyst, så her er regnet med {{count}}.",
+  "nutrition.refresh": "Hent næringsindhold ({{missing}} ingredienser mangler)",
+  "nutrition.refreshing": "Henter næringsindhold…",
+  "nutrition.upToDate": "Næringsindholdet er hentet",
+  "nutrition.coverage":
+    "{{matched}} af {{terms}} ingredienser har næringsindhold ({{unmatched}} blev ikke fundet).",
+  "nutrition.refreshed":
+    "Slog {{lookedUp}} ingredienser op — {{matched}} fundet, {{remaining}} mangler stadig.",
+  "nutrition.refreshFailures": "{{count}} opslag fejlede: {{message}}",
+  "nutrition.refreshError": "Næringsindholdet kunne ikke hentes.",
+  "nutrition.notConfigured":
+    "Der er ikke sat en FatSecret-nøgle op, så kalorier er skønnet ud fra ingredienslisten, og der " +
+    "er ingen tal for protein og fedt.",
 
   "recipesPage.heading": "Opskrifter",
   "recipesPage.title": "Alle opskrifter",

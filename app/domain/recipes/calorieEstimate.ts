@@ -1,20 +1,24 @@
-import type { ExternalRecipe } from "~/domain/types";
-
 /**
- * Roughly how many calories a scraped recipe puts on a plate.
+ * Reading an ingredient line: how much food it puts in the pot, which product
+ * it is about, and — where nothing better is available — how many calories
+ * that product carries.
  *
- * REMA's recipes carry no nutrition data at all, so ranking by "lowest
- * calories" means computing it from the only thing there is: the ingredient
- * lines, as free text. That is an *estimate* and the code says so everywhere
- * — `coverage` reports what share of the lines were actually recognised, and
- * the UI shows the number with a "~" and the word estimat rather than
- * pretending to a nutrition label.
+ * REMA's recipes carry no nutrition data at all, so everything the app knows
+ * about a dinner has to be computed from the only thing there is: the
+ * ingredient lines, as free text. This file does the reading; what is done
+ * with it is in `app/domain/nutrition/recipeNutrition.ts`, which prefers
+ * FatSecret's food database and falls back to the kcal table below for the
+ * lines FatSecret can't be asked about.
  *
- * It is nonetheless good enough for the job it has, which is *comparative*:
- * a lentil soup and a creamy pork dish are separated by a factor of three,
- * and no plausible error in a table of per-100 g figures reorders that.
+ * The table is *only* kcal, and that is the point of the FatSecret
+ * integration: protein and fat for 250 Danish products is a nutrition
+ * database, not a constant anyone should hand-write. What the table is good
+ * at is being *comparative* — a lentil soup and a creamy pork dish are
+ * separated by a factor of three, and no plausible error in a table of
+ * per-100 g figures reorders that — so it remains the fallback rather than
+ * being deleted.
  *
- * Two deliberate simplifications:
+ * Two deliberate simplifications, shared with the rest of the pipeline:
  *
  *   * Volumes convert to grams 1:1. True for water and near enough for most
  *     of what a recipe measures in dl; oil is 0.92 and the fats table below
@@ -24,7 +28,7 @@ import type { ExternalRecipe } from "~/domain/types";
  */
 
 /** Fallback when a line's product isn't in the table below. */
-const DEFAULT_KCAL_PER_100G = 150;
+export const DEFAULT_KCAL_PER_100G = 150;
 
 /** Fallback weight for a "1 stk"-style line whose product isn't in `ITEM_WEIGHTS`. */
 const DEFAULT_ITEM_GRAMS = 100;
@@ -39,7 +43,7 @@ const DEFAULT_ITEM_GRAMS = 100;
 const UNQUANTIFIED_GRAMS = 10;
 
 /** REMA's recipes state servings often but not always; four is the family this plans for. */
-const DEFAULT_SERVINGS = 4;
+export const DEFAULT_SERVINGS = 4;
 
 /**
  * The most one ingredient line is allowed to contribute.
@@ -62,7 +66,7 @@ const MAX_LINE_GRAMS = 1500;
  * disagree. Values are ordinary reference figures, rounded — the ranking
  * cares about which side of a comparison a dish falls on, not about ±5%.
  */
-const KCAL_PER_100G: Record<string, number> = {
+export const KCAL_PER_100G: Record<string, number> = {
   // Fats and oils — the numbers that actually move a dish's total.
   olivenolie: 884, rapsolie: 884, sesamolie: 884, olie: 884,
   smør: 717, margarine: 717, mayonnaise: 680, remoulade: 500, pesto: 450,
@@ -181,7 +185,7 @@ export function parseQuantity(line: string): number | null {
 }
 
 /** The lowercased line with its leading quantity and any parenthetical removed. */
-function withoutQuantity(line: string): string {
+export function withoutQuantity(line: string): string {
   return line
     .toLowerCase()
     .replace(/\([^)]*\)/g, " ")
@@ -191,13 +195,26 @@ function withoutQuantity(line: string): string {
 }
 
 /** The unit word a line uses, if it uses one. */
-function parseUnit(rest: string): string | undefined {
+export function parseUnit(rest: string): string | undefined {
   const first = rest.split(/[^a-zà-ÿæøå]+/i)[0]?.toLowerCase();
   if (!first) return undefined;
   const known =
     first in VOLUME_UNITS || first in WEIGHT_UNITS || first in PACK_UNITS || COUNT_UNITS.has(first);
   return known ? first : undefined;
 }
+
+/**
+ * The most a word may carry in front of a key and still be a kind of it.
+ *
+ * The suffix rule exists for Danish head-final compounds — `rødløg` is a kind
+ * of `løg`, `hvidløg` of `løg` — where the qualifier is short. Unbounded, the
+ * same rule reads `frilandsgris` (free-range pork) as a kind of `ris`, and
+ * prices a pork dish as rice: `ris` is only three letters, so it turns up at
+ * the end of words that have nothing to do with it. Four characters covers
+ * the qualifiers Danish actually forms compounds with (`rød`, `hvid`, `grøn`,
+ * `sød`) and excludes the eight-letter accidents.
+ */
+const MAX_COMPOUND_QUALIFIER = 4;
 
 /**
  * Whether an ingredient line names the product a table key stands for.
@@ -207,12 +224,17 @@ function parseUnit(rest: string): string | undefined {
  * contains the letters of `ris`, and a plain substring test priced fresh
  * herbs as dry rice. A word may match a key exactly, start with it (Danish
  * compounds are head-final, so `kyllingebryst` is a kind of `kylling`) or end
- * with it (`rødløg` is a kind of `løg`). Multi-word keys are the one case
- * that still has to look at the whole line.
+ * with it, with a short enough qualifier in front. Multi-word keys are the
+ * one case that still has to look at the whole line.
  */
 function lineNames(key: string, rest: string, tokens: string[]): boolean {
   if (key.includes(" ")) return rest.includes(key);
-  return tokens.some((token) => token === key || token.startsWith(key) || token.endsWith(key));
+  return tokens.some(
+    (token) =>
+      token === key ||
+      token.startsWith(key) ||
+      (token.endsWith(key) && token.length - key.length <= MAX_COMPOUND_QUALIFIER),
+  );
 }
 
 /**
@@ -227,7 +249,15 @@ function wordsOf(rest: string): string[] {
   return rest.split(/[^a-zà-ÿæøå]+/i).filter(Boolean);
 }
 
-function lookupProduct(rest: string): string | undefined {
+/**
+ * The table key an already-de-quantified ingredient line names, if any.
+ *
+ * Exported because it is also the app's ingredient-line *vocabulary*: the
+ * keys were tuned against the 350 scraped dinners, so "which product is this
+ * line about" is a question `nutrition/ingredientTerms.ts` can ask the same
+ * way rather than parsing Danish ingredient lines a second time.
+ */
+export function lookupProduct(rest: string): string | undefined {
   const tokens = wordsOf(rest);
   return KCAL_KEYS_BY_LENGTH.find((key) => lineNames(key, rest, tokens));
 }
@@ -257,54 +287,4 @@ export function estimateLineGrams(line: string): number {
             quantity * itemGrams(rest);
 
   return Math.min(grams, MAX_LINE_GRAMS);
-}
-
-export interface CalorieEstimate {
-  /** Whole-recipe estimate, in kcal. */
-  totalKcal: number;
-  /** The number that matters for choosing a dinner. */
-  perServingKcal: number;
-  /** Servings the figure is divided by — the recipe's own, or the default. */
-  servings: number;
-  /** Whether `servings` came from the recipe or was assumed. */
-  servingsKnown: boolean;
-  /** Share of ingredient lines whose product was recognised, 0–1. */
-  coverage: number;
-  /** Ingredient lines that fell back to `DEFAULT_KCAL_PER_100G`. */
-  unrecognisedLines: string[];
-}
-
-/**
- * Estimates a recipe's calories per serving, or null when there's nothing to
- * estimate from — a scrape that produced no ingredient list can't be given a
- * number, and guessing one would put it in the middle of a calorie ranking it
- * has no business being in.
- */
-export function estimateRecipeCalories(
-  recipe: Pick<ExternalRecipe, "ingredients" | "servings">,
-): CalorieEstimate | null {
-  if (recipe.ingredients.length === 0) return null;
-
-  let totalKcal = 0;
-  const unrecognisedLines: string[] = [];
-
-  for (const line of recipe.ingredients) {
-    const rest = withoutQuantity(line);
-    const key = lookupProduct(rest);
-    if (!key) unrecognisedLines.push(line);
-    const kcalPer100g = key ? KCAL_PER_100G[key]! : DEFAULT_KCAL_PER_100G;
-    totalKcal += (estimateLineGrams(line) / 100) * kcalPer100g;
-  }
-
-  const servingsKnown = typeof recipe.servings === "number" && recipe.servings > 0;
-  const servings = servingsKnown ? recipe.servings! : DEFAULT_SERVINGS;
-
-  return {
-    totalKcal: Math.round(totalKcal),
-    perServingKcal: Math.round(totalKcal / servings),
-    servings,
-    servingsKnown,
-    coverage: (recipe.ingredients.length - unrecognisedLines.length) / recipe.ingredients.length,
-    unrecognisedLines,
-  };
 }

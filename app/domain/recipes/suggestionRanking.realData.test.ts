@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import type { ExternalRecipe, Offer } from "~/domain/types";
-import { estimateRecipeCalories } from "~/domain/recipes/calorieEstimate";
+import { computeRecipeNutrition } from "~/domain/nutrition/recipeNutrition";
 import { assessVegetarian } from "~/domain/recipes/vegetarian";
 import { rankRecipeSuggestions } from "~/domain/recipes/suggestionRanking";
 
@@ -31,7 +31,7 @@ describe.skipIf(!haveScrape)("ranking against the real scrape", () => {
   const offers: Offer[] = JSON.parse(readFileSync(OFFERS_PATH, "utf8")).offers;
 
   it("recognises most of what real ingredient lines name", () => {
-    const estimates = recipes.map(estimateRecipeCalories).filter((e) => e !== null);
+    const estimates = recipes.map((recipe) => computeRecipeNutrition(recipe)).filter((e) => e !== null);
     const meanCoverage =
       estimates.reduce((sum, estimate) => sum + estimate.coverage, 0) / estimates.length;
     expect(meanCoverage).toBeGreaterThan(0.85);
@@ -39,7 +39,7 @@ describe.skipIf(!haveScrape)("ranking against the real scrape", () => {
 
   it("puts real dinners in a plausible calorie band", () => {
     const perServing = recipes
-      .map((recipe) => estimateRecipeCalories(recipe)?.perServingKcal)
+      .map((recipe) => computeRecipeNutrition(recipe)?.perServingKcal)
       .filter((kcal): kcal is number => kcal !== undefined)
       .sort((a, b) => a - b);
 
