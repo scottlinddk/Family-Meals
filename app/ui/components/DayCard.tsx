@@ -5,6 +5,7 @@ import {
   VariantGuidanceNote,
 } from "~/ui/components/VariantPanel";
 import { RegenerateDayButton } from "~/ui/components/RegenerateDayButton";
+import { DayTimeBudgetControl } from "~/ui/components/DayTimeBudgetControl";
 import { RecipeBody } from "~/ui/components/RecipeBody";
 import { ShareButton } from "~/ui/components/ShareButton";
 import { CalorieMeta } from "~/ui/components/RecipeCalories";
@@ -167,6 +168,11 @@ export function DayCard({
           </>
         ) : (
           <div className="flex flex-col gap-2">
+            <DayTimeBudgetControl
+              weekStart={weekStart}
+              dayIndex={dayIndex}
+              maxTimeMinutes={day.maxTimeMinutes}
+            />
             <LinkButton
               to={`/weeks/${weekStart}/day/${dayIndex}`}
               variant="secondary"
