@@ -9,6 +9,7 @@ function fixtureRecipes(count: number): ExternalRecipe[] {
   return Array.from({ length: count }, (_, i) => ({
     id: `recipe-${i}`,
     title: `Recipe ${i}`,
+    source: "rema1000",
     url: `https://madogdrikke.rema1000.dk/opskrifter/recipe-${i}`,
     ingredients: [`Ingredient ${i}`],
     instructions: [`Step for recipe ${i}`],
@@ -56,5 +57,47 @@ describe("regenerateDay", () => {
 
     const ids = week.days.map((day) => day.baseRecipeId);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("only offers recipes fitting the day's time budget, when one is set", () => {
+    const externalRecipes = fixtureRecipes(10).map((recipe, i) => ({
+      ...recipe,
+      totalTimeMinutes: i < 3 ? 20 : 90,
+    }));
+    const week = generateWeekPlan({
+      familyId: "family-1",
+      weekStartDate: "2026-08-03",
+      offers: [],
+      offerSnapshotId: "snapshot-1",
+      externalRecipes,
+    });
+
+    const withBudget: typeof week = {
+      ...week,
+      days: week.days.map((day, i) => (i === 2 ? { ...day, maxTimeMinutes: 30 } : day)),
+    };
+
+    const updated = regenerateDay(withBudget, 2, [], externalRecipes);
+    const chosen = externalRecipes.find((r) => r.id === updated.days[2]!.baseRecipeId)!;
+    expect(chosen.totalTimeMinutes).toBeLessThanOrEqual(30);
+  });
+
+  it("falls back to the full candidate list when nothing fits the day's time budget", () => {
+    const externalRecipes = fixtureRecipes(4).map((recipe) => ({ ...recipe, totalTimeMinutes: 90 }));
+    const week = generateWeekPlan({
+      familyId: "family-1",
+      weekStartDate: "2026-08-03",
+      offers: [],
+      offerSnapshotId: "snapshot-1",
+      externalRecipes,
+    });
+
+    const withBudget: typeof week = {
+      ...week,
+      days: week.days.map((day, i) => (i === 2 ? { ...day, maxTimeMinutes: 10 } : day)),
+    };
+
+    const updated = regenerateDay(withBudget, 2, [], externalRecipes);
+    expect(updated.days[2]!.baseRecipeId).not.toBe(week.days[2]!.baseRecipeId);
   });
 });

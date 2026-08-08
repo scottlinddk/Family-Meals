@@ -1,6 +1,6 @@
 {
-  "id": "3666e5fc-c798-4ffa-bce3-9181d56ac4ff",
-  "prevId": "d7ab7079-237e-4cb2-9f78-c0e05a6ea44a",
+  "id": "e1108161-05f5-4dfa-b69d-889e0c093194",
+  "prevId": "33d04453-3eb8-47bb-9f05-6350e8c244b5",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -130,6 +130,12 @@
         },
         "title": {
           "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source": {
+          "name": "source",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -432,91 +438,32 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.nutrition_facts": {
-      "name": "nutrition_facts",
+    "public.family_store_settings": {
+      "name": "family_store_settings",
       "schema": "",
       "columns": {
-        "term": {
-          "name": "term",
-          "type": "text",
+        "family_id": {
+          "name": "family_id",
+          "type": "uuid",
           "primaryKey": true,
           "notNull": true
         },
-        "source": {
-          "name": "source",
-          "type": "nutrition_fact_source",
-          "typeSchema": "public",
+        "selected_stores": {
+          "name": "selected_stores",
+          "type": "jsonb",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": "'[\"rema1000\",\"netto\",\"foetex\",\"meny\"]'::jsonb"
         },
-        "query": {
-          "name": "query",
-          "type": "text",
+        "member_stores": {
+          "name": "member_stores",
+          "type": "jsonb",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": "'[]'::jsonb"
         },
-        "food_id": {
-          "name": "food_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "food_name": {
-          "name": "food_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "kcal": {
-          "name": "kcal",
-          "type": "double precision",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "protein_g": {
-          "name": "protein_g",
-          "type": "double precision",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "fat_g": {
-          "name": "fat_g",
-          "type": "double precision",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "carbs_g": {
-          "name": "carbs_g",
-          "type": "double precision",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "saturated_fat_g": {
-          "name": "saturated_fat_g",
-          "type": "double precision",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "fiber_g": {
-          "name": "fiber_g",
-          "type": "double precision",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "sugar_g": {
-          "name": "sugar_g",
-          "type": "double precision",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "sodium_mg": {
-          "name": "sodium_mg",
-          "type": "double precision",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "fetched_at": {
-          "name": "fetched_at",
+        "updated_at": {
+          "name": "updated_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
@@ -524,9 +471,114 @@
         }
       },
       "indexes": {},
-      "foreignKeys": {},
+      "foreignKeys": {
+        "family_store_settings_family_id_families_id_fk": {
+          "name": "family_store_settings_family_id_families_id_fk",
+          "tableFrom": "family_store_settings",
+          "tableTo": "families",
+          "columnsFrom": [
+            "family_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.ingredient_offer_overrides": {
+      "name": "ingredient_offer_overrides",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "family_id": {
+          "name": "family_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ingredient_label": {
+          "name": "ingredient_label",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "offer_name": {
+          "name": "offer_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_by_user_id": {
+          "name": "created_by_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "ingredient_offer_overrides_family_id_idx": {
+          "name": "ingredient_offer_overrides_family_id_idx",
+          "columns": [
+            {
+              "expression": "family_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "ingredient_offer_overrides_family_id_families_id_fk": {
+          "name": "ingredient_offer_overrides_family_id_families_id_fk",
+          "tableFrom": "ingredient_offer_overrides",
+          "tableTo": "families",
+          "columnsFrom": [
+            "family_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "ingredient_offer_overrides_family_ingredient_offer_unique": {
+          "name": "ingredient_offer_overrides_family_ingredient_offer_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "family_id",
+            "ingredient_label",
+            "offer_name"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -547,6 +599,13 @@
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
+        },
+        "store_id": {
+          "name": "store_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'rema1000'"
         },
         "source": {
           "name": "source",
@@ -602,6 +661,33 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "offer_snapshots_family_id_store_id_imported_at_idx": {
+          "name": "offer_snapshots_family_id_store_id_imported_at_idx",
+          "columns": [
+            {
+              "expression": "family_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "store_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "imported_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -641,6 +727,20 @@
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
+        },
+        "store_id": {
+          "name": "store_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'rema1000'"
+        },
+        "member_only": {
+          "name": "member_only",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
         },
         "name": {
           "name": "name",
@@ -722,6 +822,27 @@
           "columns": [
             {
               "expression": "snapshot_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "offers_snapshot_id_store_id_idx": {
+          "name": "offers_snapshot_id_store_id_idx",
+          "columns": [
+            {
+              "expression": "snapshot_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "store_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -867,6 +988,103 @@
           "nullsNotDistinct": false,
           "columns": [
             "token"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.shopping_list_extra_items": {
+      "name": "shopping_list_extra_items",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "family_id": {
+          "name": "family_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "week_start_date": {
+          "name": "week_start_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "item_label": {
+          "name": "item_label",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "added_by_user_id": {
+          "name": "added_by_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "added_at": {
+          "name": "added_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "shopping_list_extra_items_family_id_week_start_date_idx": {
+          "name": "shopping_list_extra_items_family_id_week_start_date_idx",
+          "columns": [
+            {
+              "expression": "family_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "week_start_date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "shopping_list_extra_items_family_id_families_id_fk": {
+          "name": "shopping_list_extra_items_family_id_families_id_fk",
+          "tableFrom": "shopping_list_extra_items",
+          "tableTo": "families",
+          "columnsFrom": [
+            "family_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "shopping_list_extra_items_family_week_label_unique": {
+          "name": "shopping_list_extra_items_family_week_label_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "family_id",
+            "week_start_date",
+            "item_label"
           ]
         }
       },
@@ -1233,14 +1451,6 @@
       "values": [
         "owner",
         "member"
-      ]
-    },
-    "public.nutrition_fact_source": {
-      "name": "nutrition_fact_source",
-      "schema": "public",
-      "values": [
-        "fatsecret",
-        "unmatched"
       ]
     },
     "public.offer_snapshot_source": {

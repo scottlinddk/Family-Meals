@@ -13,7 +13,7 @@ const variantClasses: Record<TagVariant, string> = {
 export function Tag({ children, variant = "neutral" }: { children: ReactNode; variant?: TagVariant }) {
   return (
     <span
-      className={`inline-flex items-center rounded-sm px-2.5 py-1 text-[11px] font-semibold ${variantClasses[variant]}`}
+      className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ${variantClasses[variant]}`}
     >
       {children}
     </span>

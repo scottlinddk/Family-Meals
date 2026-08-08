@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { DayPlan, Offer, WeekPlan } from "~/domain/types";
-import { buildShoppingList } from "~/domain/planning/shoppingList";
+import type { DayPlan, Offer, StoreId, WeekPlan } from "~/domain/types";
+import { buildShoppingList, findShoppingListItem } from "~/domain/planning/shoppingList";
 
 function day(date: string, title: string, ingredientLines: string[]): DayPlan {
   return {
@@ -39,8 +39,10 @@ function week(days: DayPlan[]): WeekPlan {
   };
 }
 
-function offer(name: string, departmentSlug: string): Offer {
+function offer(name: string, departmentSlug: string, storeId: StoreId = "rema1000"): Offer {
   return {
+    storeId,
+    memberOnly: false,
     name,
     unitSizeFrom: 400,
     unitSizeTo: 400,
@@ -55,6 +57,11 @@ function offer(name: string, departmentSlug: string): Offer {
   };
 }
 
+/** Flattens every item across every store/department section, in order. */
+function allItems(list: ReturnType<typeof buildShoppingList>) {
+  return list.sections.flatMap((s) => s.departments.flatMap((d) => d.items));
+}
+
 describe("buildShoppingList", () => {
   it("merges the same product across days, keeping both wordings and both days", () => {
     const list = buildShoppingList(
@@ -65,7 +72,7 @@ describe("buildShoppingList", () => {
       [],
     );
 
-    const onions = list.sections.flatMap((s) => s.items).find((item) => item.label === "2 løg");
+    const onions = allItems(list).find((item) => item.label === "2 løg");
     expect(onions).toBeDefined();
     expect(onions!.variants).toEqual(["2 løg", "1 løg, finthakket"]);
     expect(onions!.dates).toEqual(["2026-08-03", "2026-08-04"]);
@@ -89,14 +96,18 @@ describe("buildShoppingList", () => {
       offers,
     );
 
-    expect(list.sections.map((s) => s.departmentSlug)).toEqual(["fruit-and-veg", "meat-and-fish", null]);
+    const remaSection = list.sections.find((s) => s.storeId === "rema1000")!;
+    expect(remaSection.departments.map((d) => d.departmentSlug)).toEqual(["fruit-and-veg", "meat-and-fish"]);
     expect(list.onOfferCount).toBe(2);
 
-    const beef = list.sections.find((s) => s.departmentSlug === "meat-and-fish")!.items[0]!;
+    const beef = remaSection.departments.find((d) => d.departmentSlug === "meat-and-fish")!.items[0]!;
     expect(beef.offerNames).toEqual(["Friland Hakket dansk oksekød 8-12%"]);
+    expect(beef.offerStoreIds).toEqual(["rema1000"]);
 
-    // Nothing matched "salt", so it lands in the un-departmented section last.
-    expect(list.sections.at(-1)!.items.map((i) => i.label)).toEqual(["salt"]);
+    // Nothing matched "salt", so it lands in the un-stored section last.
+    const unmatched = list.sections.at(-1)!;
+    expect(unmatched.storeId).toBeNull();
+    expect(unmatched.departments.flatMap((d) => d.items).map((i) => i.label)).toEqual(["salt"]);
   });
 
   it("orders departments as a walk through the store, not alphabetically", () => {
@@ -110,11 +121,45 @@ describe("buildShoppingList", () => {
       offers,
     );
 
-    expect(list.sections.map((s) => s.departmentSlug)).toEqual([
+    const remaSection = list.sections.find((s) => s.storeId === "rema1000")!;
+    expect(remaSection.departments.map((d) => d.departmentSlug)).toEqual([
       "fruit-and-veg",
       "bread-and-bakery",
       "meat-and-fish",
     ]);
+  });
+
+  it("groups matching items by store first, in the given store order, and keeps a multi-store match in one section", () => {
+    const offers = [
+      offer("Kyllingebryst", "meat-and-fish", "netto"),
+      offer("Rugbrød", "bread-and-bakery", "rema1000"),
+    ];
+    const list = buildShoppingList(
+      week([day("2026-08-03", "Ret", ["500 g kyllingebryst", "1 rugbrød"])]),
+      offers,
+      ["netto", "rema1000", "foetex", "meny"],
+    );
+
+    expect(list.sections.map((s) => s.storeId)).toEqual(["netto", "rema1000"]);
+  });
+
+  it("records every store whose offer matched, but places the item in a single section", () => {
+    const offers = [
+      offer("Kyllingebryst", "meat-and-fish", "rema1000"),
+      offer("Kyllingebryst", "meat-and-fish", "netto"),
+    ];
+    const list = buildShoppingList(week([day("2026-08-03", "Ret", ["500 g kyllingebryst"])]), offers, [
+      "rema1000",
+      "netto",
+      "foetex",
+      "meny",
+    ]);
+
+    const items = allItems(list);
+    expect(items).toHaveLength(1);
+    expect(items[0]!.offerStoreIds.sort()).toEqual(["netto", "rema1000"]);
+    expect(list.sections).toHaveLength(1);
+    expect(list.sections[0]!.storeId).toBe("rema1000");
   });
 
   it("returns an empty list for a week whose recipes carry no ingredients", () => {
@@ -123,5 +168,82 @@ describe("buildShoppingList", () => {
     expect(list.sections).toEqual([]);
     expect(list.itemCount).toBe(0);
     expect(list.onOfferCount).toBe(0);
+  });
+
+  it("folds hand-added items in as their own line, with no day or recipe", () => {
+    const list = buildShoppingList(week([day("2026-08-03", "Pasta", ["500 g hakket oksekød"])]), [], undefined, [
+      "1 squash",
+    ]);
+
+    const squash = allItems(list).find((item) => item.label === "1 squash")!;
+    expect(squash).toBeDefined();
+    expect(squash.dates).toEqual([]);
+    expect(squash.recipeTitles).toEqual([]);
+    expect(list.itemCount).toBe(2);
+  });
+
+  it("merges a hand-added item into a matching recipe line instead of duplicating it", () => {
+    const list = buildShoppingList(week([day("2026-08-03", "Ret", ["2 løg"])]), [], undefined, [
+      "1 løg, finthakket",
+    ]);
+
+    expect(list.itemCount).toBe(1);
+    const onions = allItems(list)[0]!;
+    expect(onions.variants).toEqual(["2 løg", "1 løg, finthakket"]);
+    expect(onions.dates).toEqual(["2026-08-03"]);
+  });
+});
+
+describe("buildShoppingList prices", () => {
+  it("carries the matched offer's price onto the item, and a per-store subtotal onto the list", () => {
+    const offers = [offer("Broccoli", "fruit-and-veg")];
+    const list = buildShoppingList(week([day("2026-08-03", "Ret", ["1 broccoli", "salt"])]), offers);
+
+    const broccoli = allItems(list).find((item) => item.label === "1 broccoli")!;
+    expect(broccoli.prices).toEqual([{ storeId: "rema1000", price: 30, unitPrice: 75, baseUnit: "kilogram", currencyCode: "DKK" }]);
+
+    const salt = allItems(list).find((item) => item.label === "salt")!;
+    expect(salt.prices).toEqual([]);
+
+    expect(list.storeTotals).toEqual([{ storeId: "rema1000", total: 30, itemCount: 1, currencyCode: "DKK" }]);
+  });
+
+  it("sums an item's price at each store it matched into, without inventing a combined basket total", () => {
+    const offers = [
+      offer("Kyllingebryst", "meat-and-fish", "rema1000"),
+      offer("Kyllingebryst", "meat-and-fish", "netto"),
+    ];
+    const list = buildShoppingList(week([day("2026-08-03", "Ret", ["500 g kyllingebryst"])]), offers, [
+      "rema1000",
+      "netto",
+      "foetex",
+      "meny",
+    ]);
+
+    const item = allItems(list)[0]!;
+    expect(item.prices.map((p) => p.storeId).sort()).toEqual(["netto", "rema1000"]);
+    expect(list.storeTotals.map((t) => t.storeId).sort()).toEqual(["netto", "rema1000"]);
+    expect(list.storeTotals.every((t) => t.total === 30 && t.itemCount === 1)).toBe(true);
+  });
+
+  it("has no store totals when nothing on the list matched an offer", () => {
+    const list = buildShoppingList(week([day("2026-08-03", "Ret", ["salt"])]), []);
+
+    expect(list.storeTotals).toEqual([]);
+  });
+});
+
+describe("findShoppingListItem", () => {
+  it("finds a list item by product identity, not exact text", () => {
+    const list = buildShoppingList(week([day("2026-08-03", "Ret", ["2 løg, finthakket"])]), []);
+
+    expect(findShoppingListItem(list, "1 løg")?.label).toBe("2 løg, finthakket");
+  });
+
+  it("returns null when the ingredient isn't on the list, or there is no list", () => {
+    const list = buildShoppingList(week([day("2026-08-03", "Ret", ["2 løg"])]), []);
+
+    expect(findShoppingListItem(list, "1 squash")).toBeNull();
+    expect(findShoppingListItem(null, "2 løg")).toBeNull();
   });
 });

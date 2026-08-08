@@ -1,42 +1,85 @@
-import type { Offer } from "~/domain/types";
+import type { Offer, StoreId } from "~/domain/types";
 import type { OfferSource } from "~/adapters/offerSource/OfferSource";
 import { offerListSchema } from "~/adapters/offerSource/offerSchema";
+import { STORE_NAMES } from "~/domain/stores";
+
+/**
+ * Per-store dealer lookup for etilbudsavis.dk's Tjek platform: the search
+ * string that finds the dealer, and a substring `resolveDealerId()` checks
+ * the matched dealer's name against so a same-ish-named unrelated dealer
+ * isn't picked silently.
+ *
+ * `foetex`'s exact Tjek dealer name/spelling is unverified — this project's
+ * dev sandbox gets 403'd by Tjek's bot protection (see the class comment
+ * below), so it couldn't be confirmed against a live response. Check it
+ * against a real `/dealers?query=...` response before relying on it.
+ */
+export const STORE_DEALER_QUERIES: Record<StoreId, { query: string; nameMatch: string }> = {
+  rema1000: { query: "REMA 1000", nameMatch: "rema" },
+  netto: { query: "Netto", nameMatch: "netto" },
+  foetex: { query: "Føtex", nameMatch: "føtex" },
+  meny: { query: "Meny", nameMatch: "meny" },
+};
 
 /**
  * Automatic OfferSource backed by etilbudsavis.dk's public "Tjek" platform
- * API — a third-party tilbudsavis aggregator (not REMA 1000's own webshop),
- * but one that publishes REMA 1000's weekly offers as structured data
- * (name, price, validity period) rather than raw flyer images. This is the
- * "future scraper-based source" the `OfferSource` interface was designed to
- * accommodate — see `app/adapters/offerSource/OfferSource.ts`.
+ * API — a third-party tilbudsavis aggregator (not any one chain's own
+ * webshop), but one that publishes several Danish chains' weekly offers as
+ * structured data (name, price, validity period) rather than raw flyer
+ * images. This is the "future scraper-based source" the `OfferSource`
+ * interface was designed to accommodate — see `app/adapters/offerSource/OfferSource.ts`.
+ * One instance fetches one store's offers, parameterized by `storeId`.
  *
- * Flow: resolve REMA 1000's dealer id, find its current catalog (weekly
- * flyer), then list that catalog's offers. `/v2/offers/search` looks like
+ * Flow: resolve the store's dealer id, find its most recent catalogs (weekly
+ * flyers), then list each catalog's offers. `/v2/offers/search` looks like
  * the obvious endpoint but requires a non-empty `query` (returns
  * `MISSING_QUERY` otherwise) — there's no per-dealer "list everything"
- * search, so we go through the catalog instead.
+ * search, so we go through catalogs instead.
  *
- * Endpoint shapes and field mappings below (dealer id "11deC", catalog id
- * shape, `quantity.unit` as a sibling of `quantity.size`, no `unitPrice`
- * field — computed from `size.to × unit.si.factor`) were verified against
- * live API responses fetched from outside this project's dev sandbox
+ * Most chains publish next week's catalog a few days before this week's ends
+ * — from around Wednesday/Thursday, `-publication_date` order puts *next*
+ * week's flyer first even though this week's is still running. Fetching just
+ * the newest catalog would then return only future-dated offers, so this
+ * takes the two most recent catalogs and merges their offers; each offer
+ * carries its own `validFrom`/`validUntil`, so downstream code (`offerRepository`)
+ * can still tell this week's offers apart from next week's.
+ *
+ * Endpoint shapes and field mappings below (REMA 1000's dealer id "11deC",
+ * catalog id shape, `quantity.unit` as a sibling of `quantity.size`, no
+ * `unitPrice` field — computed from `size.to × unit.si.factor`) were verified
+ * against live API responses fetched from outside this project's dev sandbox
  * (whose outbound requests get 403'd by bot protection on api.etilbudsavis.dk).
+ * The same shapes are assumed to hold for the other configured stores since
+ * they're all on the same Tjek platform, but that assumption — and in
+ * particular whether any field distinguishes a member-only ("plus") offer —
+ * hasn't been re-verified live for Netto/Føtex/Meny; see the `memberOnly`
+ * note in `toOfferInput` below.
  */
 export class EtilbudsavisOfferSource implements OfferSource {
   private static readonly API_BASE = "https://api.etilbudsavis.dk/v2";
-  private static readonly DEALER_QUERY = "REMA 1000";
   private static readonly PAGE_SIZE = 100;
+  /** This week's catalog plus next week's, once the latter is published. */
+  private static readonly CATALOG_COUNT = 2;
 
-  constructor(private readonly fetchImpl: typeof fetch = fetch) {}
+  constructor(
+    private readonly storeId: StoreId,
+    private readonly fetchImpl: typeof fetch = fetch,
+  ) {}
 
   async fetchCurrentOffers(): Promise<Offer[]> {
     const dealerId = await this.resolveDealerId();
-    const catalog = await this.resolveCurrentCatalog(dealerId);
-    const raw = await this.fetchOffersForCatalog(catalog.id);
-    const departmentSlug = catalog.categoryIds[0] ?? "unspecified";
+    const catalogs = await this.resolveCatalogs(dealerId);
 
-    const mapped = raw
-      .map((offer) => this.toOfferInput(offer, departmentSlug))
+    const perCatalog = await Promise.all(
+      catalogs.map(async (catalog) => {
+        const raw = await this.fetchOffersForCatalog(catalog.id);
+        const departmentSlug = catalog.categoryIds[0] ?? "unspecified";
+        return raw.map((offer) => this.toOfferInput(offer, departmentSlug));
+      }),
+    );
+
+    const mapped = perCatalog
+      .flat()
       .filter((o): o is NonNullable<typeof o> => o !== null);
 
     // Re-validate against the same reference schema manual entry uses, so a
@@ -45,44 +88,45 @@ export class EtilbudsavisOfferSource implements OfferSource {
     const parsed = offerListSchema.safeParse(mapped);
     if (!parsed.success) {
       throw new Error(
-        `EtilbudsavisOfferSource: fetched offers failed schema validation: ${parsed.error.message}`,
+        `EtilbudsavisOfferSource(${this.storeId}): fetched offers failed schema validation: ${parsed.error.message}`,
       );
     }
     return parsed.data;
   }
 
   private async resolveDealerId(): Promise<string> {
-    const url = `${EtilbudsavisOfferSource.API_BASE}/dealers?query=${encodeURIComponent(
-      EtilbudsavisOfferSource.DEALER_QUERY,
-    )}`;
+    const { query, nameMatch } = STORE_DEALER_QUERIES[this.storeId];
+    const url = `${EtilbudsavisOfferSource.API_BASE}/dealers?query=${encodeURIComponent(query)}`;
     const res = await this.fetchImpl(url);
     if (!res.ok) {
-      throw new Error(`EtilbudsavisOfferSource: dealer lookup failed (${res.status})`);
+      throw new Error(`EtilbudsavisOfferSource(${this.storeId}): dealer lookup failed (${res.status})`);
     }
     const dealers = (await res.json()) as Array<{ id: string; name: string }>;
-    const rema = dealers.find((d) => d.name?.toLowerCase().includes("rema"));
-    if (!rema) {
-      throw new Error("EtilbudsavisOfferSource: could not resolve a REMA 1000 dealer id");
+    const match = dealers.find((d) => d.name?.toLowerCase().includes(nameMatch));
+    if (!match) {
+      throw new Error(
+        `EtilbudsavisOfferSource(${this.storeId}): could not resolve a ${STORE_NAMES[this.storeId]} dealer id`,
+      );
     }
-    return rema.id;
+    return match.id;
   }
 
-  private async resolveCurrentCatalog(
+  private async resolveCatalogs(
     dealerId: string,
-  ): Promise<{ id: string; categoryIds: string[] }> {
+  ): Promise<{ id: string; categoryIds: string[] }[]> {
     const url =
       `${EtilbudsavisOfferSource.API_BASE}/catalogs` +
-      `?dealer_ids=${encodeURIComponent(dealerId)}&order_by=-publication_date&offset=0&limit=1`;
+      `?dealer_ids=${encodeURIComponent(dealerId)}&order_by=-publication_date&offset=0` +
+      `&limit=${EtilbudsavisOfferSource.CATALOG_COUNT}`;
     const res = await this.fetchImpl(url);
     if (!res.ok) {
-      throw new Error(`EtilbudsavisOfferSource: catalog lookup failed (${res.status})`);
+      throw new Error(`EtilbudsavisOfferSource(${this.storeId}): catalog lookup failed (${res.status})`);
     }
     const catalogs = (await res.json()) as Array<{ id: string; category_ids?: string[] }>;
-    const current = catalogs[0];
-    if (!current) {
-      throw new Error("EtilbudsavisOfferSource: REMA 1000 has no current catalog");
+    if (catalogs.length === 0) {
+      throw new Error(`EtilbudsavisOfferSource(${this.storeId}): ${STORE_NAMES[this.storeId]} has no current catalog`);
     }
-    return { id: current.id, categoryIds: current.category_ids ?? [] };
+    return catalogs.map((catalog) => ({ id: catalog.id, categoryIds: catalog.category_ids ?? [] }));
   }
 
   private async fetchOffersForCatalog(catalogId: string): Promise<TjekOffer[]> {
@@ -97,7 +141,7 @@ export class EtilbudsavisOfferSource implements OfferSource {
         `?catalog_ids=${encodeURIComponent(catalogId)}&offset=${offset}&limit=${EtilbudsavisOfferSource.PAGE_SIZE}`;
       const res = await this.fetchImpl(url);
       if (!res.ok) {
-        throw new Error(`EtilbudsavisOfferSource: offer list failed (${res.status})`);
+        throw new Error(`EtilbudsavisOfferSource(${this.storeId}): offer list failed (${res.status})`);
       }
       const batch = (await res.json()) as TjekOffer[];
       offers.push(...batch);
@@ -122,6 +166,16 @@ export class EtilbudsavisOfferSource implements OfferSource {
     const unitPrice = sizeInBaseUnit > 0 ? price / sizeInBaseUnit : price;
 
     return {
+      storeId: this.storeId,
+      // TODO(member-only-detection): nothing in the sampled Tjek offer shape
+      // (heading/run_from/run_till/pricing/quantity) distinguishes a
+      // member-only ("plus") offer from a regular one, and this couldn't be
+      // re-verified against live Netto+/Føtex+ catalog data from this
+      // sandbox (Tjek 403s bot-like requests here). Until someone inspects a
+      // real member-tier catalog response for a distinguishing field,
+      // auto-fetch always reports `false` — member-only offers can only be
+      // entered via the manual JSON-paste form for now.
+      memberOnly: false,
       name: raw.heading,
       unitSizeFrom,
       unitSizeTo,
@@ -164,6 +218,8 @@ interface TjekOffer {
 }
 
 interface OfferInputCandidate {
+  storeId: StoreId;
+  memberOnly: boolean;
   name: string;
   unitSizeFrom: number;
   unitSizeTo: number;

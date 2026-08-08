@@ -1,6 +1,13 @@
 import { useMemo } from "react";
-import type { ShoppingList, ShoppingListItem } from "~/domain/planning/shoppingList";
+import type {
+  ShoppingList,
+  ShoppingListItem,
+  ShoppingListItemPrice,
+  ShoppingListSection,
+  ShoppingListStoreTotal,
+} from "~/domain/planning/shoppingList";
 import { shoppingListProgress } from "~/domain/planning/shoppingListMarks";
+import { STORE_NAMES } from "~/domain/stores";
 import type { ShoppingListMarks } from "~/ui/hooks/useShoppingListMarks";
 import { Card } from "~/ui/components/ui/Card";
 import { Button } from "~/ui/components/ui/Button";
@@ -33,6 +40,10 @@ function weekdayOf(isoDate: string): string {
   return new Date(`${isoDate}T00:00:00`).toLocaleDateString("da-DK", { weekday: "short" });
 }
 
+function storeLabel(storeId: ShoppingListSection["storeId"]): string {
+  return storeId === null ? t("shoppingList.otherStore") : STORE_NAMES[storeId];
+}
+
 /**
  * The list itself: departments, lines, marks and the running count.
  *
@@ -50,7 +61,8 @@ export function ShoppingListView({
   marks: ShoppingListMarks;
 }) {
   const labels = useMemo(
-    () => list.sections.flatMap((section) => section.items).map((item) => item.label),
+    () =>
+      list.sections.flatMap((section) => section.departments.flatMap((d) => d.items)).map((item) => item.label),
     [list],
   );
   const progress = shoppingListProgress(labels, marks.marks);
@@ -58,8 +70,13 @@ export function ShoppingListView({
   return (
     <>
       <div className="mb-4 flex flex-col gap-1">
-        <div className="flex items-center justify-between gap-3">
-          <p className="m-0 text-sm text-muted">
+        {/* `min-w-0` on the summary text and `flex-wrap` on the row: the
+            summary and the "clear marks" button are both flex items with no
+            wrap otherwise, and a long summary string (or a translation
+            that's longer than the Danish original) could push the button
+            off the edge of a narrow phone instead of wrapping under it. */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="m-0 min-w-0 text-sm text-muted">
             {t("shoppingList.summary", {
               remaining: progress.remaining,
               total: list.itemCount,
@@ -80,24 +97,75 @@ export function ShoppingListView({
           </p>
         )}
 
+        {list.storeTotals.length > 0 && <StoreTotals totals={list.storeTotals} />}
+
         <SyncStatus marks={marks} />
       </div>
 
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-5">
         {list.sections.map((section) => (
-          <Card key={section.departmentSlug ?? "other"} as="section">
-            <h2 className="text-[11px] font-semibold tracking-[0.08em] text-muted uppercase">
-              {departmentLabel(section.departmentSlug)}
+          <div key={section.storeId ?? "other"}>
+            <h2 className="mb-2 text-sm font-bold tracking-[0.02em] text-text uppercase">
+              {storeLabel(section.storeId)}
             </h2>
-            <ul className="m-0 flex list-none flex-col p-0">
-              {section.items.map((item) => (
-                <ShoppingListRow key={item.label} item={item} marks={marks} />
+            <div className="flex flex-col gap-4">
+              {section.departments.map((department) => (
+                <Card key={department.departmentSlug ?? "other"} as="section">
+                  <h3 className="text-[11px] font-semibold tracking-[0.08em] text-muted uppercase">
+                    {departmentLabel(department.departmentSlug)}
+                  </h3>
+                  <ul className="m-0 flex list-none flex-col p-0">
+                    {department.items.map((item) => (
+                      <ShoppingListRow key={item.label} item={item} marks={marks} />
+                    ))}
+                  </ul>
+                </Card>
               ))}
-            </ul>
-          </Card>
+            </div>
+          </div>
         ))}
       </div>
     </>
+  );
+}
+
+/**
+ * Per-store subtotal of the priced (on-offer) items only — explicitly not a
+ * basket total, since most items on the list have no matched offer at all.
+ * Each store gets its own line rather than one combined figure, since the
+ * same item can price differently (or not at all) at each.
+ */
+function StoreTotals({ totals }: { totals: ShoppingListStoreTotal[] }) {
+  return (
+    <ul className="m-0 flex list-none flex-col gap-0.5 p-0 text-xs text-muted">
+      {totals.map((storeTotal) => (
+        <li key={storeTotal.storeId}>
+          {t("shoppingList.storeTotal", {
+            store: STORE_NAMES[storeTotal.storeId],
+            total: `${storeTotal.total} ${storeTotal.currencyCode}`,
+            count: storeTotal.itemCount,
+          })}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/**
+ * The matched offer's price, next to the "on offer" tag — the cheapest of
+ * the item's per-store prices, since that's the store-agnostic figure most
+ * useful at a glance. When more than one store has it, that's flagged
+ * rather than silently picking one store's price and implying it's the only
+ * option (the per-store breakdown lives in `StoreTotals`).
+ */
+function PriceBadge({ prices }: { prices: ShoppingListItemPrice[] }) {
+  const cheapest = prices.reduce((min, p) => (p.price < min.price ? p : min), prices[0]!);
+  return (
+    <span className="ml-1 text-xs text-muted">
+      {prices.length > 1
+        ? t("shoppingList.priceFrom", { price: `${cheapest.price} ${cheapest.currencyCode}` })
+        : `${cheapest.price} ${cheapest.currencyCode}`}
+    </span>
   );
 }
 
@@ -121,7 +189,10 @@ function ShoppingListRow({ item, marks }: { item: ShoppingListItem; marks: Shopp
 
   return (
     <li className="flex items-start gap-2 border-b border-divider last:border-0">
-      <label className="flex min-h-11 flex-1 cursor-pointer items-start gap-3 py-2">
+      {/* `min-w-0` all the way down: an ingredient line can be one long
+          unbreakable word, and without it the row's min-content width is that
+          word's, which pushes the whole page sideways. */}
+      <label className="flex min-h-11 min-w-0 flex-1 cursor-pointer items-start gap-3 py-2">
         <input
           type="checkbox"
           checked={inTrolley}
@@ -145,6 +216,7 @@ function ShoppingListRow({ item, marks }: { item: ShoppingListItem; marks: Shopp
               <>
                 {" "}
                 <Tag variant="accent">{t("recipeDetail.onOfferBadge")}</Tag>
+                {item.prices.length > 0 && <PriceBadge prices={item.prices} />}
               </>
             )}
           </span>

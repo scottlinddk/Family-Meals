@@ -3,9 +3,11 @@ import { useWeekPlan } from "~/ui/hooks/useWeekPlan";
 import { useSwapDayRecipe } from "~/ui/hooks/useRegenerateDay";
 import { DayCard } from "~/ui/components/DayCard";
 import { useExternalRecipes } from "~/ui/hooks/useExternalRecipes";
+import { RecipeSearchPicker } from "~/ui/components/RecipeSearchPicker";
+import { DayTimeBudgetControl } from "~/ui/components/DayTimeBudgetControl";
 import { Card } from "~/ui/components/ui/Card";
 import { BackLink } from "~/ui/components/ui/BackLink";
-import { FieldLabel, Select } from "~/ui/components/ui/Input";
+import { FieldLabel } from "~/ui/components/ui/Input";
 import { t } from "~/i18n/t";
 
 export default function DayPage({ params }: Route.ComponentProps) {
@@ -28,24 +30,20 @@ export default function DayPage({ params }: Route.ComponentProps) {
           <DayCard day={day} weekStart={weekStart} dayIndex={dayIndex} expanded />
 
           <Card className="mt-4">
+            <DayTimeBudgetControl weekStart={weekStart} dayIndex={dayIndex} maxTimeMinutes={day.maxTimeMinutes} />
+          </Card>
+
+          <Card className="mt-4">
             <div>
               <FieldLabel htmlFor="swap-recipe">{t("day.swapLabel")}</FieldLabel>
-              <Select
+              <RecipeSearchPicker
                 id="swap-recipe"
-                defaultValue=""
-                onChange={(e) => {
-                  if (e.target.value) swap.mutate({ dayIndex, recipeId: e.target.value });
-                }}
-              >
-                <option value="" disabled>
-                  {t("day.choosePlaceholder")}
-                </option>
-                {recipes.data?.map((recipe) => (
-                  <option key={recipe.id} value={recipe.id}>
-                    {recipe.title}
-                  </option>
-                ))}
-              </Select>
+                recipes={recipes.data ?? []}
+                placeholder={t("day.choosePlaceholder")}
+                disabled={recipes.isLoading}
+                maxTimeMinutes={day.maxTimeMinutes}
+                onSelect={(recipe) => swap.mutate({ dayIndex, recipeId: recipe.id })}
+              />
             </div>
           </Card>
         </div>

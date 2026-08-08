@@ -27,6 +27,12 @@ export const familyRepository = {
     return row ? familyToDomain(row) : undefined;
   },
 
+  /** Every family, for the scheduled offer refresh — there's no per-family session to key off. */
+  async listAll(): Promise<Family[]> {
+    const rows = await db.select().from(families);
+    return rows.map(familyToDomain);
+  },
+
   async getByOwnerUserId(ownerUserId: string): Promise<Family | undefined> {
     const [row] = await db.select().from(families).where(eq(families.ownerUserId, ownerUserId));
     return row ? familyToDomain(row) : undefined;

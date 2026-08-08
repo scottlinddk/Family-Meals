@@ -7,8 +7,9 @@ import { ShareButton } from "~/ui/components/ShareButton";
 import { InfantNote } from "~/ui/components/InfantNote";
 import { Button, IconLink, LinkButton } from "~/ui/components/ui/Button";
 import { CardKicker } from "~/ui/components/ui/Card";
+import { Tag } from "~/ui/components/ui/Tag";
 import { ChevronLeftIcon, ChevronRightIcon } from "~/ui/components/Icon";
-import { addDays } from "~/lib/time";
+import { addDays, mondayOf, todayIso } from "~/lib/time";
 import { t } from "~/i18n/t";
 
 export default function WeekPage({ params }: Route.ComponentProps) {
@@ -19,15 +20,26 @@ export default function WeekPage({ params }: Route.ComponentProps) {
   const prevWeek = addDays(weekStart, -7);
   const nextWeek = addDays(weekStart, 7);
 
+  // Tells whether the week being viewed is the current or the next one, so
+  // flicking back and forth with the arrows doesn't lose track of "now".
+  const currentWeekStart = mondayOf(todayIso());
+  const isCurrentWeek = weekStart === currentWeekStart;
+  const isNextWeek = weekStart === addDays(currentWeekStart, 7);
+
   return (
     <>
-      <div className="mb-5 flex items-center justify-center gap-3">
+      <div className="mb-5 flex items-center justify-between gap-3">
         <IconLink to={`/weeks/${prevWeek}`} aria-label={t("week.prev")}>
           <ChevronLeftIcon size={18} />
         </IconLink>
         <div className="min-w-44 text-center">
           <CardKicker>{t("week.kicker")}</CardKicker>
           <h1 className="mt-1 text-xl">{t("week.heading", { date: weekStart })}</h1>
+          {(isCurrentWeek || isNextWeek) && (
+            <div className="mt-1.5">
+              <Tag variant="accent">{t(isCurrentWeek ? "week.thisWeek" : "week.nextWeek")}</Tag>
+            </div>
+          )}
         </div>
         <IconLink to={`/weeks/${nextWeek}`} aria-label={t("week.next")}>
           <ChevronRightIcon size={18} />

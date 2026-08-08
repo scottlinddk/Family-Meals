@@ -49,6 +49,10 @@ export default [
   route("api/weeks/:weekStart/swap-day", "routes/api.weeks.$weekStart.swap-day.tsx"),
   route("api/weeks/:weekStart/shopping-list", "routes/api.weeks.$weekStart.shopping-list.tsx"),
   route("api/weeks/:weekStart/shopping-list/marks", "routes/api.weeks.$weekStart.shopping-list.marks.tsx"),
+  route(
+    "api/weeks/:weekStart/shopping-list/extra-items",
+    "routes/api.weeks.$weekStart.shopping-list.extra-items.tsx",
+  ),
   route("api/weeks/:weekStart/shopping-list/share", "routes/api.weeks.$weekStart.shopping-list.share.tsx"),
   // Token-authenticated twins of the two routes above, for the share link.
   route("api/shopping-list/:token", "routes/api.shopping-list.$token.tsx"),
@@ -58,9 +62,12 @@ export default [
   route("api/shared/:token", "routes/api.shared.$token.tsx"),
   route("api/offers", "routes/api.offers.tsx"),
   route("api/offers/refresh", "routes/api.offers.refresh.tsx"),
+  route("api/cron/offers-refresh", "routes/api.cron.offers-refresh.tsx"),
   route("api/recipes", "routes/api.recipes.tsx"),
   route("api/recipes/refresh", "routes/api.recipes.refresh.tsx"),
+  route("api/recipes/import", "routes/api.recipes.import.tsx"),
   route("api/recipes/suggestions", "routes/api.recipes.suggestions.tsx"),
+  route("api/recipes/ingredient-offer-overrides", "routes/api.recipes.ingredient-offer-overrides.tsx"),
   route("api/recipes/diagnose", "routes/api.recipes.diagnose.tsx"),
   route("api/recipes/:id", "routes/api.recipes.$id.tsx"),
   // Reads the nutrition cache's coverage (GET) and fills it from FatSecret (POST).
@@ -73,6 +80,7 @@ export default [
   route("api/family/invites", "routes/api.family.invites.tsx"),
   route("api/family/invites/:id/revoke", "routes/api.family.invites.$id.revoke.tsx"),
   route("api/family/invites/:token/accept", "routes/api.family.invites.$token.accept.tsx"),
+  route("api/family/store-settings", "routes/api.family.store-settings.tsx"),
   route("api/calendar-token/rotate", "routes/api.calendar-token.rotate.tsx"),
 
   route("auth/signup", "routes/auth.signup.tsx"),

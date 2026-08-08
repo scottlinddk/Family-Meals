@@ -50,6 +50,7 @@ describe("parseRecipeDetail", () => {
     expect(recipe).toEqual({
       id: "kylling-i-karry",
       title: "Kylling i karry",
+      source: "rema1000",
       url: "https://madogdrikke.rema1000.dk/opskrifter/kylling-i-karry",
       imageUrl: "https://cdn.example/kylling.jpg",
       description: undefined,
@@ -57,6 +58,8 @@ describe("parseRecipeDetail", () => {
       instructions: [],
       servings: undefined,
       totalTimeMinutes: undefined,
+      prepTimeMinutes: undefined,
+      cookTimeMinutes: undefined,
     });
   });
 
@@ -133,6 +136,7 @@ describe("parseRecipeDetail via schema.org JSON-LD", () => {
     expect(recipe).toEqual({
       id: "kylling-i-karry",
       title: "Kylling i karry",
+      source: "rema1000",
       url: "https://madogdrikke.rema1000.dk/opskrifter/kylling-i-karry",
       imageUrl: "https://cdn.example/kylling.jpg",
       description: "En hurtig karryret.",
@@ -179,6 +183,8 @@ describe("parseRecipeDetail via schema.org JSON-LD", () => {
     const recipe = parseRecipeDetail(html, "https://x/opskrifter/gryderet");
     expect(recipe?.instructions).toEqual(["Snit løgene.", "Lad simre en time."]);
     expect(recipe?.totalTimeMinutes).toBe(75);
+    expect(recipe?.prepTimeMinutes).toBe(15);
+    expect(recipe?.cookTimeMinutes).toBe(60);
   });
 
   it("falls back to the DOM when JSON-LD is malformed", () => {
@@ -328,7 +334,7 @@ describe("parseRecipeDetail against component-style markup", () => {
 
 describe("summarizeExtraction", () => {
   it("counts how many recipes actually yielded ingredients and instructions", () => {
-    const base = { url: "https://x", title: "t" };
+    const base = { url: "https://x", title: "t", source: "rema1000" };
     const summary = summarizeExtraction([
       { ...base, id: "a", ingredients: ["x"], instructions: ["y"] },
       { ...base, id: "b", ingredients: ["x"], instructions: [] },

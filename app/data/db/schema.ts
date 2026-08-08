@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   boolean,
   date,
@@ -94,14 +95,18 @@ export const familyInvites = pgTable("family_invites", {
 export const offerSnapshotSource = pgEnum("offer_snapshot_source", ["manual", "etilbudsavis"]);
 
 /**
- * One offer import, owned by the family that made it.
+ * One offer import for one store, owned by the family that made it.
  *
- * Offers are family-scoped rather than global: which REMA offers apply
- * depends on the family's store and when they imported, and a shared table
- * meant one family's import replaced everyone else's. Snapshots are also
- * kept rather than overwritten, so `week_plans.offer_snapshot_id` points at
- * the exact offer set a plan was generated from and stays resolvable after
- * the next import.
+ * Offers are family-scoped rather than global: which offers apply depends on
+ * the family's stores and when they imported, and a shared table meant one
+ * family's import replaced everyone else's. Scoped to a single `storeId`
+ * rather than holding a mixed multi-store batch: `offerRepository.replaceCurrentOffers`
+ * replaces "the latest snapshot for this family+store" wholesale, and keeping
+ * one store per snapshot means refreshing (or failing to refresh) Netto can
+ * never disturb Rema's still-current data. Snapshots are also kept rather
+ * than overwritten, so `week_plans.offer_snapshot_id` points at the exact
+ * offer set a plan was generated from and stays resolvable after the next
+ * import.
  */
 export const offerSnapshots = pgTable(
   "offer_snapshots",
@@ -110,6 +115,8 @@ export const offerSnapshots = pgTable(
     familyId: uuid("family_id")
       .notNull()
       .references(() => families.id, { onDelete: "cascade" }),
+    /** Defaults to "rema1000" so pre-existing snapshots stay valid once this column lands. */
+    storeId: text("store_id").notNull().default("rema1000"),
     source: offerSnapshotSource("source").notNull(),
     offerCount: integer("offer_count").notNull(),
     /** Earliest `validFrom` / latest `validUntil` across the snapshot's offers. */
@@ -117,7 +124,15 @@ export const offerSnapshots = pgTable(
     validUntil: timestamp("valid_until", { withTimezone: true }),
     importedAt: timestamp("imported_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [index("offer_snapshots_family_id_imported_at_idx").on(table.familyId, table.importedAt)],
+  (table) => [
+    index("offer_snapshots_family_id_imported_at_idx").on(table.familyId, table.importedAt),
+    // "Latest snapshot" now resolves per (family, store).
+    index("offer_snapshots_family_id_store_id_imported_at_idx").on(
+      table.familyId,
+      table.storeId,
+      table.importedAt,
+    ),
+  ],
 );
 
 /** Weekly offers belonging to one import (see `offerSnapshots`). */
@@ -128,6 +143,10 @@ export const offers = pgTable(
     snapshotId: uuid("snapshot_id")
       .notNull()
       .references(() => offerSnapshots.id, { onDelete: "cascade" }),
+    /** Defaults to "rema1000" so pre-existing rows stay valid once this column lands. */
+    storeId: text("store_id").notNull().default("rema1000"),
+    /** True for a chain's member-only tier (Netto+, Føtex+) rather than a regular offer. */
+    memberOnly: boolean("member_only").notNull().default(false),
     name: text("name").notNull(),
     unitSizeFrom: doublePrecision("unit_size_from").notNull(),
     unitSizeTo: doublePrecision("unit_size_to").notNull(),
@@ -141,8 +160,31 @@ export const offers = pgTable(
     validUntil: timestamp("valid_until", { withTimezone: true }).notNull(),
     importedAt: timestamp("imported_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [index("offers_snapshot_id_idx").on(table.snapshotId)],
+  (table) => [
+    index("offers_snapshot_id_idx").on(table.snapshotId),
+    index("offers_snapshot_id_store_id_idx").on(table.snapshotId, table.storeId),
+  ],
 );
+
+/**
+ * A family's store preferences: which supermarkets they shop at, and which
+ * of those they hold a paid member tier for (Netto+, Føtex+). Kept as its
+ * own small table, keyed by family rather than by user — like `userPreferences`,
+ * a missing row is the normal state for a family that hasn't changed anything
+ * and reads back as the defaults (all four stores, no memberships).
+ */
+export const familyStoreSettings = pgTable("family_store_settings", {
+  familyId: uuid("family_id")
+    .primaryKey()
+    .references(() => families.id, { onDelete: "cascade" }),
+  /** Store ids this family shops at. */
+  selectedStores: jsonb("selected_stores")
+    .notNull()
+    .default(sql`'["rema1000","netto","foetex","meny"]'::jsonb`),
+  /** Store ids whose member-only tier this family holds. */
+  memberStores: jsonb("member_stores").notNull().default(sql`'[]'::jsonb`),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
 
 /**
  * REMA 1000's own published recipes (madogdrikke.rema1000.dk/opskrifter),
@@ -154,6 +196,8 @@ export const offers = pgTable(
 export const externalRecipes = pgTable("external_recipes", {
   id: text("id").primaryKey(),
   title: text("title").notNull(),
+  /** `"rema1000"` for `RemaRecipeSource`, or a URL import's hostname. Scopes `replaceForSource`. */
+  source: text("source").notNull(),
   url: text("url").notNull(),
   imageUrl: text("image_url"),
   description: text("description"),
@@ -161,6 +205,10 @@ export const externalRecipes = pgTable("external_recipes", {
   instructions: jsonb("instructions").notNull().default([]),
   servings: integer("servings"),
   totalTimeMinutes: integer("total_time_minutes"),
+  /** Active prep time, separate from cooking, when the source states it that way. */
+  prepTimeMinutes: integer("prep_time_minutes"),
+  /** Cooking/baking time, separate from prep, when the source states it that way. */
+  cookTimeMinutes: integer("cook_time_minutes"),
   /** Meal-theme slugs from the source site, e.g. `["aftensmad", "frokost"]`. */
   tags: jsonb("tags").notNull().default([]),
   fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull().defaultNow(),
@@ -264,6 +312,91 @@ export const shoppingListMarks = pgTable(
       table.itemLabel,
     ),
     index("shopping_list_marks_family_id_week_start_date_idx").on(
+      table.familyId,
+      table.weekStartDate,
+    ),
+  ],
+);
+
+/**
+ * One row per ingredient↔offer pairing a family has flagged as wrong.
+ *
+ * `ingredientOfferScore.ts` matches ingredient lines to offer names with
+ * Danish-compound heuristics, and it will never be perfect — "chili" (the
+ * fresh pepper) and "Go-Tan chili saucer" (a sauce) share a word but aren't
+ * the same product, and no tokenizer rule can know that. Rather than block on
+ * getting every edge case right in code, a family can flag a specific match
+ * as wrong and it's excluded from then on.
+ *
+ * Keyed by free-text `(familyId, ingredientLabel, offerName)`, the same
+ * identity choice as `shoppingListMarks.itemLabel`: neither ingredients nor
+ * offers have a stable id anywhere in the domain, so the label is the only
+ * available key. A row's mere existence is the flag — there is no "force this
+ * match" counterpart, since the report this solves is about false positives.
+ */
+export const ingredientOfferOverrides = pgTable(
+  "ingredient_offer_overrides",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    familyId: uuid("family_id")
+      .notNull()
+      .references(() => families.id, { onDelete: "cascade" }),
+    ingredientLabel: text("ingredient_label").notNull(),
+    offerName: text("offer_name").notNull(),
+    /** Null when the flag came from a share link rather than a signed-in member. */
+    createdByUserId: uuid("created_by_user_id"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    unique("ingredient_offer_overrides_family_ingredient_offer_unique").on(
+      table.familyId,
+      table.ingredientLabel,
+      table.offerName,
+    ),
+    index("ingredient_offer_overrides_family_id_idx").on(table.familyId),
+  ],
+);
+
+/**
+ * One row per ingredient a family added to the shopping list by hand, rather
+ * than it being on the list because a recipe on the week's plan calls for it.
+ *
+ * The recipe suggestions panel shows meals that aren't necessarily part of
+ * this week's plan, so "buy this" for one of their ingredients has nowhere
+ * generated to land — `buildShoppingList` only ever walks `week.days`. This
+ * table is that missing source: `shoppingListForWeek` merges its rows in
+ * alongside the plan's ingredient lines, through the same per-product
+ * merging `buildShoppingList` already does, so an item added here that a
+ * recipe also calls for becomes one line, not two.
+ *
+ * Keyed and scoped exactly like `shoppingListMarks` — by family and week, on
+ * the free-text label, since neither ingredients nor shopping list items have
+ * a stable id anywhere in this app — for the same reason: a regenerated week
+ * leaves rows whose label no longer matters, and that's fine, they simply
+ * stop contributing a line rather than needing to be cleaned up.
+ */
+export const shoppingListExtraItems = pgTable(
+  "shopping_list_extra_items",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    familyId: uuid("family_id")
+      .notNull()
+      .references(() => families.id, { onDelete: "cascade" }),
+    weekStartDate: date("week_start_date").notNull(),
+    itemLabel: text("item_label").notNull(),
+    /** Null when the item came from a share link rather than a signed-in member. */
+    addedByUserId: uuid("added_by_user_id"),
+    addedAt: timestamp("added_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    // Adding is an idempotent upsert on this key: tapping "add to list" twice
+    // for the same ingredient must not produce two rows.
+    unique("shopping_list_extra_items_family_week_label_unique").on(
+      table.familyId,
+      table.weekStartDate,
+      table.itemLabel,
+    ),
+    index("shopping_list_extra_items_family_id_week_start_date_idx").on(
       table.familyId,
       table.weekStartDate,
     ),
@@ -406,6 +539,8 @@ export const dayPlans = pgTable(
     editedAt: timestamp("edited_at", { withTimezone: true }).notNull().defaultNow(),
     /** Bumped on every write; drives ICS SEQUENCE for this day's VEVENT. */
     sequence: integer("sequence").notNull().default(0),
+    /** Family-set cap on prep+cook minutes for this day; regenerating it only offers recipes that fit. */
+    maxTimeMinutes: integer("max_time_minutes"),
   },
   (table) => [index("day_plans_week_plan_id_idx").on(table.weekPlanId)],
 );

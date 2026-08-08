@@ -1,9 +1,9 @@
-import type { Offer } from "~/domain/types";
+import type { Offer, StoreId } from "~/domain/types";
 import type { OfferSource } from "~/adapters/offerSource/OfferSource";
 
 /** Minimal shape this adapter needs from the persistence layer. */
 export interface OfferReader {
-  listCurrentOffers(familyId: string): Promise<Offer[]>;
+  listCurrentOffers(familyId: string, storeIds: StoreId[]): Promise<Offer[]>;
 }
 
 /**
@@ -16,9 +16,10 @@ export class ManualOfferSource implements OfferSource {
   constructor(
     private readonly reader: OfferReader,
     private readonly familyId: string,
+    private readonly storeIds: StoreId[],
   ) {}
 
   async fetchCurrentOffers(): Promise<Offer[]> {
-    return this.reader.listCurrentOffers(this.familyId);
+    return this.reader.listCurrentOffers(this.familyId, this.storeIds);
   }
 }

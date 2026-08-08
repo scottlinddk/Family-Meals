@@ -88,6 +88,7 @@ function toRecipe(node: Record<string, unknown>): RemaListingRecipe | undefined 
   return {
     id: slug,
     title,
+    source: "rema1000",
     url: `${BASE_URL}/opskrifter/${slug}`,
     imageUrl: imageUrl(f.image),
     description: undefined,

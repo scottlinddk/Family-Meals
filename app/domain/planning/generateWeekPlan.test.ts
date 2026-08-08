@@ -6,6 +6,7 @@ function fixtureRecipes(count: number): ExternalRecipe[] {
   return Array.from({ length: count }, (_, i) => ({
     id: `recipe-${i}`,
     title: `Recipe ${i}`,
+    source: "rema1000",
     url: `https://madogdrikke.rema1000.dk/opskrifter/recipe-${i}`,
     ingredients: [`Ingredient ${i}`],
     instructions: [`Step for recipe ${i}`],
@@ -83,6 +84,7 @@ describe("generateWeekPlan", () => {
     const unscraped: ExternalRecipe[] = Array.from({ length: 8 }, (_, i) => ({
       id: `empty-${i}`,
       title: `Empty ${i}`,
+      source: "rema1000",
       url: `https://madogdrikke.rema1000.dk/opskrifter/empty-${i}`,
       ingredients: [],
       instructions: [],
@@ -96,6 +98,7 @@ describe("generateWeekPlan", () => {
     const unscraped: ExternalRecipe[] = Array.from({ length: 8 }, (_, i) => ({
       id: `empty-${i}`,
       title: `Empty ${i}`,
+      source: "rema1000",
       url: `https://madogdrikke.rema1000.dk/opskrifter/empty-${i}`,
       ingredients: [],
       instructions: [],

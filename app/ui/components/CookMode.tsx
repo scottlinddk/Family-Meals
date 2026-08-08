@@ -5,10 +5,11 @@ import { buildCookSteps, type CookStep } from "~/domain/recipes/cookSteps";
 import { COOK_VIEW_MODES, DEFAULT_USER_PREFERENCES, type CookViewMode } from "~/domain/preferences";
 import { useKeepScreenAwake, type KeepScreenAwake } from "~/ui/hooks/useKeepScreenAwake";
 import { useSetCookViewMode, useUserPreferences } from "~/ui/hooks/useUserPreferences";
-import { AdultVariantPanel, ChildVariantPanel } from "~/ui/components/VariantPanel";
+import { VariantsGrid, VariantGuidanceNote } from "~/ui/components/VariantPanel";
 import { Button } from "~/ui/components/ui/Button";
 import { Tag } from "~/ui/components/ui/Tag";
 import { ChevronDownIcon, CloseIcon } from "~/ui/components/Icon";
+import { useCalorieEstimate } from "~/ui/components/RecipeCalories";
 import { t, type TranslationKey } from "~/i18n/t";
 
 export interface CookModeProps {
@@ -69,6 +70,10 @@ export function CookMode({
     hasIngredients: ingredientLines.length > 0,
     hasVariants,
   });
+
+  // Cooking is the last moment the figure is any use, and the one place the
+  // recipe is on screen without the meta line the other views carry.
+  const calories = useCalorieEstimate(ingredientLines, servings);
 
   const preferences = useUserPreferences();
   const setViewMode = useSetCookViewMode();
@@ -179,6 +184,16 @@ export function CookMode({
           <KeepAwakeStatus screen={screen} />
         </div>
 
+        {/* Above the pane rather than inside it: in the stepping layout the
+            meta used to live in the ingredients step, so from step two
+            onwards the cook could no longer see what they were serving or
+            what it costs them. */}
+        <RecipeMeta
+          servings={servings}
+          totalTimeMinutes={totalTimeMinutes}
+          calorieKcal={calories?.perServingKcal}
+        />
+
         {stepCount === 0 && (
           <>
             <p className="text-lg text-muted">{t("cook.nothingToCook")}</p>
@@ -196,8 +211,6 @@ export function CookMode({
               tickedCount={ticked.size}
               ingredientsOpen={ingredientsOpen}
               onToggleIngredients={() => setIngredientsOpen((open) => !open)}
-              servings={servings}
-              totalTimeMinutes={totalTimeMinutes}
               sourceLink={sourceLink}
               adultVariant={adultVariant}
               childVariant={childVariant}
@@ -207,8 +220,6 @@ export function CookMode({
               steps={steps}
               ingredients={ingredients}
               ingredientCount={ingredientLines.length}
-              servings={servings}
-              totalTimeMinutes={totalTimeMinutes}
               sourceLink={sourceLink}
               adultVariant={adultVariant}
               childVariant={childVariant}
@@ -277,8 +288,6 @@ export function CookModeFallback({ exitTo, loading }: { exitTo: string; loading:
 interface PaneCommonProps {
   ingredients: ReactNode;
   ingredientCount: number;
-  servings?: number;
-  totalTimeMinutes?: number;
   sourceLink: ReactNode;
   adultVariant?: AdultVariant;
   childVariant?: ChildVariant;
@@ -293,8 +302,6 @@ function StepPane({
   tickedCount,
   ingredientsOpen,
   onToggleIngredients,
-  servings,
-  totalTimeMinutes,
   sourceLink,
   adultVariant,
   childVariant,
@@ -312,7 +319,6 @@ function StepPane({
       {step.kind === "ingredients" && (
         <>
           <h2 className="mb-1 text-2xl">{t("recipeDetail.ingredientsHeading")}</h2>
-          <RecipeMeta servings={servings} totalTimeMinutes={totalTimeMinutes} />
           {ingredients}
           <p className="mt-4 text-sm text-muted">{t("cook.noMethod")}</p>
           {sourceLink}
@@ -347,7 +353,6 @@ function StepPane({
                 />
               </button>
               <div id={INGREDIENTS_PANEL_ID} hidden={!ingredientsOpen}>
-                <RecipeMeta servings={servings} totalTimeMinutes={totalTimeMinutes} />
                 {ingredients}
               </div>
             </section>
@@ -372,8 +377,6 @@ function AllStepsPane({
   steps,
   ingredients,
   ingredientCount,
-  servings,
-  totalTimeMinutes,
   sourceLink,
   adultVariant,
   childVariant,
@@ -383,8 +386,6 @@ function AllStepsPane({
 
   return (
     <>
-      <RecipeMeta servings={servings} totalTimeMinutes={totalTimeMinutes} />
-
       {ingredientCount > 0 && (
         <section className="mb-6">
           <h2 className="mb-1 text-2xl">{t("recipeDetail.ingredientsHeading")}</h2>
@@ -433,9 +434,9 @@ function ServingSection({
     <section>
       <h2 className="mb-1 text-2xl">{t("cook.servingHeading")}</h2>
       <p className="mt-0 mb-4 text-base text-muted">{t("cook.servingIntro")}</p>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <AdultVariantPanel variant={adultVariant} />
-        <ChildVariantPanel variant={childVariant} />
+      <VariantsGrid adultVariant={adultVariant} childVariant={childVariant} />
+      <div className="mt-3">
+        <VariantGuidanceNote adultVariant={adultVariant} childVariant={childVariant} />
       </div>
     </section>
   );
@@ -491,15 +492,18 @@ function countInstructions(steps: CookStep[]): number {
 function RecipeMeta({
   servings,
   totalTimeMinutes,
+  calorieKcal,
 }: {
   servings?: number;
   totalTimeMinutes?: number;
+  calorieKcal?: number | null;
 }) {
-  if (!servings && !totalTimeMinutes) return null;
+  if (!servings && !totalTimeMinutes && !calorieKcal) return null;
   return (
-    <p className="mt-0 mb-2 flex flex-wrap gap-x-4 text-sm text-muted">
+    <p className="mt-0 mb-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted">
       {servings && <span>{t("recipeDetail.servings", { count: servings })}</span>}
       {totalTimeMinutes && <span>{t("recipeDetail.totalTime", { minutes: totalTimeMinutes })}</span>}
+      {calorieKcal && <span>{t("recipeDetail.kcalPerServing", { kcal: calorieKcal })}</span>}
     </p>
   );
 }

@@ -26,7 +26,6 @@ export const da = {
   "week.next": "Næste uge",
   "week.kicker": "Ugeplan",
   "week.heading": "Uge fra {{date}}",
-  "week.signOut": "Log ud",
   "week.loading": "Indlæser…",
   "week.empty": "Der er endnu ikke lavet en plan for denne uge.",
   "week.generating": "Genererer...",
@@ -40,6 +39,8 @@ export const da = {
   "week.noRecipes": "Der er ingen opskrifter hentet endnu, så der er intet at planlægge med.",
   "week.noRecipesAction": "Hent opskrifter",
   "week.today": "I dag",
+  "week.thisWeek": "Denne uge",
+  "week.nextWeek": "Næste uge",
 
   "shoppingList.title": "Indkøbsliste",
   "shoppingList.open": "Se indkøbsliste",
@@ -54,6 +55,8 @@ export const da = {
   "shoppingList.atHome": "Har vi",
   "shoppingList.atHomeAria": "Vi har allerede {{item}} hjemme",
   "shoppingList.atHomeSummary": "{{count}} har I allerede hjemme og skal ikke købes.",
+  "shoppingList.storeTotal": "{{store}}: {{total}} for {{count}} varer på tilbud",
+  "shoppingList.priceFrom": "fra {{price}}",
   "shoppingList.sharedWithFamily": "Markeringer deles med resten af familien.",
   "shoppingList.syncPending": "{{count}} markering(er) venter på forbindelse — de sendes automatisk.",
   "shoppingList.syncFailed": "En markering blev ikke gemt, så listen kan se anderledes ud hos de andre.",
@@ -81,15 +84,24 @@ export const da = {
   "shoppingList.dept.dryGoods": "Kolonial",
   "shoppingList.dept.drinks": "Drikkevarer",
   "shoppingList.dept.other": "Øvrige",
+  "shoppingList.otherStore": "Ingen butik fundet",
 
   "day.backToWeek": "Tilbage til ugen",
+  "day.maxTimeLabel": "Maks. tid til forberedelse & tilberedning i dag",
+  "day.maxTimeNoLimit": "Ingen grænse",
+  "day.maxTimeBadge": "Maks. {{minutes}} min",
+  "day.maxTimeSaveFailed": "Kunne ikke gemme — prøv igen.",
   "day.swapLabel": "Skift til en anden opskrift",
-  "day.choosePlaceholder": "Vælg en opskrift…",
+  "day.choosePlaceholder": "Søg efter en opskrift…",
+  "day.noRecipesFound": "Ingen opskrifter matcher.",
   "day.notFound": "Der er ingen ret planlagt til denne dag.",
 
   "dayCard.regenerating": "Genererer...",
   "dayCard.regenerateThisDay": "Genskab denne dag",
 
+  "info.close": "Luk",
+
+  "infant.calloutLabel": "Aldersvejledning",
   "infant.label": "6 måneder gammel",
   "infant.note":
     "Denne app planlægger ikke mad til jeres 6 måneder gamle barn. Følg sundhedsplejerskens " +
@@ -98,22 +110,31 @@ export const da = {
     "kvælning.",
 
   "offers.pageTitle": "Ugens tilbud",
-  "offers.formHeading": "Ugens tilbud fra REMA 1000",
+  "offers.formHeading": "Indsæt tilbud manuelt",
   "offers.formDescription":
-    "Indsæt tilbuds-JSON i referenceformatet (samme felter som REMA's egne lister bruger). Dette erstatter det aktuelt importerede tilbudssæt.",
+    "Indsæt tilbuds-JSON i referenceformatet (samme felter som butikkernes egne lister bruger) for den valgte butik. Dette erstatter den butiks aktuelt importerede tilbudssæt.",
   "offers.importing": "Importerer...",
   "offers.import": "Importér tilbud",
-  "offers.currentlyImported": "Aktuelt importeret ({{count}})",
+  "offers.thisWeek": "På tilbud denne uge ({{count}})",
+  "offers.nextWeek": "På tilbud næste uge ({{count}})",
+  "offers.nextWeekEmpty": "Næste uges tilbud er endnu ikke hentet.",
+  "offers.weekendOnly": "Kun i weekenden ({{from}}–{{to}})",
+  "offers.memberOnly": "Kun for medlemmer",
+  "offers.requiresMembership": "Kræver {{store}}+",
+  "offers.notFetchedYet": "Ingen tilbud hentet endnu for denne butik.",
+  "offers.noStoresSelected": "Du har ikke valgt nogen butikker. Vælg butikker under Bruger & familie.",
   "offers.autoFetchHeading": "Automatiske tilbud",
   "offers.autoFetchDescription":
-    "Hent REMA 1000's aktuelle tilbud automatisk fra etilbudsavis.dk (en tredjeparts tilbudsavis bygget på Tjek-platformen, ikke selve webshoppen).",
+    "Hent dine valgte butikkers aktuelle tilbud automatisk fra etilbudsavis.dk (en tredjeparts tilbudsavis bygget på Tjek-platformen, ikke butikkernes egne webshops).",
   "offers.fetching": "Henter...",
   "offers.fetchNow": "Hent tilbud nu",
   "offers.fetchError": "Kunne ikke hente tilbud automatisk.",
+  "offers.fetchPartialError": "Kunne ikke hente tilbud for: {{stores}}.",
   "offers.snapshotManual": "Indsat manuelt {{date}}.",
   "offers.snapshotAuto": "Hentet fra etilbudsavis.dk {{date}}.",
   "offers.snapshotValidity": "Gælder {{from}}–{{to}}.",
   "offers.snapshotExpired": "{{count}} af tilbuddene er udløbet og bruges ikke længere.",
+  "offers.loadFailed": "Kunne ikke indlæse tilbud.",
 
   "recipes.suggestionsHeading": "Bedste måltider ud fra ugens tilbud",
   "recipes.suggestionsDescription":
@@ -134,11 +155,14 @@ export const da = {
     "{{recipes}} af {{total}} opskrifter i temaet \"{{theme}}\" ({{pages}} sider hentet).",
   "recipes.refreshedPagesSkipped": "Sider der ikke kunne hentes: {{pages}}.",
 
-  // Bottom-nav labels: short enough to sit under an icon on the narrowest phone.
+  // Bottom-nav labels: these have to fit on one line under an icon, in a
+  // quarter of the narrowest phone. "Bruger & familie" is the longest at 77px
+  // of an 80px column at 320px — check any change to it at that width.
   "nav.plan": "Uge",
   "nav.recipes": "Opskrifter",
   "nav.offers": "Tilbud",
-  "nav.family": "Familie",
+  "nav.shoppingList": "Indkøb",
+  "nav.family": "Bruger & familie",
   "nav.primary": "Hovedmenu",
 
   "suggestions.sortLabel": "Sortering",
@@ -157,9 +181,20 @@ export const da = {
   "suggestions.kcalPerServingMeasured": "{{kcal}} kcal/portion",
   "suggestions.proteinPerServing": "{{grams}} g protein/portion",
   "suggestions.vegetarian": "Kødfri",
+  "suggestions.weekendOnly": "Kun i weekenden: {{offers}}",
   "suggestions.noneVegetarian":
     "Ingen af de hentede opskrifter er kødfri. Prøv at slå filteret fra, eller hent opskrifterne igen.",
   "suggestions.loadFailed": "Forslagene kunne ikke hentes.",
+  "suggestions.prevPage": "Forrige side",
+  "suggestions.nextPage": "Næste side",
+  "suggestions.page": "Side {{page}} af {{pages}}",
+  "suggestions.flagWrongMatch": "Forkert match — denne vare passer ikke til ingrediensen",
+  "suggestions.unflagWrongMatch": "Fjern markering som forkert match",
+  "suggestions.flagFailed": "Markeringen kunne ikke gemmes.",
+  "suggestions.onShoppingList": "På indkøbslisten",
+  "suggestions.addToShoppingList": "Tilføj til indkøbsliste",
+  "suggestions.addToShoppingListFailed": "Kunne ikke tilføjes til indkøbslisten.",
+  "suggestions.unmarkAtHome": "Vi mangler den alligevel",
 
   // Næringsindhold, fra FatSecrets fødevaredatabase — se app/domain/nutrition.
   // Ordvalget bærer den skelnen, panelet findes for: et målt tal står som et
@@ -194,6 +229,7 @@ export const da = {
     "Der er ikke sat en FatSecret-nøgle op, så kalorier er skønnet ud fra ingredienslisten, og der " +
     "er ingen tal for protein og fedt.",
 
+  "recipesPage.heading": "Opskrifter",
   "recipesPage.title": "Alle opskrifter",
   "recipesPage.searchLabel": "Søg på navn eller ingrediens",
   "recipesPage.searchPlaceholder": "f.eks. broccoli, laks…",
@@ -201,20 +237,40 @@ export const da = {
   "recipesPage.resultCount": "{{count}} opskrift(er)",
   "recipesPage.none": "Ingen opskrifter matcher disse filtre.",
 
+  "recipeImport.formHeading": "Importér opskrift fra link",
+  "recipeImport.formDescription":
+    "Indsæt et link til en opskrift på en hvilken som helst hjemmeside. Fungerer for sider der bruger det gængse opskriftsformat (schema.org/Recipe) til Googles søgeresultater.",
+  "recipeImport.urlPlaceholder": "https://…",
+  "recipeImport.importing": "Importerer...",
+  "recipeImport.import": "Importér",
+  "recipeImport.success": "Importeret: {{title}}",
+  "recipeImport.genericError": "Kunne ikke importere opskriften.",
+
   "recipeDetail.backToRecipes": "Tilbage til opskrifter",
   "recipeDetail.notFound": "Denne opskrift findes ikke.",
   "recipeDetail.ingredientsHeading": "Ingredienser",
   "recipeDetail.instructionsHeading": "Fremgangsmåde",
-  "recipeDetail.viewOriginal": "Se den originale opskrift på REMA 1000 →",
+  "recipeDetail.viewOriginal": "Se den originale opskrift →",
   "recipeDetail.servings": "{{count}} portioner",
   "recipeDetail.totalTime": "{{minutes}} min",
+  "recipeDetail.prepTime": "{{minutes}} min forberedelse",
+  "recipeDetail.cookTime": "{{minutes}} min tilberedning",
+  // Shown wherever a recipe is — the "~" and "(skøn)" are not decoration:
+  // REMA publishes no nutrition data, so this is computed from the
+  // ingredient lines and must never read as a measured figure.
+  "recipeDetail.kcalPerServing": "~{{kcal}} kcal/portion (skøn)",
   "recipeDetail.onOfferBadge": "På tilbud",
   "recipeDetail.onOfferCount": "{{count}} ingrediens(er) på tilbud",
+  "recipeDetail.onOfferPrice": "{{price}} hos {{store}}",
+  "recipeDetail.importedFrom": "Importeret fra {{source}}",
   "recipeDetail.noIngredients":
     "Der blev ikke fundet en ingrediensliste til denne opskrift — åbn den hos REMA 1000 nedenfor.",
+  "recipeDetail.delete": "Slet importeret opskrift",
+  "recipeDetail.deleting": "Sletter…",
+  "recipeDetail.deleteConfirm": "Slet denne importerede opskrift? Det kan ikke fortrydes.",
 
   "day.viewRecipe": "Se hele opskriften",
-  "day.viewOnRema": "Åbn hos REMA 1000 ↗",
+  "day.viewOnRema": "Se den oprindelige opskrift ↗",
 
   "share.button.week": "Del ugen",
   "share.button.day": "Del dagen",
@@ -289,8 +345,12 @@ export const da = {
   "variant.childHeading": "Mindre barn (grundret + kalorietæt tilføjelse)",
   "variant.addLabel": "Tilføj {{qty}}{{unit}} {{name}}",
   "variant.notCurated": "Der er endnu ingen kalorievejledning til denne opskrift — juster portionerne manuelt.",
+  "variant.guidanceMissingLabel": "Vejledning mangler for denne ret",
 
-  "family.pageTitle": "Familie",
+  "family.pageTitle": "Bruger & familie",
+  "family.accountHeading": "Bruger",
+  "family.signedInAs": "Logget ind som {{email}}",
+  "family.signOut": "Log ud",
   "family.yourFamiliesHeading": "Dine familier",
   "family.switch": "Skift",
   "family.active": "Aktiv",
@@ -298,6 +358,9 @@ export const da = {
   "family.namePlaceholder": "Familien Jensen",
   "family.saving": "Gemmer...",
   "family.save": "Gem",
+  "family.storesHeading": "Butikker",
+  "family.storesDescription": "Vælg hvilke butikker din familie handler i, og markér dem hvor I har medlemskab.",
+  "family.hasMembership": "Har {{store}}",
   "family.membersHeading": "Medlemmer",
   "family.inviteHeading": "Invitér et familiemedlem",
   "family.inviteDescription":

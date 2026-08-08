@@ -1,15 +1,26 @@
+import { useNavigate } from "react-router";
 import type { Route } from "./+types/recipes.$id";
-import { useExternalRecipe } from "~/ui/hooks/useExternalRecipes";
+import { useExternalRecipe, useDeleteRecipe } from "~/ui/hooks/useExternalRecipes";
+import { useOffers } from "~/ui/hooks/useOffers";
 import { RecipeBody } from "~/ui/components/RecipeBody";
 import { NutritionPanel } from "~/ui/components/NutritionPanel";
 import { ShareButton } from "~/ui/components/ShareButton";
-import { LinkButton } from "~/ui/components/ui/Button";
+import { Button, LinkButton } from "~/ui/components/ui/Button";
 import { BackLink } from "~/ui/components/ui/BackLink";
 import { HeroPhoto } from "~/ui/components/ui/Photo";
 import { t } from "~/i18n/t";
 
 export default function RecipeDetailPage({ params }: Route.ComponentProps) {
   const recipe = useExternalRecipe(params.id);
+  const offers = useOffers();
+  const currentOffers = Object.values(offers.data?.stores ?? {}).flatMap((store) => store?.offers ?? []);
+  const deleteRecipe = useDeleteRecipe();
+  const navigate = useNavigate();
+
+  function handleDelete() {
+    if (!window.confirm(t("recipeDetail.deleteConfirm"))) return;
+    deleteRecipe.mutate(params.id!, { onSuccess: () => navigate("/recipes") });
+  }
 
   return (
     <>
@@ -28,11 +39,13 @@ export default function RecipeDetailPage({ params }: Route.ComponentProps) {
             />
           )}
 
-          <div className="mb-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-3">
-            <h1 className="m-0 text-2xl">{recipe.data.title}</h1>
-            <div className="flex flex-wrap gap-2">
-              <LinkButton to={`/recipes/${params.id}/cook`}>{t("cook.open")}</LinkButton>
-              <ShareButton target={{ kind: "recipe", recipeId: params.id! }} size="md" />
+          <div className="mb-6 flex flex-col gap-4">
+            <h1 className="m-0 text-3xl">{recipe.data.title}</h1>
+            <div className="grid grid-cols-2 gap-3">
+              <LinkButton to={`/recipes/${params.id}/cook`} size="md" block>
+                {t("cook.open")}
+              </LinkButton>
+              <ShareButton target={{ kind: "recipe", recipeId: params.id! }} size="md" block />
             </div>
           </div>
 
@@ -42,10 +55,34 @@ export default function RecipeDetailPage({ params }: Route.ComponentProps) {
             description={recipe.data.description}
             servings={recipe.data.servings}
             totalTimeMinutes={recipe.data.totalTimeMinutes}
+            prepTimeMinutes={recipe.data.prepTimeMinutes}
+            cookTimeMinutes={recipe.data.cookTimeMinutes}
             ingredientLines={recipe.data.ingredients}
             instructionLines={recipe.data.instructions}
+            offers={currentOffers}
+            source={recipe.data.source}
             url={recipe.data.url}
           />
+
+          {recipe.data.source !== "rema1000" && (
+            <div className="mt-6">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-red-700 hover:bg-red-50"
+                onClick={handleDelete}
+                disabled={deleteRecipe.isPending}
+              >
+                {deleteRecipe.isPending ? t("recipeDetail.deleting") : t("recipeDetail.delete")}
+              </Button>
+              {deleteRecipe.isError && (
+                <p className="mt-2 text-sm text-red-700">
+                  {deleteRecipe.error instanceof Error ? deleteRecipe.error.message : t("recipeImport.genericError")}
+                </p>
+              )}
+            </div>
+          )}
         </>
       )}
     </>

@@ -1,12 +1,20 @@
 import { useState } from "react";
-import { useImportOffers, useOffers, useRefreshOffers, type OffersResponse } from "~/ui/hooks/useOffers";
+import { useImportOffers, useOffers, useRefreshOffers } from "~/ui/hooks/useOffers";
+import { useFamilyStoreSettings } from "~/ui/hooks/useFamilyStoreSettings";
+import { hasStoreMembership } from "~/domain/familyStoreSettings";
+import { STORE_NAMES } from "~/domain/stores";
+import type { StoreId } from "~/domain/types";
+import { StoreOffersCard } from "~/ui/components/StoreOffersCard";
 import { Button } from "~/ui/components/ui/Button";
 import { Card } from "~/ui/components/ui/Card";
-import { Textarea } from "~/ui/components/ui/Input";
+import { Select, Textarea } from "~/ui/components/ui/Input";
+import { Accordion } from "~/ui/components/ui/Accordion";
 import { t } from "~/i18n/t";
 
 const PLACEHOLDER = `[
   {
+    "storeId": "rema1000",
+    "memberOnly": false,
     "name": "REMA 1000 Dansk kylling",
     "unitSizeFrom": 230,
     "unitSizeTo": 825,
@@ -21,43 +29,18 @@ const PLACEHOLDER = `[
   }
 ]`;
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("da-DK", { day: "numeric", month: "short" });
-}
-
 /**
- * Says where the current offers came from, when, and how much of the import
- * is still valid — an import whose offers have all expired otherwise looks
- * identical to never having imported at all.
+ * Whole offers page: one shared "fetch now" button that refreshes every
+ * selected store at once, a card per selected store showing its current and
+ * upcoming offers, and a manual JSON-paste escape hatch scoped to one store
+ * per submission.
  */
-function OfferSnapshotNote({ data }: { data: OffersResponse }) {
-  const { snapshot, offers, importedCount } = data;
-  if (!snapshot) return null;
-
-  const expired = importedCount - offers.length;
-
-  return (
-    <p className="m-0 mt-1 text-xs text-muted">
-      {t(snapshot.source === "manual" ? "offers.snapshotManual" : "offers.snapshotAuto", {
-        date: formatDate(snapshot.importedAt),
-      })}
-      {snapshot.validFrom && snapshot.validUntil && (
-        <>
-          {" "}
-          {t("offers.snapshotValidity", {
-            from: formatDate(snapshot.validFrom),
-            to: formatDate(snapshot.validUntil),
-          })}
-        </>
-      )}
-      {expired > 0 && <> {t("offers.snapshotExpired", { count: expired })}</>}
-    </p>
-  );
-}
-
 export function OfferJsonPasteForm() {
   const [raw, setRaw] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const storeSettings = useFamilyStoreSettings();
+  const selectedStores = storeSettings.data?.selectedStores ?? [];
+  const [pasteStoreId, setPasteStoreId] = useState<StoreId>(selectedStores[0] ?? "rema1000");
   const importOffers = useImportOffers();
   const refreshOffers = useRefreshOffers();
   const offers = useOffers();
@@ -66,7 +49,10 @@ export function OfferJsonPasteForm() {
     setError(null);
     try {
       const parsed = JSON.parse(raw);
-      await importOffers.mutateAsync(parsed);
+      const withStore = Array.isArray(parsed)
+        ? parsed.map((offer) => ({ ...offer, storeId: offer.storeId ?? pasteStoreId }))
+        : parsed;
+      await importOffers.mutateAsync(withStore);
       setRaw("");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Invalid JSON");
@@ -74,57 +60,83 @@ export function OfferJsonPasteForm() {
   }
 
   return (
-    <Card as="section">
-      <h2 className="text-lg">{t("offers.autoFetchHeading")}</h2>
-      <p className="-mt-1 text-sm text-muted">{t("offers.autoFetchDescription")}</p>
-      <Button
-        type="button"
-        variant="secondary"
-        block
-        onClick={() => refreshOffers.mutate()}
-        disabled={refreshOffers.isPending}
-      >
-        {refreshOffers.isPending ? t("offers.fetching") : t("offers.fetchNow")}
-      </Button>
-      {refreshOffers.isError && (
-        <p className="text-sm text-red-700">
-          {t("offers.fetchError")} {refreshOffers.error instanceof Error ? refreshOffers.error.message : ""}
-        </p>
+    <>
+      <Card as="section" className="mb-4">
+        <h2 className="text-lg">{t("offers.autoFetchHeading")}</h2>
+        <p className="-mt-1 text-sm text-muted">{t("offers.autoFetchDescription")}</p>
+        <Button
+          type="button"
+          variant="secondary"
+          block
+          onClick={() => refreshOffers.mutate()}
+          disabled={refreshOffers.isPending}
+        >
+          {refreshOffers.isPending ? t("offers.fetching") : t("offers.fetchNow")}
+        </Button>
+        {refreshOffers.isError && (
+          <p className="text-sm text-red-700">
+            {t("offers.fetchError")} {refreshOffers.error instanceof Error ? refreshOffers.error.message : ""}
+          </p>
+        )}
+        {refreshOffers.isSuccess && refreshOffers.data.failed.length > 0 && (
+          <p className="text-sm text-red-700">
+            {t("offers.fetchPartialError", {
+              stores: refreshOffers.data.failed
+                .map((f) => refreshOffers.data.storeNames[f.storeId] ?? f.storeId)
+                .join(", "),
+            })}
+          </p>
+        )}
+      </Card>
+
+      {offers.isLoading && <p className="mt-3 text-sm text-muted">{t("week.loading")}</p>}
+      {offers.isError && <p className="mt-3 text-sm text-red-700">{t("offers.loadFailed")}</p>}
+
+      {selectedStores.length === 0 && (
+        <p className="text-sm text-muted">{t("offers.noStoresSelected")}</p>
       )}
 
-      <h2 className="mt-4 text-lg">{t("offers.formHeading")}</h2>
-      <p className="-mt-1 text-sm text-muted">{t("offers.formDescription")}</p>
-      <Textarea value={raw} onChange={(e) => setRaw(e.target.value)} placeholder={PLACEHOLDER} rows={10} />
-      {error && <p className="text-sm text-red-700">{error}</p>}
-      <Button
-        type="button"
-        variant="secondary"
-        block
-        onClick={handleImport}
-        disabled={importOffers.isPending || raw.trim().length === 0}
-      >
-        {importOffers.isPending ? t("offers.importing") : t("offers.import")}
-      </Button>
-
-      <div className="mt-3">
-        <h3 className="text-[11px] font-semibold tracking-[0.08em] text-muted uppercase">
-          {t("offers.currentlyImported", { count: offers.data?.offers.length ?? 0 })}
-        </h3>
-        {offers.data?.snapshot && <OfferSnapshotNote data={offers.data} />}
-        <ul className="m-0 mt-1.5 flex max-h-56 list-none flex-col overflow-y-auto p-0">
-          {offers.data?.offers.map((offer, i) => (
-            <li
-              key={i}
-              className="flex items-center justify-between gap-3 border-b border-divider py-2.5 text-sm last:border-b-0"
-            >
-              <span className="min-w-0">{offer.name}</span>
-              <span className="shrink-0 text-[13px] font-bold text-accent-700">
-                {offer.price} {offer.currencyCode}
-              </span>
-            </li>
-          ))}
-        </ul>
+      <div className="flex flex-col gap-4">
+        {selectedStores.map((storeId) => (
+          <StoreOffersCard
+            key={storeId}
+            storeId={storeId}
+            data={offers.data?.stores[storeId]}
+            hasMembership={hasStoreMembership(
+              storeSettings.data ?? { selectedStores: [], memberStores: [] },
+              storeId,
+            )}
+          />
+        ))}
       </div>
-    </Card>
+
+      <div className="mt-4">
+        <Accordion title={t("offers.formHeading")} defaultOpen={false}>
+          <p className="-mt-1 text-sm text-muted">{t("offers.formDescription")}</p>
+          <Select
+            value={pasteStoreId}
+            onChange={(e) => setPasteStoreId(e.target.value as StoreId)}
+            className="mb-2"
+          >
+            {selectedStores.map((storeId) => (
+              <option key={storeId} value={storeId}>
+                {STORE_NAMES[storeId]}
+              </option>
+            ))}
+          </Select>
+          <Textarea value={raw} onChange={(e) => setRaw(e.target.value)} placeholder={PLACEHOLDER} rows={10} />
+          {error && <p className="text-sm text-red-700">{error}</p>}
+          <Button
+            type="button"
+            variant="secondary"
+            block
+            onClick={handleImport}
+            disabled={importOffers.isPending || raw.trim().length === 0}
+          >
+            {importOffers.isPending ? t("offers.importing") : t("offers.import")}
+          </Button>
+        </Accordion>
+      </div>
+    </>
   );
 }

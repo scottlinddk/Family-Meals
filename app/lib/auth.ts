@@ -47,11 +47,22 @@ export async function requireUser(request: Request, headers: Headers) {
 }
 
 /**
+ * A redirect to the login form, pointing back at the page that was asked
+ * for, so a bookmarked or shared deep link survives the detour through
+ * sign-in.
+ */
+export function redirectToLogin(request: Request, headers: Headers): Response {
+  const { pathname, search } = new URL(request.url);
+  const redirectTo = `${pathname}${search}`;
+  const target =
+    redirectTo === "/" ? "/auth/login" : `/auth/login?redirectTo=${encodeURIComponent(redirectTo)}`;
+  return redirect(target, { headers });
+}
+
+/**
  * Page-route guard: returns a redirect to the login form when nobody is
- * signed in, or null when they are. `redirectTo` points back at the page
- * that was asked for, so a bookmarked or shared deep link survives the
- * detour through sign-in. Shared by the layouts that wrap the signed-in
- * pages (`_app`, `_cook`).
+ * signed in, or null when they are. Shared by the layouts that wrap the
+ * signed-in pages (`_app`, `_cook`).
  */
 export async function redirectToLoginIfSignedOut(
   request: Request,
@@ -59,12 +70,7 @@ export async function redirectToLoginIfSignedOut(
 ): Promise<Response | null> {
   const user = await requireUser(request, headers);
   if (user) return null;
-
-  const { pathname, search } = new URL(request.url);
-  const redirectTo = `${pathname}${search}`;
-  const target =
-    redirectTo === "/" ? "/auth/login" : `/auth/login?redirectTo=${encodeURIComponent(redirectTo)}`;
-  return redirect(target, { headers });
+  return redirectToLogin(request, headers);
 }
 
 /**

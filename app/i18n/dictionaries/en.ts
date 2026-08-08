@@ -28,7 +28,6 @@ export const en: Record<keyof typeof da, string> = {
   "week.next": "Next week",
   "week.kicker": "Week plan",
   "week.heading": "Week of {{date}}",
-  "week.signOut": "Sign out",
   "week.loading": "Loading…",
   "week.empty": "No plan generated for this week yet.",
   "week.generating": "Generating...",
@@ -42,6 +41,8 @@ export const en: Record<keyof typeof da, string> = {
   "week.noRecipes": "No recipes have been fetched yet, so there's nothing to plan with.",
   "week.noRecipesAction": "Fetch recipes",
   "week.today": "Today",
+  "week.thisWeek": "This week",
+  "week.nextWeek": "Next week",
 
   "shoppingList.title": "Shopping list",
   "shoppingList.open": "Open shopping list",
@@ -56,6 +57,8 @@ export const en: Record<keyof typeof da, string> = {
   "shoppingList.atHome": "Have it",
   "shoppingList.atHomeAria": "We already have {{item}} at home",
   "shoppingList.atHomeSummary": "{{count}} you already have at home, so don't buy them.",
+  "shoppingList.storeTotal": "{{store}}: {{total}} for {{count}} items on offer",
+  "shoppingList.priceFrom": "from {{price}}",
   "shoppingList.sharedWithFamily": "Marks are shared with the rest of the family.",
   "shoppingList.syncPending": "{{count}} mark(s) waiting for a connection — they'll send themselves.",
   "shoppingList.syncFailed": "A mark wasn't saved, so the others may be seeing a different list.",
@@ -82,15 +85,24 @@ export const en: Record<keyof typeof da, string> = {
   "shoppingList.dept.dryGoods": "Dry goods",
   "shoppingList.dept.drinks": "Drinks",
   "shoppingList.dept.other": "Other",
+  "shoppingList.otherStore": "No store found",
 
   "day.backToWeek": "Back to week",
+  "day.maxTimeLabel": "Max time to prep & cook today",
+  "day.maxTimeNoLimit": "No limit",
+  "day.maxTimeBadge": "Max {{minutes}} min",
+  "day.maxTimeSaveFailed": "Couldn't save that — try again.",
   "day.swapLabel": "Swap to a different recipe",
-  "day.choosePlaceholder": "Choose a recipe…",
+  "day.choosePlaceholder": "Search for a recipe…",
+  "day.noRecipesFound": "No recipes match.",
   "day.notFound": "There's no meal planned for this day.",
 
   "dayCard.regenerating": "Regenerating...",
   "dayCard.regenerateThisDay": "Regenerate this day",
 
+  "info.close": "Close",
+
+  "infant.calloutLabel": "Age guidance",
   "infant.label": "6-month-old",
   "infant.note":
     "This app does not plan meals for your 6-month-old. Follow your health visitor's " +
@@ -98,22 +110,31 @@ export const en: Record<keyof typeof da, string> = {
     "12 months, no added salt or sugar before 12 months, and always supervise for choking hazards.",
 
   "offers.pageTitle": "Weekly offers",
-  "offers.formHeading": "This week's REMA 1000 offers",
+  "offers.formHeading": "Paste offers manually",
   "offers.formDescription":
-    "Paste offer JSON in the reference schema shape (same fields REMA's own listings use). This replaces the currently-imported offer set.",
+    "Paste offer JSON in the reference schema shape (same fields the stores' own listings use) for the selected store. This replaces that store's currently-imported offer set.",
   "offers.importing": "Importing...",
   "offers.import": "Import offers",
-  "offers.currentlyImported": "Currently imported ({{count}})",
+  "offers.thisWeek": "On offer this week ({{count}})",
+  "offers.nextWeek": "On offer next week ({{count}})",
+  "offers.nextWeekEmpty": "Next week's offers haven't been fetched yet.",
+  "offers.weekendOnly": "Weekend only ({{from}}–{{to}})",
+  "offers.memberOnly": "Members only",
+  "offers.requiresMembership": "Requires {{store}}+",
+  "offers.notFetchedYet": "No offers fetched yet for this store.",
+  "offers.noStoresSelected": "You haven't selected any stores. Pick stores under User & family.",
   "offers.autoFetchHeading": "Automatic offers",
   "offers.autoFetchDescription":
-    "Fetch REMA 1000's current offers automatically from etilbudsavis.dk (a third-party tilbudsavis built on the Tjek platform, not the webshop itself).",
+    "Fetch your selected stores' current offers automatically from etilbudsavis.dk (a third-party tilbudsavis built on the Tjek platform, not the stores' own webshops).",
   "offers.fetching": "Fetching...",
   "offers.fetchNow": "Fetch offers now",
   "offers.fetchError": "Could not fetch offers automatically.",
+  "offers.fetchPartialError": "Could not fetch offers for: {{stores}}.",
   "offers.snapshotManual": "Pasted manually on {{date}}.",
   "offers.snapshotAuto": "Fetched from etilbudsavis.dk on {{date}}.",
   "offers.snapshotValidity": "Valid {{from}}–{{to}}.",
   "offers.snapshotExpired": "{{count}} of them have expired and are no longer used.",
+  "offers.loadFailed": "Could not load offers.",
 
   "recipes.suggestionsHeading": "Best meals from this week's offers",
   "recipes.suggestionsDescription":
@@ -134,11 +155,14 @@ export const en: Record<keyof typeof da, string> = {
     "{{recipes}} of {{total}} recipes in the \"{{theme}}\" theme ({{pages}} pages fetched).",
   "recipes.refreshedPagesSkipped": "Pages that could not be fetched: {{pages}}.",
 
-  // Bottom-nav labels: short enough to sit under an icon on the narrowest phone.
+  // Bottom-nav labels: these have to fit on one line under an icon, in a
+  // quarter of the narrowest phone — see the Danish dictionary, whose longest
+  // label ("Bruger & familie") is the one that sets the budget.
   "nav.plan": "Week",
   "nav.recipes": "Recipes",
   "nav.offers": "Offers",
-  "nav.family": "Family",
+  "nav.shoppingList": "Shopping",
+  "nav.family": "User & family",
   "nav.primary": "Main menu",
 
   "suggestions.sortLabel": "Sort by",
@@ -157,9 +181,20 @@ export const en: Record<keyof typeof da, string> = {
   "suggestions.kcalPerServingMeasured": "{{kcal}} kcal/serving",
   "suggestions.proteinPerServing": "{{grams}} g protein/serving",
   "suggestions.vegetarian": "Meat-free",
+  "suggestions.weekendOnly": "Weekend only: {{offers}}",
   "suggestions.noneVegetarian":
     "None of the fetched recipes are meat-free. Try turning the filter off, or refresh the recipes.",
   "suggestions.loadFailed": "The suggestions couldn't be loaded.",
+  "suggestions.prevPage": "Previous page",
+  "suggestions.nextPage": "Next page",
+  "suggestions.page": "Page {{page}} of {{pages}}",
+  "suggestions.flagWrongMatch": "Wrong match — this item isn't the ingredient",
+  "suggestions.unflagWrongMatch": "Undo wrong-match flag",
+  "suggestions.flagFailed": "That flag couldn't be saved.",
+  "suggestions.onShoppingList": "On the shopping list",
+  "suggestions.addToShoppingList": "Add to shopping list",
+  "suggestions.addToShoppingListFailed": "Couldn't add it to the shopping list.",
+  "suggestions.unmarkAtHome": "We're out after all",
 
   // Nutrition, from FatSecret's food database — see app/domain/nutrition.
   // The wording carries the distinction the panel exists for: a measured
@@ -195,6 +230,7 @@ export const en: Record<keyof typeof da, string> = {
     "No FatSecret key is configured, so calories are estimated from the ingredient list and there " +
     "are no protein or fat figures.",
 
+  "recipesPage.heading": "Recipes",
   "recipesPage.title": "All recipes",
   "recipesPage.searchLabel": "Search by name or ingredient",
   "recipesPage.searchPlaceholder": "e.g. broccoli, salmon…",
@@ -202,20 +238,40 @@ export const en: Record<keyof typeof da, string> = {
   "recipesPage.resultCount": "{{count}} recipe(s)",
   "recipesPage.none": "No recipes match these filters.",
 
+  "recipeImport.formHeading": "Import recipe from link",
+  "recipeImport.formDescription":
+    "Paste a link to a recipe on any website. Works for sites that use the common recipe markup (schema.org/Recipe) for Google search results.",
+  "recipeImport.urlPlaceholder": "https://…",
+  "recipeImport.importing": "Importing...",
+  "recipeImport.import": "Import",
+  "recipeImport.success": "Imported: {{title}}",
+  "recipeImport.genericError": "Could not import that recipe.",
+
   "recipeDetail.backToRecipes": "Back to recipes",
   "recipeDetail.notFound": "This recipe doesn't exist.",
   "recipeDetail.ingredientsHeading": "Ingredients",
   "recipeDetail.instructionsHeading": "Instructions",
-  "recipeDetail.viewOriginal": "View original recipe on REMA 1000 →",
+  "recipeDetail.viewOriginal": "View original recipe →",
   "recipeDetail.servings": "{{count}} servings",
   "recipeDetail.totalTime": "{{minutes}} min",
+  "recipeDetail.prepTime": "{{minutes}} min prep",
+  "recipeDetail.cookTime": "{{minutes}} min cook",
+  // Shown wherever a recipe is — the "~" and "(estimate)" are not decoration:
+  // REMA publishes no nutrition data, so this is computed from the
+  // ingredient lines and must never read as a measured figure.
+  "recipeDetail.kcalPerServing": "~{{kcal}} kcal/serving (estimate)",
   "recipeDetail.onOfferBadge": "On offer",
   "recipeDetail.onOfferCount": "{{count}} ingredient(s) on offer",
+  "recipeDetail.onOfferPrice": "{{price}} at {{store}}",
+  "recipeDetail.importedFrom": "Imported from {{source}}",
   "recipeDetail.noIngredients":
     "No ingredient list was found for this recipe — open it on REMA 1000 below.",
+  "recipeDetail.delete": "Delete imported recipe",
+  "recipeDetail.deleting": "Deleting…",
+  "recipeDetail.deleteConfirm": "Delete this imported recipe? This can't be undone.",
 
   "day.viewRecipe": "See the full recipe",
-  "day.viewOnRema": "Open on REMA 1000 ↗",
+  "day.viewOnRema": "View original recipe ↗",
 
   "share.button.week": "Share week",
   "share.button.day": "Share day",
@@ -290,8 +346,12 @@ export const en: Record<keyof typeof da, string> = {
   "variant.childHeading": "Toddler (base dish + calorie-dense addition)",
   "variant.addLabel": "Add {{qty}}{{unit}} {{name}}",
   "variant.notCurated": "No calorie guidance is available for this recipe yet — adjust portions manually.",
+  "variant.guidanceMissingLabel": "Guidance missing for this dish",
 
-  "family.pageTitle": "Family",
+  "family.pageTitle": "User & family",
+  "family.accountHeading": "User",
+  "family.signedInAs": "Signed in as {{email}}",
+  "family.signOut": "Sign out",
   "family.yourFamiliesHeading": "Your families",
   "family.switch": "Switch",
   "family.active": "Active",
@@ -299,6 +359,9 @@ export const en: Record<keyof typeof da, string> = {
   "family.namePlaceholder": "The Smiths",
   "family.saving": "Saving...",
   "family.save": "Save",
+  "family.storesHeading": "Stores",
+  "family.storesDescription": "Choose which stores your family shops at, and flag the ones you hold membership at.",
+  "family.hasMembership": "Have {{store}}",
   "family.membersHeading": "Members",
   "family.inviteHeading": "Invite a family member",
   "family.inviteDescription":

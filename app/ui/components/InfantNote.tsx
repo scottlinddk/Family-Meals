@@ -1,12 +1,22 @@
 import { INFANT_NOTE } from "~/domain/infant/infantNote";
+import { InfoPopover } from "~/ui/components/InfoPopover";
 import { t } from "~/i18n/t";
 
-/** Static, non-personalized reminder — the only infant-related content in the app. */
+/**
+ * Static, non-personalized reminder — the only infant-related content in the
+ * app. The trigger is labelled generically ("age guidance") rather than with
+ * the note's own heading, so it keeps reading correctly once a second item
+ * (a different age, a different caveat) joins the one below it.
+ */
 export function InfantNote() {
+  const calloutLabel = t("infant.calloutLabel");
   return (
-    <aside className="rounded-sm bg-neutral-100 p-3.5">
-      <p className="m-0 text-xs font-semibold text-text">{t("infant.label")}</p>
-      <p className="m-0 mt-1 text-xs leading-relaxed text-muted italic">{t(INFANT_NOTE.textKey)}</p>
-    </aside>
+    <div className="flex items-center gap-1.5 text-xs font-semibold text-muted">
+      {calloutLabel}
+      <InfoPopover
+        ariaLabel={calloutLabel}
+        items={[{ heading: t("infant.label"), body: t(INFANT_NOTE.textKey) }]}
+      />
+    </div>
   );
 }

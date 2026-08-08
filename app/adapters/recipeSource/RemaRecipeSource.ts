@@ -307,9 +307,11 @@ function microdataValues(root: HTMLElement, prop: string): string[] {
  * more durable source but letting a weaker one fill a gap the stronger one
  * left empty (e.g. JSON-LD that omits `description` but has full ingredients).
  *
- * Used by the fallback crawl and by `/api/recipes/diagnose`.
+ * Used by the fallback crawl, by `/api/recipes/diagnose`, and (with a
+ * non-REMA `source`) by the URL-paste import — the extraction itself doesn't
+ * know or care which site it's reading.
  */
-export function parseRecipeDetail(html: string, url: string): ExternalRecipe | null {
+export function parseRecipeDetail(html: string, url: string, source = "rema1000"): ExternalRecipe | null {
   const root = parse(html);
   const jsonLd = extractRecipeFromJsonLd(root);
   const embedded = extractRecipeFromEmbeddedState(root);
@@ -351,12 +353,21 @@ export function parseRecipeDetail(html: string, url: string): ExternalRecipe | n
     parseDurationMinutes(microdataValues(root, "totalTime")[0]) ??
     extractTotalTimeMinutes(root);
 
+  // No class-name heuristic fallback for these two — only schema.org/Recipe
+  // JSON-LD and microdata publish prep/cook as separate figures; a page that
+  // states only a bare total time has no split to extract.
+  const prepTimeMinutes =
+    jsonLd?.prepTimeMinutes ?? parseDurationMinutes(microdataValues(root, "prepTime")[0]);
+  const cookTimeMinutes =
+    jsonLd?.cookTimeMinutes ?? parseDurationMinutes(microdataValues(root, "cookTime")[0]);
+
   const slugMatch = url.match(/\/opskrifter\/([^/?#]+)/);
   const id = slugMatch?.[1] ?? url;
 
   return {
     id,
     title,
+    source,
     url,
     imageUrl,
     description: description || undefined,
@@ -364,6 +375,8 @@ export function parseRecipeDetail(html: string, url: string): ExternalRecipe | n
     instructions,
     servings,
     totalTimeMinutes,
+    prepTimeMinutes,
+    cookTimeMinutes,
   };
 }
 

@@ -52,6 +52,8 @@ export interface RankedSuggestion {
   offerCoverage: number;
   matchedIngredients: MatchedIngredient[];
   matchedOfferNames: string[];
+  /** Subset of `matchedOfferNames` that only run part of the week (see `offerTiming.ts`). */
+  weekendOnlyOfferNames: string[];
   /**
    * Calories, macros and how much of each was measured rather than estimated.
    * Null when the recipe has no ingredient list to compute from.
@@ -92,6 +94,8 @@ export interface SuggestionOptions {
    * exactly as it did before.
    */
   nutrition?: NutrientLookup;
+  /** Ingredient↔offer pairs the family has flagged as wrong (see `offerOverrideKey`). */
+  excludedPairs?: ReadonlySet<string>;
 }
 
 /**
@@ -131,9 +135,15 @@ function caloriePercentiles(perServing: (number | null)[]): number[] {
 export function rankRecipeSuggestions(
   recipes: ExternalRecipe[],
   offers: Offer[],
-  { sort = "balanced", vegetarianOnly = false, limit, nutrition }: SuggestionOptions = {},
+  {
+    sort = "balanced",
+    vegetarianOnly = false,
+    limit,
+    nutrition,
+    excludedPairs,
+  }: SuggestionOptions = {},
 ): RankedSuggestion[] {
-  const byOffers = rankExternalRecipesByOffers(recipes, offers);
+  const byOffers = rankExternalRecipesByOffers(recipes, offers, excludedPairs);
 
   const candidates = byOffers
     .map((ranked) => ({
@@ -175,6 +185,7 @@ export function rankRecipeSuggestions(
       offerCoverage: offerMatch.coverage,
       matchedIngredients: offerMatch.matchedIngredients,
       matchedOfferNames: offerMatch.matchedOfferNames,
+      weekendOnlyOfferNames: offerMatch.weekendOnlyOfferNames,
       nutrition: recipeNutrition,
       vegetarian,
       score:

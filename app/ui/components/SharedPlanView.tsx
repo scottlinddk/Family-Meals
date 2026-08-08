@@ -1,6 +1,7 @@
 import type { DayPlan, ExternalRecipe, WeekPlan } from "~/domain/types";
 import { RecipeBody } from "~/ui/components/RecipeBody";
-import { AdultVariantPanel, ChildVariantPanel } from "~/ui/components/VariantPanel";
+import { VariantsGrid, VariantGuidanceNote } from "~/ui/components/VariantPanel";
+import { CalorieMeta } from "~/ui/components/RecipeCalories";
 import { Card, CardKicker, CardTitle } from "~/ui/components/ui/Card";
 import { Tag } from "~/ui/components/ui/Tag";
 import { HeroPhoto, ThumbPhoto } from "~/ui/components/ui/Photo";
@@ -47,6 +48,7 @@ function SharedWeekDay({ day }: { day: DayPlan }) {
             {snapshot.totalTimeMinutes && (
               <span>{t("recipeDetail.totalTime", { minutes: snapshot.totalTimeMinutes })}</span>
             )}
+            <CalorieMeta ingredientLines={snapshot.ingredientLines} servings={snapshot.servings} />
             {offerCount > 0 && (
               <Tag variant="accent">{t("recipeDetail.onOfferCount", { count: offerCount })}</Tag>
             )}
@@ -100,9 +102,11 @@ export function SharedDay({ day }: { day: DayPlan }) {
         url={snapshot.url}
       />
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        <AdultVariantPanel variant={day.adultVariant} />
-        <ChildVariantPanel variant={day.childVariant} />
+      <div className="mt-4">
+        <VariantsGrid adultVariant={day.adultVariant} childVariant={day.childVariant} />
+      </div>
+      <div className="mt-3">
+        <VariantGuidanceNote adultVariant={day.adultVariant} childVariant={day.childVariant} />
       </div>
     </>
   );

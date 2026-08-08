@@ -23,7 +23,7 @@ import { rankRecipeSuggestions } from "~/domain/recipes/suggestionRanking";
  * build artefact and not everyone checking out this repo will have them.
  */
 const RECIPES_PATH = "scrape-output/rema-recipes.json";
-const OFFERS_PATH = "scrape-output/rema-offers.json";
+const OFFERS_PATH = "scrape-output/rema1000-offers.json";
 const haveScrape = existsSync(RECIPES_PATH) && existsSync(OFFERS_PATH);
 
 describe.skipIf(!haveScrape)("ranking against the real scrape", () => {

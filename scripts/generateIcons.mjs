@@ -23,11 +23,12 @@ const PUBLIC_DIR = join(dirname(fileURLToPath(import.meta.url)), "..", "public")
 
 /* ---------------------------------------------------------------- palette */
 
-// The app's own colours (see app/app.css): the Fresh Table deep green, the
-// soft mint the app tints with, and the darkest green for the cutlery.
-const GREEN = [0x1f, 0x4d, 0x2c];
-const MINT = [0xea, 0xf5, 0xe8];
-const INK = [0x0c, 0x20, 0x11];
+// The app's own colours (see app/app.css): the Good Harvest deep forest
+// green, the accent-100 tint the app uses for soft fills, and the darkest
+// green for the cutlery.
+const GREEN = [0x0e, 0x3b, 0x27];
+const MINT = [0xe6, 0xf0, 0xe8];
+const INK = [0x06, 0x1d, 0x13];
 
 /* --------------------------------------------------------------- geometry */
 

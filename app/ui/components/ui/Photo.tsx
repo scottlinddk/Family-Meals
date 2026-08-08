@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { ClockIcon } from "~/ui/components/Icon";
 import { t } from "~/i18n/t";
 
@@ -7,6 +8,17 @@ import { t } from "~/i18n/t";
  * beside a row of text. Both are rounded rectangles — never circles, never
  * square corners — and both keep their aspect ratio by cropping.
  *
+ * Every photo comes from a scrape, over a connection that isn't always fast,
+ * so every photo needs a between state: a pulsing tint the same shape as the
+ * photo, in place until `onLoad` fires, rather than the blank white (or
+ * broken-image icon) a bare `<img>` shows meanwhile.
+ */
+function usePhotoLoaded() {
+  const [loaded, setLoaded] = useState(false);
+  return { loaded, onLoad: () => setLoaded(true) };
+}
+
+/**
  * `time` puts the recipe's total time in a translucent badge over the top-left
  * corner, which is where the design system keeps it.
  */
@@ -19,25 +31,44 @@ export function HeroPhoto({
   time?: number;
   className?: string;
 }) {
+  const { loaded, onLoad } = usePhotoLoaded();
   return (
-    <div className={`relative ${className}`}>
-      <img src={src} alt="" loading="lazy" className="aspect-[1.6] w-full object-cover" />
+    <div className={`relative bg-neutral-200 ${className}`}>
+      {!loaded && <div aria-hidden="true" className="absolute inset-0 animate-pulse bg-neutral-300" />}
+      <img
+        src={src}
+        alt=""
+        loading="lazy"
+        onLoad={onLoad}
+        className={`aspect-[1.6] w-full object-cover transition-opacity duration-300 ${
+          loaded ? "opacity-100" : "opacity-0"
+        }`}
+      />
       {time && <TimeBadge minutes={time} />}
     </div>
   );
 }
 
 export function ThumbPhoto({ src, size = 64 }: { src: string; size?: number }) {
+  const { loaded, onLoad } = usePhotoLoaded();
   return (
-    <img
-      src={src}
-      alt=""
-      width={size}
-      height={size}
-      loading="lazy"
-      className="shrink-0 rounded-sm object-cover"
+    <span
+      className="relative inline-block shrink-0 overflow-hidden rounded-sm bg-neutral-200"
       style={{ width: size, height: size }}
-    />
+    >
+      {!loaded && <span aria-hidden="true" className="absolute inset-0 block animate-pulse bg-neutral-300" />}
+      <img
+        src={src}
+        alt=""
+        width={size}
+        height={size}
+        loading="lazy"
+        onLoad={onLoad}
+        className={`h-full w-full rounded-sm object-cover transition-opacity duration-300 ${
+          loaded ? "opacity-100" : "opacity-0"
+        }`}
+      />
+    </span>
   );
 }
 

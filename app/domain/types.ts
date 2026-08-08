@@ -5,8 +5,15 @@
 
 export type CurrencyCode = "DKK";
 
-/** Mirrors the REMA 1000 weekly-offer reference schema exactly. */
+/** The supermarket chains this app knows how to fetch/import offers for. */
+export const STORE_IDS = ["rema1000", "netto", "foetex", "meny"] as const;
+export type StoreId = (typeof STORE_IDS)[number];
+
+/** Matches the shared Tjek-derived reference schema — one store among several. */
 export interface Offer {
+  storeId: StoreId;
+  /** True for a chain's member-only tier (Netto+, Føtex+) rather than a regular offer. */
+  memberOnly: boolean;
   name: string;
   unitSizeFrom: number;
   unitSizeTo: number;
@@ -112,6 +119,12 @@ export interface RecipeSnapshot {
   servings?: number;
   /** Total time to make the dish, in minutes, if stated. */
   totalTimeMinutes?: number;
+  /** Active preparation time (chopping, mixing, etc.), in minutes, if the source states it separately from cooking. */
+  prepTimeMinutes?: number;
+  /** Cooking/baking time, in minutes, if the source states it separately from preparation. */
+  cookTimeMinutes?: number;
+  /** `ExternalRecipe.source` — `"rema1000"` or a URL import's hostname — kept for attribution, distinct from the coarser `source` field above. */
+  sourceLabel?: string;
   tags: string[];
   /** Ingredients as display lines (already formatted, no separate qty/unit). */
   ingredientLines: string[];
@@ -137,6 +150,13 @@ export interface DayPlan {
   editedAt: string; // ISO 8601
   /** Bumped on every edit/swap/regenerate; drives ICS SEQUENCE. */
   sequence: number;
+  /**
+   * How many minutes the family has, at most, to prep and cook this day's
+   * dinner — set by the family, not derived from any recipe. When set,
+   * regenerating this day only offers recipes whose combined prep+cook (or
+   * total) time fits the budget.
+   */
+  maxTimeMinutes?: number;
 }
 
 export interface WeekPlan {
@@ -165,6 +185,14 @@ export interface ExternalRecipe {
   /** Stable id derived from the source URL slug. */
   id: string;
   title: string;
+  /**
+   * Where this recipe came from: `"rema1000"` for `RemaRecipeSource`, or the
+   * hostname of a user-pasted URL import (e.g. `"valdemarsro.dk"`). Used to
+   * scope a cache refresh to one source (`externalRecipeRepository.replaceForSource`)
+   * without touching recipes from any other source, and to attribute
+   * URL-imported recipes in the UI.
+   */
+  source: string;
   /** Canonical URL on madogdrikke.rema1000.dk. */
   url: string;
   imageUrl?: string;
@@ -177,6 +205,10 @@ export interface ExternalRecipe {
   servings?: number;
   /** Total time to make the dish, in minutes, if stated. */
   totalTimeMinutes?: number;
+  /** Active preparation time, in minutes, if the source states it separately from cooking. */
+  prepTimeMinutes?: number;
+  /** Cooking/baking time, in minutes, if the source states it separately from preparation. */
+  cookTimeMinutes?: number;
   /**
    * Meal-theme slugs from the source site, e.g. `["aftensmad", "frokost"]`.
    * A recipe carries several: REMA files "Poke bowl med ørredfilet" under
